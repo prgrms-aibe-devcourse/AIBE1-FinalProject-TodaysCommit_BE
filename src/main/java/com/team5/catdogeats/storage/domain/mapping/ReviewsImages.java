@@ -17,7 +17,7 @@ import java.util.UUID;
 public class ReviewsImages extends BaseEntity {
     @Id
     @Column(length = 36)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;  // 이 id는 reviews 테이블의 id를 FK로 참조
 
     @OneToOne(fetch = FetchType.LAZY)

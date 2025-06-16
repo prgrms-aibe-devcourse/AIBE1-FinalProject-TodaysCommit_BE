@@ -21,7 +21,7 @@ public class Settlements extends BaseEntity {
 
     @Id
     @Column(length = 36)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,7 +37,7 @@ public class Settlements extends BaseEntity {
     @Column(name = "item_price", nullable = false)
     private Long itemPrice;
 
-    @Column(name = "commission_rate", precision = 5, scale = 2, nullable = false)
+    @Column(name = "commission_rate", columnDefinition = "DECIMAL(5,2)", nullable = false)
     private BigDecimal commissionRate;
 
     @Column(name = "commission_amount", nullable = false)

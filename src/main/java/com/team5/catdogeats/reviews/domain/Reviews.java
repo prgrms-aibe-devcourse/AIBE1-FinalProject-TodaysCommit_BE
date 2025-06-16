@@ -18,7 +18,7 @@ public class Reviews extends BaseEntity {
 
     @Id
     @Column(length = 36)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,7 +31,7 @@ public class Reviews extends BaseEntity {
             foreignKey = @ForeignKey(name = "fk_reviews_buyer_id"))
     private Buyers buyer;
 
-    @Column(nullable = false, precision = 2, scale = 1)
+    @Column(nullable = false, columnDefinition = "DECIMAL(2,1)")
     private Double star;
 
     @Column(nullable = false, columnDefinition = "TEXT")

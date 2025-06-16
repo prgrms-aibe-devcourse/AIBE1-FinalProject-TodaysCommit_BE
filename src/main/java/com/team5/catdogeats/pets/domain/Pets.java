@@ -17,7 +17,7 @@ import java.util.UUID;
 public class Pets extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
     private UUID id;
 

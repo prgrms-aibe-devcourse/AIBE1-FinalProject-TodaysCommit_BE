@@ -7,7 +7,6 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
@@ -18,7 +17,7 @@ import java.util.UUID;
 public class Products extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
     private UUID id;
 
@@ -47,8 +46,8 @@ public class Products extends BaseEntity {
     @Column(name = "is_discounted")
     private boolean isDiscounted = false;
 
-    @Column(name = "discount_rate", precision = 10, scale = 2)
-    private BigDecimal discountRate = BigDecimal.ZERO;
+    @Column(name = "discount_rate", columnDefinition = "DECIMAL(10,2)")
+    private Double discountRate;
 
     @Column(nullable = false)
     private Long price;

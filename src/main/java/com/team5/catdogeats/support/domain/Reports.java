@@ -21,7 +21,7 @@ public class Reports extends BaseEntity {
 
     @Id
     @Column(length = 36)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @Enumerated(EnumType.STRING)

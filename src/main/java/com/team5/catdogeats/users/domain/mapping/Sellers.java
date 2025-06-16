@@ -5,15 +5,19 @@ import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Sellers extends BaseEntity {
+
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id", length = 36)
-    private String userId;
+    private UUID userId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
@@ -23,7 +27,7 @@ public class Sellers extends BaseEntity {
     @Column(name = "vendor_name", length = 100)
     private String vendorName;
 
-    @Column(name = "vendor_profile_image", length = 255, nullable = false)
+    @Column(name = "vendor_profile_image", length = 255)
     private String vendorProfileImage;
 
     @Column(name = "business_number", length = 20)
@@ -35,6 +39,6 @@ public class Sellers extends BaseEntity {
     @Column(name = "settlement_acc", length = 30)
     private String settlementAccount;
 
-    @Column(length = 36)
+    @Column(name = "tags")
     private String tags;
 }

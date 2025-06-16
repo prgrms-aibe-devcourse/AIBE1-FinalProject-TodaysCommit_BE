@@ -23,7 +23,7 @@ public class OrderIssues extends BaseEntity {
 
     @Id
     @Column(length = 36)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -62,13 +62,7 @@ public class OrderIssues extends BaseEntity {
     @Column(name = "discount_amount", nullable = false)
     private Long discountAmount = 0L;
 
-    @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @OneToMany(mappedBy = "orderIssue", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "orderIssues", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderIssueItems> orderIssueItems;
 
 }
