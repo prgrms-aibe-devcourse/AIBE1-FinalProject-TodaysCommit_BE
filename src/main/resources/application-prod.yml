@@ -1,0 +1,28 @@
+spring:
+  # 데이터베이스 연결 설정
+  datasource: # 여러 DBaaS에서 가져오기
+    url: ${DB_URL} # 데이터베이스 URL
+    username: ${DB_USER} # 데이터베이스 사용자 이름
+    password: ${DB_PASSWORD} # 데이터베이스 비밀번호
+    driver-class-name: org.postgresql.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      pool-name: HikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true # SQL 로그 출력
+    properties:
+      hibernate:
+        format_sql: true # SQL 예쁘게 출력
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false # OSIV 비활성화 (API 서버라면 false 추천)\
+
+mybatis:
+  type-aliases-package: com.team5.catdogeats.mybatis
