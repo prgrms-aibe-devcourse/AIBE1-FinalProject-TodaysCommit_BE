@@ -15,7 +15,7 @@ import java.util.UUID;
 @Table(uniqueConstraints = @UniqueConstraint(name = "uk_provider_provider_id", columnNames = {"provider", "providerId"}))
 public class Users extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(length = 36)
     private UUID id;
 

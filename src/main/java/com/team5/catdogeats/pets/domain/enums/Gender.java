@@ -1,4 +1,5 @@
 package com.team5.catdogeats.pets.domain.enums;
 
-public enum Category {
+public enum Gender {
+    M, F
 }
