@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+      onload="this.rel='stylesheet'"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>CatDogEats Admin</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+      body {
+        font-family: "Noto Sans KR", "Work Sans", sans-serif;
+        background-color: #faf8f5;
+      }
+      .primary-bg {
+        background-color: #f5a623;
+      }
+      .primary-text {
+        color: #f5a623;
+      }
+      .secondary-text {
+        color: #a5d6a7;
+      }
+      .accent-text {
+        color: #7d6e63;
+      }
+      .secondary-bg {
+        background-color: #e8f5e9;
+      }
+      .active-tab {
+        border-left-width: 4px;
+        border-color: #f5a623;
+        background-color: #fff9f0;
+        color: #f5a623;
+        font-weight: 700;
+      }
+      .inactive-tab {
+        border-left-width: 4px;
+        border-color: transparent;
+        color: #7d6e63;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .inactive-tab:hover {
+        background-color: #fdfbf8;
+        color: #e69500;
+      }
+      .page-title {
+        color: #7d6e63;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .page-subtitle {
+        color: #a89a91;
+        font-size: 1rem;
+      }
+      .sidebar {
+        background-color: #fffdfb;
+        border-right: 1px solid #f0ebe5;
+      }
+      .sidebar-link-icon {
+        color: #bcaaa4;
+      }
+      .sidebar-link-text {
+        color: #7d6e63;
+      }
+      .active-tab .sidebar-link-icon,
+      .active-tab .sidebar-link-text {
+        color: #f5a623;
+      }
+      .inactive-tab:hover .sidebar-link-icon,
+      .inactive-tab:hover .sidebar-link-text {
+        color: #e69500;
+      }
+      .filter-chip {
+        display: flex;
+        height: 2.5rem;
+        flex-shrink: 0;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        background-color: white;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        border: 1px solid #cbd5e1;
+      }
+      .filter-chip:hover {
+        background-color: #f8fafc;
+      }
+      .filter-chip.active {
+        background-color: #f5a623;
+        color: white;
+        border-color: #f5a623;
+      }
+      .filter-chip.active:hover {
+        background-color: #e69500;
+      }
+      .search-input {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        flex: 1 1 0%;
+        resize: none;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        height: 2.5rem;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.25rem;
+      }
+      .search-input::placeholder {
+        color: #9ca3af;
+      }
+      .search-input:focus {
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+        outline: none;
+      }
+      .form-select {
+        height: 2.5rem;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        background-color: white;
+        font-size: 0.875rem;
+        color: #374151;
+        transition: border-color 0.2s ease-in-out;
+      }
+      .form-select:focus {
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+        outline: none;
+      }
+      .table-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #374151;
+        background-color: #fdfbf8;
+      }
+      .bg-beige-100 {
+        background-color: #fdfbf8;
+      }
+      .table-cell {
+        height: 72px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: #374151;
+      }
+      .table-cell-highlight {
+        color: #111827;
+        font-weight: 500;
+      }
+      .action-button {
+        display: flex;
+        min-width: 84px;
+        max-width: 480px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.375rem;
+        height: 2.25rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      }
+      .primary-button {
+        background-color: #f5a623;
+        color: white;
+      }
+      .primary-button:hover {
+        background-color: #e69500;
+      }
+      .status-answered {
+        background-color: #dcfce7;
+        color: #15803d;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .status-pending {
+        background-color: #fed7aa;
+        color: #c2410c;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .priority-high {
+        background-color: #fee2e2;
+        color: #dc2626;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .priority-medium {
+        background-color: #fef3c7;
+        color: #d97706;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .priority-low {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .detail-button {
+        color: #f5a623;
+        font-weight: 500;
+        transition: color 0.2s ease-in-out;
+      }
+      .detail-button:hover {
+        color: #e69500;
+        text-decoration: underline;
+      }
+      .pagination-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        color: #374151;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .pagination-button:hover {
+        background-color: #f8fafc;
+        color: #f5a623;
+        border-color: #f5a623;
+      }
+      .pagination-button:first-child {
+        border-radius: 0.375rem 0 0 0.375rem;
+      }
+      .pagination-button:last-child {
+        border-radius: 0 0.375rem 0.375rem 0;
+        border-left: none;
+      }
+      .pagination-active {
+        background-color: #f5a623;
+        color: white;
+        border-color: #f5a623;
+      }
+      .pagination-active:hover {
+        background-color: #e69500;
+        border-color: #e69500;
+      }
+    </style>
+  </head>
+  <body class="bg-FAF8F5">
+    <div
+      class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+    >
+      <aside
+        class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+      >
+        <div class="flex items-center gap-3 px-3 mb-6">
+          <div class="size-8 text-orange-500">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                fill="#F5A623"
+              ></path>
+              <path
+                d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                fill="white"
+              ></path>
+            </svg>
+          </div>
+          <h2
+            class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+          >
+            CatDogEats <br />관리자 페이지
+          </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >dashboard</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >report_problem</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >campaign</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >공지사항 관리</span
+            >
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >quiz</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+          </a>
+          <a
+            class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >support_agent</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >1:1 문의 관리</span
+            >
+          </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >settings</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">설정</span>
+          </a>
+        </div>
+      </aside>
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+          <div class="flex items-center"></div>
+          <div class="flex flex-1 justify-end gap-6 items-center">
+            <span class="text-sm accent-text">admin@catdogeats.com</span>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntqFRVigLCo6ehVPth_V8zN4jp2n7z3g5ST5ma8p4lCvbt0vlw0qD-c1aP-hWz6us6lXIgBmiw4wQbJho3t_XD6kPIW0ySAqBKKiFa_KL2O5KoYLaW8AwULGp1eQk72U-EGm7G2cD8ovTLUtYCJfGKb5L8jQixuExWreqbunZ3LQea4Hli3nJ5F9ZzDZ_csur2Tg2uuvPQOzN3eXtdqNY185Vdf02otSCwJbVJddXgBf5mVNfJ7Strvcw0Mt3AwIWFbu__yVjRwc');
+              "
+            ></div>
+          </div>
+        </header>
+        <main
+          class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+          <div class="flex flex-col w-full max-w-7xl mx-auto">
+            <div class="mb-8">
+              <h1 class="page-title">1:1 문의 관리</h1>
+              <p class="page-subtitle">
+                사용자의 문의사항을 확인하고 답변을 관리합니다.
+              </p>
+            </div>
+
+            <!-- 필터 섹션 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              <div class="p-6">
+                <div
+                  class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6"
+                >
+                  <h2 class="accent-text text-lg font-semibold">문의 필터</h2>
+                  <div class="flex gap-3">
+                    <div class="relative">
+                      <span
+                        class="material-icons-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg"
+                        >search</span
+                      >
+                      <input
+                        class="search-input !pl-10 w-64"
+                        placeholder="문의 내용 검색..."
+                        type="text"
+                      />
+                    </div>
+                    <button class="action-button primary-button">검색</button>
+                  </div>
+                </div>
+
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+                >
+                  <!-- 답변 상태 -->
+                  <div>
+                    <label class="block text-sm font-medium accent-text mb-2"
+                      >답변 상태</label
+                    >
+                    <select class="form-select w-full">
+                      <option value="">전체</option>
+                      <option value="answered">답변 완료</option>
+                      <option value="pending">답변 대기</option>
+                    </select>
+                  </div>
+
+                  <!-- 문의 유형 -->
+                  <div>
+                    <label class="block text-sm font-medium accent-text mb-2"
+                      >문의 유형</label
+                    >
+                    <select class="form-select w-full">
+                      <option value="">전체</option>
+                      <option value="account">계정 관련</option>
+                      <option value="payment">결제 관련</option>
+                      <option value="technical">기술적 문제</option>
+                      <option value="other">기타</option>
+                    </select>
+                  </div>
+
+                  <!-- 긴급도 -->
+                  <div>
+                    <label class="block text-sm font-medium accent-text mb-2"
+                      >긴급도</label
+                    >
+                    <select class="form-select w-full">
+                      <option value="">전체</option>
+                      <option value="high">높음</option>
+                      <option value="medium">중간</option>
+                      <option value="low">낮음</option>
+                    </select>
+                  </div>
+
+                  <!-- 기간 -->
+                  <div>
+                    <label class="block text-sm font-medium accent-text mb-2"
+                      >기간</label
+                    >
+                    <div class="flex gap-2">
+                      <input class="search-input text-xs" type="date" />
+                      <span class="self-center text-slate-400">~</span>
+                      <input class="search-input text-xs" type="date" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 문의 목록 -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+              <div class="p-6">
+                <h2 class="accent-text text-lg font-semibold mb-6">
+                  문의 목록
+                </h2>
+
+                <div class="overflow-x-auto @container">
+                  <div class="border border-slate-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-slate-200">
+                      <thead class="bg-beige-100">
+                        <tr>
+                          <th class="table-header w-[8%]">번호</th>
+                          <th class="table-header w-[12%]">유형</th>
+                          <th class="table-header w-[35%]">제목</th>
+                          <th class="table-header w-[12%]">상태</th>
+                          <th class="table-header w-[12%]">작성일</th>
+                          <th class="table-header w-[10%]">긴급도</th>
+                          <th class="table-header w-[11%] text-center">작업</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-slate-200">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">#001</td>
+                          <td class="table-cell">계정</td>
+                          <td class="table-cell table-cell-highlight">
+                            계정 복구 요청합니다
+                          </td>
+                          <td class="table-cell">
+                            <span class="status-answered">답변 완료</span>
+                          </td>
+                          <td class="table-cell">2024-01-15</td>
+                          <td class="table-cell">
+                            <span class="priority-high">높음</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <button
+                              class="detail-button"
+                              onclick="openInquiryModal('#001', '계정 복구 요청합니다', '계정', '2024-01-15', '높음', 'answered')"
+                            >
+                              상세보기
+                            </button>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">#002</td>
+                          <td class="table-cell">결제</td>
+                          <td class="table-cell table-cell-highlight">
+                            구독 결제 관련 문의
+                          </td>
+                          <td class="table-cell">
+                            <span class="status-pending">답변 대기</span>
+                          </td>
+                          <td class="table-cell">2024-01-16</td>
+                          <td class="table-cell">
+                            <span class="priority-medium">중간</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <button
+                              class="detail-button"
+                              onclick="openInquiryModal('#002', '구독 결제 관련 문의', '결제', '2024-01-16', '중간', 'pending')"
+                            >
+                              상세보기
+                            </button>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">#003</td>
+                          <td class="table-cell">기술</td>
+                          <td class="table-cell table-cell-highlight">
+                            앱 사용 중 오류 발생
+                          </td>
+                          <td class="table-cell">
+                            <span class="status-answered">답변 완료</span>
+                          </td>
+                          <td class="table-cell">2024-01-17</td>
+                          <td class="table-cell">
+                            <span class="priority-low">낮음</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <button
+                              class="detail-button"
+                              onclick="openInquiryModal('#003', '앱 사용 중 오류 발생', '기술', '2024-01-17', '낮음', 'answered')"
+                            >
+                              상세보기
+                            </button>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">#004</td>
+                          <td class="table-cell">기타</td>
+                          <td class="table-cell table-cell-highlight">
+                            서비스 이용 방법 문의
+                          </td>
+                          <td class="table-cell">
+                            <span class="status-pending">답변 대기</span>
+                          </td>
+                          <td class="table-cell">2024-01-18</td>
+                          <td class="table-cell">
+                            <span class="priority-low">낮음</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <button
+                              class="detail-button"
+                              onclick="openInquiryModal('#004', '서비스 이용 방법 문의', '기타', '2024-01-18', '낮음', 'pending')"
+                            >
+                              상세보기
+                            </button>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">#005</td>
+                          <td class="table-cell">계정</td>
+                          <td class="table-cell table-cell-highlight">
+                            비밀번호 변경 문제
+                          </td>
+                          <td class="table-cell">
+                            <span class="status-answered">답변 완료</span>
+                          </td>
+                          <td class="table-cell">2024-01-19</td>
+                          <td class="table-cell">
+                            <span class="priority-medium">중간</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <button
+                              class="detail-button"
+                              onclick="openInquiryModal('#005', '비밀번호 변경 문제', '계정', '2024-01-19', '중간', 'answered')"
+                            >
+                              상세보기
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 페이지네이션 -->
+                <div
+                  class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 mt-6 border-t border-slate-200"
+                >
+                  <span class="text-sm accent-text">
+                    총 <span class="font-medium">127</span>개 중
+                    <span class="font-medium">1</span> ~
+                    <span class="font-medium">5</span>개 표시
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <button class="pagination-button">
+                      <span class="material-icons-outlined text-sm"
+                        >chevron_left</span
+                      >
+                    </button>
+                    <button class="pagination-button pagination-active">
+                      1
+                    </button>
+                    <button class="pagination-button">2</button>
+                    <button class="pagination-button">3</button>
+                    <span class="px-3 py-2 text-slate-400">...</span>
+                    <button class="pagination-button">26</button>
+                    <button class="pagination-button">
+                      <span class="material-icons-outlined text-sm"
+                        >chevron_right</span
+                      >
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- 문의 상세보기 모달 -->
+    <div id="inquiryModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="p-6">
+          <!-- 모달 헤더 -->
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold accent-text">문의 상세보기</h2>
+            <button onclick="closeInquiryModal()" class="icon-button">
+              <span
+                class="material-icons-outlined text-xl text-slate-400 hover:text-slate-600"
+                >close</span
+              >
+            </button>
+          </div>
+
+          <!-- 문의 정보 -->
+          <div class="space-y-6">
+            <!-- 기본 정보 -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span class="text-slate-500">문의 번호</span>
+                  <p class="font-medium" id="modalInquiryId">#001</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">카테고리</span>
+                  <p class="font-medium" id="modalInquiryCategory">계정</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">작성일</span>
+                  <p class="font-medium" id="modalInquiryDate">2024-01-15</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">긴급도</span>
+                  <p class="font-medium" id="modalInquiryPriority">높음</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 문의 제목 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >문의 제목</label
+              >
+              <p class="p-3 bg-gray-50 rounded-lg" id="modalInquiryTitle">
+                계정 복구 요청합니다
+              </p>
+            </div>
+
+            <!-- 문의 내용 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >문의 내용</label
+              >
+              <div
+                class="p-4 bg-gray-50 rounded-lg min-h-[120px]"
+                id="modalInquiryContent"
+              >
+                <p>안녕하세요. 계정에 로그인할 수 없어서 문의드립니다.</p>
+                <br />
+                <p>
+                  어제까지는 정상적으로 로그인이 되었는데, 오늘 아침부터 갑자기
+                  "잘못된 비밀번호입니다"라는 메시지가 계속 나타납니다.
+                  비밀번호를 여러 번 확인했지만 분명히 맞는 비밀번호입니다.
+                </p>
+                <br />
+                <p>
+                  비밀번호 재설정도 시도해봤지만 이메일이 오지 않습니다. 계정
+                  복구를 도와주세요.
+                </p>
+                <br />
+                <p>
+                  사용자 이메일: user123@example.com<br />
+                  가입일: 2023년 5월 15일<br />
+                  마지막 정상 로그인: 2024년 1월 14일 오후 6시
+                </p>
+              </div>
+            </div>
+
+            <!-- 첨부파일 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >첨부파일</label
+              >
+              <div class="flex items-center gap-2 text-sm text-slate-600">
+                <span class="material-icons-outlined text-base"
+                  >attach_file</span
+                >
+                <span>스크린샷_로그인오류.png (125KB)</span>
+                <button class="text-primary-text hover:underline ml-2">
+                  다운로드
+                </button>
+              </div>
+            </div>
+
+            <!-- 답변 섹션 -->
+            <div class="border-t border-slate-200 pt-6">
+              <div class="flex items-center gap-2 mb-4">
+                <label class="text-lg font-medium accent-text"
+                  >관리자 답변</label
+                >
+                <span class="status-pending text-xs" id="modalAnswerStatus"
+                  >답변 대기</span
+                >
+              </div>
+
+              <!-- 기존 답변 (있는 경우) -->
+              <div id="existingAnswer" class="mb-4 hidden">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div class="flex items-center gap-2 mb-2">
+                    <span class="material-icons-outlined text-blue-600 text-sm"
+                      >admin_panel_settings</span
+                    >
+                    <span class="text-sm font-medium text-blue-800"
+                      >관리자 답변</span
+                    >
+                    <span class="text-xs text-blue-600" id="answerDate"
+                      >2024-01-15 14:30</span
+                    >
+                  </div>
+                  <p class="text-blue-800" id="existingAnswerContent">
+                    안녕하세요. 문의해주셔서 감사합니다. 계정 문제를 확인하여
+                    임시 비밀번호를 발송해드렸습니다. 이메일을 확인해주세요.
+                  </p>
+                </div>
+              </div>
+
+              <!-- 답변 작성 폼 -->
+              <form id="answerForm" onsubmit="submitAnswer(event)">
+                <textarea
+                  id="adminAnswer"
+                  class="form-input form-textarea w-full min-h-[120px] mb-4"
+                  placeholder="사용자의 문의에 대한 답변을 작성해주세요..."
+                ></textarea>
+
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <label class="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="sendEmail"
+                        class="text-orange-500 focus:ring-orange-500"
+                        checked
+                      />
+                      <span class="text-sm text-slate-600"
+                        >답변 완료 시 사용자에게 이메일 알림</span
+                      >
+                    </label>
+                  </div>
+                  <div class="flex gap-3">
+                    <button
+                      type="button"
+                      onclick="closeInquiryModal()"
+                      class="action-button secondary-button"
+                    >
+                      취소
+                    </button>
+                    <button type="submit" class="action-button primary-button">
+                      <span class="material-icons-outlined text-base mr-2"
+                        >send</span
+                      >
+                      답변 전송
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      /* 모달 스타일 */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-content {
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 800px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.95) translateY(-20px);
+        transition: transform 0.3s ease-in-out;
+      }
+
+      .modal-overlay.active .modal-content {
+        transform: scale(1) translateY(0);
+      }
+
+      .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+    </style>
+
+    <script>
+      // 문의 상세보기 모달 열기
+      function openInquiryModal(id, title, category, date, priority, status) {
+        document.getElementById("modalInquiryId").textContent = id;
+        document.getElementById("modalInquiryTitle").textContent = title;
+        document.getElementById("modalInquiryCategory").textContent = category;
+        document.getElementById("modalInquiryDate").textContent = date;
+        document.getElementById("modalInquiryPriority").textContent = priority;
+
+        // 상태에 따른 답변 섹션 설정
+        const answerStatus = document.getElementById("modalAnswerStatus");
+        const existingAnswer = document.getElementById("existingAnswer");
+
+        if (status === "answered") {
+          answerStatus.textContent = "답변 완료";
+          answerStatus.className = "status-answered text-xs";
+          existingAnswer.classList.remove("hidden");
+        } else {
+          answerStatus.textContent = "답변 대기";
+          answerStatus.className = "status-pending text-xs";
+          existingAnswer.classList.add("hidden");
+        }
+
+        // 문의별 상세 내용 설정 (실제로는 서버에서 가져올 데이터)
+        const inquiryContents = {
+          "#001": `안녕하세요. 계정에 로그인할 수 없어서 문의드립니다.
+
+어제까지는 정상적으로 로그인이 되었는데, 오늘 아침부터 갑자기 "잘못된 비밀번호입니다"라는 메시지가 계속 나타납니다. 비밀번호를 여러 번 확인했지만 분명히 맞는 비밀번호입니다.
+
+비밀번호 재설정도 시도해봤지만 이메일이 오지 않습니다. 계정 복구를 도와주세요.
+
+사용자 이메일: user123@example.com
+가입일: 2023년 5월 15일
+마지막 정상 로그인: 2024년 1월 14일 오후 6시`,
+          "#002": `구독 결제 관련해서 문의드립니다.
+
+이번 달 결제가 실패했다는 알림을 받았는데, 카드에는 충분한 잔액이 있습니다. 다른 서비스에서는 정상적으로 결제가 진행되고 있어서 카드 문제는 아닌 것 같습니다.
+
+결제 방법을 변경하거나 다시 시도할 수 있는 방법이 있을까요?
+
+현재 구독: 프리미엄 플랜
+결제 카드: ****-****-****-1234 (KB국민카드)`,
+          "#003": `앱을 사용하던 중 계속 오류가 발생합니다.
+
+상품 상세페이지에서 "장바구니에 추가" 버튼을 누르면 앱이 강제 종료됩니다. 앱을 다시 실행해도 같은 현상이 반복됩니다.
+
+앱 버전: 2.1.3
+기기: iPhone 14 Pro (iOS 17.2)
+발생 시점: 2024년 1월 17일 오전 10시경부터`,
+          "#004": `서비스 이용 방법에 대해 문의드립니다.
+
+처음 가입한 신규 사용자인데, 주문한 상품의 배송 상태를 어디서 확인할 수 있는지 모르겠습니다. 
+
+또한 적립금은 어떻게 사용하는지, 등급별 혜택은 무엇인지 자세히 알고 싶습니다.
+
+주문번호: CDE2024011800123`,
+          "#005": `비밀번호 변경이 안됩니다.
+
+마이페이지에서 비밀번호 변경을 시도했는데 "현재 비밀번호가 일치하지 않습니다"라는 메시지가 나타납니다. 하지만 현재 비밀번호로 로그인은 정상적으로 됩니다.
+
+여러 번 시도해봤지만 같은 오류가 계속 발생합니다. 해결 방법을 알려주세요.`,
+        };
+
+        document.getElementById("modalInquiryContent").innerHTML =
+          inquiryContents[id].replace(/\n/g, "<br>");
+
+        const modal = document.getElementById("inquiryModal");
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+
+      // 문의 상세보기 모달 닫기
+      function closeInquiryModal() {
+        const modal = document.getElementById("inquiryModal");
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto";
+
+        // 폼 초기화
+        document.getElementById("answerForm").reset();
+      }
+
+      // 모달 외부 클릭 시 닫기
+      document
+        .getElementById("inquiryModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeInquiryModal();
+          }
+        });
+
+      // ESC 키로 모달 닫기
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          const modal = document.getElementById("inquiryModal");
+          if (modal.classList.contains("active")) {
+            closeInquiryModal();
+          }
+        }
+      });
+
+      // 답변 제출 처리
+      function submitAnswer(event) {
+        event.preventDefault();
+
+        const answer = document.getElementById("adminAnswer").value;
+        const sendEmail = document.getElementById("sendEmail").checked;
+
+        if (!answer.trim()) {
+          alert("답변 내용을 입력해주세요.");
+          return;
+        }
+
+        // 여기에 실제 서버 전송 로직 구현
+        console.log("답변 데이터:", { answer, sendEmail });
+
+        alert("답변이 성공적으로 전송되었습니다!");
+        closeInquiryModal();
+
+        // 테이블의 상태를 답변 완료로 업데이트 (실제로는 페이지 새로고침이나 동적 업데이트)
+      }
+    </script>
+  </body>
+</html>
