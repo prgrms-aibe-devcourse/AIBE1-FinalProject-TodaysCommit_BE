@@ -16,7 +16,7 @@ import java.util.UUID;
 public class Addresses extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     @Column(length = 36)
     private UUID id;
 
