@@ -1,4 +1,4 @@
-package com.team5.catdogeats.carts;
+package com.team5.catdogeats.carts.domain;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;

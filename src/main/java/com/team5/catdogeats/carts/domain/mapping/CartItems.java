@@ -1,6 +1,6 @@
-package com.team5.catdogeats.carts.mapping;
+package com.team5.catdogeats.carts.domain.mapping;
 
-import com.team5.catdogeats.carts.Carts;
+import com.team5.catdogeats.carts.domain.Carts;
 import com.team5.catdogeats.products.domain.Products;
 import jakarta.persistence.*;
 import lombok.*;

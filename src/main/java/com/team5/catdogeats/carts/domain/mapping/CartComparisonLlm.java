@@ -1,4 +1,4 @@
-package com.team5.catdogeats.carts.mapping;
+package com.team5.catdogeats.carts.domain.mapping;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.orders.domain.Orders;
