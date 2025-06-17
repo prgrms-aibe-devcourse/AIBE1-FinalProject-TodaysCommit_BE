@@ -137,7 +137,7 @@ public class SellerInfoController {
         // UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
         // 현재: 하드코딩된 사용자 ID 사용 (개발용)
-        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
+        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173741");
         log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
 
         try {
@@ -174,7 +174,7 @@ public class SellerInfoController {
      * 판매자 정보 등록/수정 (개발용 - 하드코딩된 사용자 ID 사용)
      */
     @Operation(
-            summary = "판매자 정보 등록/수정 (개발용)",
+            summary = "판매자 정보 등록/수정",
             description = """
                     현재 개발 단계에서는 하드코딩된 사용자 ID를 사용합니다.
                     
@@ -199,7 +199,11 @@ public class SellerInfoController {
                   "businessNumber": "123-45-67890",
                   "settlementBank": "국민은행",
                   "settlementAcc": "123456789012",
-                  "tags": "수제간식,강아지"
+                  "tags": "수제간식,강아지",
+                  "operatingStartTime": "09:00:00",
+                  "operatingEndTime": "18:00:00",
+                  "closedDays": "MON,TUE"
+                  
                 }
                 """
                     )
@@ -225,6 +229,9 @@ public class SellerInfoController {
                         "settlementBank": "국민은행",
                         "settlementAcc": "123456789012",
                         "tags": "수제간식,강아지",
+                        "operatingStartTime": "09:00:00",
+                        "operatingEndTime": "18:00:00",
+                        "closedDays": "MON,TUE
                         "createdAt": "2024-01-15T10:30:00",
                         "updatedAt": "2024-01-20T14:20:00"
                       },
@@ -328,7 +335,7 @@ public class SellerInfoController {
         // UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
         // 현재: 하드코딩된 사용자 ID 사용 (개발용)
-        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
+        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173741");
         log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
                 tempUserId, request.getVendorName());
 
@@ -366,6 +373,12 @@ public class SellerInfoController {
             log.error("사업자 등록번호 중복 - userId: {}, businessNumber: {}",
                     tempUserId, request.getBusinessNumber(), e);
             return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(e.getMessage(), httpRequest.getRequestURI(), null));
+
+        } catch (IllegalArgumentException e) {
+            // 운영시간 유효성 검증 오류 처리 추가
+            log.error("운영시간 유효성 검증 실패 - userId: {}, error: {}", tempUserId, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(ApiResponse.error(e.getMessage(), httpRequest.getRequestURI(), null));
 
         } catch (Exception e) {

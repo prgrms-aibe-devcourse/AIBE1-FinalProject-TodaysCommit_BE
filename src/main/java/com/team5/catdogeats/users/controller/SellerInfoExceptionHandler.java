@@ -2,6 +2,7 @@ package com.team5.catdogeats.users.controller;
 
 import com.team5.catdogeats.users.dto.ApiResponse;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
+import com.team5.catdogeats.users.exception.InvalidOperatingHoursException;
 import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
 import com.team5.catdogeats.users.exception.UserNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,6 +43,20 @@ public class SellerInfoExceptionHandler {
     }
 
     /**
+     *  운영시간 잘못된 입력 예외 처리
+     */
+    @ExceptionHandler(InvalidOperatingHoursException.class)
+    public ResponseEntity<ApiResponse<Object>> handleInvalidOperatingHours(
+            InvalidOperatingHoursException e, HttpServletRequest request) {
+
+        log.warn("운영시간 유효성 검증 실패 - URI: {}, Message: {}", request.getRequestURI(), e.getMessage());
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(e.getMessage(), request.getRequestURI(), null));
+    }
+
+
+    /**
      * 커스텀 판매자 접근 권한 없음 예외 처리
      */
     @ExceptionHandler(SellerAccessDeniedException.class)
@@ -56,7 +71,6 @@ public class SellerInfoExceptionHandler {
 
     /**
      * Spring Security 접근 권한 없음 예외 처리
-     * JWT 구현 전에는 이 예외가 거의 발생하지 않으므로 주석 처리도 가능
      */
     @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
     public ResponseEntity<ApiResponse<Object>> handleSpringAccessDenied(

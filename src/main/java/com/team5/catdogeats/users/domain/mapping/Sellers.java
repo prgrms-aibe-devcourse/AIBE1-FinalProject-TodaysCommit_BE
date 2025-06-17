@@ -5,6 +5,7 @@ import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -41,6 +42,15 @@ public class Sellers extends BaseEntity {
     @Column(name = "tags")
     private String tags;
 
+    @Column(name = "operating_start_time")
+    private LocalTime operatingStartTime;
+
+    @Column(name = "operating_end_time")
+    private LocalTime operatingEndTime;
+
+    @Column(name = "closed_days", length = 20)
+    private String closedDays;
+
     public void updateVendorName(String vendorName) {
         if (vendorName != null && !vendorName.trim().isEmpty()) {
             this.vendorName = vendorName;
@@ -69,6 +79,18 @@ public class Sellers extends BaseEntity {
 
     public void updateTags(String tags) {
         this.tags = tags;
+    }
+
+    public void updateOperatingStartTime(LocalTime operatingStartTime) {
+        this.operatingStartTime = operatingStartTime;
+    }
+
+    public void updateOperatingEndTime(LocalTime operatingEndTime) {
+        this.operatingEndTime = operatingEndTime;
+    }
+
+    public void updateClosedDays(String closedDays) {
+        this.closedDays = closedDays;
     }
 }
 

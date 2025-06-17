@@ -8,6 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,4 +37,11 @@ public class SellerInfoRequest {
 
     @Size(max = 36, message = "태그는 최대 36자까지 입력 가능합니다.")
     private String tags;
+
+    private LocalTime operatingStartTime;
+
+    private LocalTime operatingEndTime;
+
+    @Size(max = 20, message = "휴무일은 최대 20자까지 입력 가능합니다.")
+    private String closedDays;
 }

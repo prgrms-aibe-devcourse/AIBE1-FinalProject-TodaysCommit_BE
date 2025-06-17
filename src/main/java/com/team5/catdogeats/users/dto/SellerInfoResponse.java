@@ -4,6 +4,7 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Getter
 @Setter
@@ -19,6 +20,9 @@ public class SellerInfoResponse {
     private String settlementBank;
     private String settlementAcc;
     private String tags;
+    private LocalTime operatingStartTime;
+    private LocalTime operatingEndTime;
+    private String closedDays;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -38,6 +42,9 @@ public class SellerInfoResponse {
                 .settlementBank(seller.getSettlementBank())
                 .settlementAcc(seller.getSettlementAcc())
                 .tags(seller.getTags())
+                .operatingStartTime(seller.getOperatingStartTime())
+                .operatingEndTime(seller.getOperatingEndTime())
+                .closedDays(seller.getClosedDays())
                 .createdAt(seller.getCreatedAt() != null ? seller.getCreatedAt().toLocalDateTime() : null)
                 .updatedAt(seller.getUpdatedAt() != null ? seller.getUpdatedAt().toLocalDateTime() : null)
                 .build();

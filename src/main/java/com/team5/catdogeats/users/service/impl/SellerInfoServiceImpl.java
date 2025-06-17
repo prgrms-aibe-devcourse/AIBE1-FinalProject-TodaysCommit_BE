@@ -38,7 +38,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return getSellerInfoInternal(userId);
     }
 
-
     @Override
     @Transactional
     public SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request) {
@@ -47,10 +46,11 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         // 사용자 존재 여부 및 판매자 권한 확인
         Users user = validateSellerUser(userId);
 
+        // 운영시간 유효성 검증
+        validateOperatingHours(request);
+
         return upsertSellerInfoInternal(user, userId, request);
     }
-
-
 
     /**
      * 판매자 정보 조회 로직 (권한 검증 분리)
@@ -136,6 +136,26 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     }
 
     /**
+     * 운영시간 유효성 검증
+     */
+    private void validateOperatingHours(SellerInfoRequest request) {
+        if (request.getOperatingStartTime() != null && request.getOperatingEndTime() != null) {
+            if (request.getOperatingStartTime().isAfter(request.getOperatingEndTime())) {
+                throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
+            }
+        }
+
+        // 시작 시간만 있고 종료 시간이 없는 경우 또는 그 반대인 경우 검증
+        if ((request.getOperatingStartTime() != null && request.getOperatingEndTime() == null) ||
+                (request.getOperatingStartTime() == null && request.getOperatingEndTime() != null)) {
+            throw new IllegalArgumentException("운영 시작 시간과 종료 시간은 모두 입력하거나 모두 입력하지 않아야 합니다.");
+        }
+
+        log.info("운영시간 유효성 검증 완료 - start: {}, end: {}",
+                request.getOperatingStartTime(), request.getOperatingEndTime());
+    }
+
+    /**
      * 기존 판매자 정보 업데이트
      */
     private void updateSellerInfo(Sellers seller, SellerInfoRequest request) {
@@ -145,6 +165,9 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         seller.updateSettlementBank(request.getSettlementBank());
         seller.updateSettlementAcc(request.getSettlementAcc());
         seller.updateTags(request.getTags());
+        seller.updateOperatingStartTime(request.getOperatingStartTime());
+        seller.updateOperatingEndTime(request.getOperatingEndTime());
+        seller.updateClosedDays(request.getClosedDays());
     }
 
     /**
@@ -159,6 +182,9 @@ public class SellerInfoServiceImpl implements SellerInfoService {
                 .settlementBank(request.getSettlementBank())
                 .settlementAcc(request.getSettlementAcc())
                 .tags(request.getTags())
+                .operatingStartTime(request.getOperatingStartTime())
+                .operatingEndTime(request.getOperatingEndTime())
+                .closedDays(request.getClosedDays())
                 .build();
     }
 }
