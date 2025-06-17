@@ -135,10 +135,24 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private void validateBusinessNumberDuplication(UUID userId, String businessNumber) {
         Optional<Sellers> existingSeller = sellersRepository.findByBusinessNumber(businessNumber);
 
-        if (existingSeller.isPresent() && !existingSeller.get().getUserId().equals(userId)) {
-            log.warn("사업자 등록번호 중복 - businessNumber: {}, 요청자: {}, 기존사용자: {}",
-                    businessNumber, userId, existingSeller.get().getUserId());
-            throw new BusinessNumberDuplicateException("이미 등록된 사업자 등록번호입니다.");
+        if (existingSeller.isPresent()) {
+            Sellers seller = existingSeller.get();
+
+            // Null 체크
+            UUID existingUserId = seller.getUserId();
+            if (existingUserId == null) {
+                // userId가 null인 경우 Users 관계에서 가져오기
+                if (seller.getUser() != null) {
+                    existingUserId = seller.getUser().getId();
+                }
+            }
+
+            // 다른 사용자가 사용 중인지 확인
+            if (existingUserId != null && !existingUserId.equals(userId)) {
+                log.warn("사업자 등록번호 중복 - businessNumber: {}, 요청자: {}, 기존사용자: {}",
+                        businessNumber, userId, existingUserId);
+                throw new BusinessNumberDuplicateException("이미 등록된 사업자 등록번호입니다.");
+            }
         }
     }
 

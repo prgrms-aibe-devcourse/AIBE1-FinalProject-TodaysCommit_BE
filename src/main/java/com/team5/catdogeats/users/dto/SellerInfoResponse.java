@@ -23,17 +23,23 @@ public class SellerInfoResponse {
     private LocalDateTime updatedAt;
 
     // Entity to Response DTO 변환 메서드
+
+    //null-체크
     public static SellerInfoResponse from(Sellers seller) {
+        if (seller == null) {
+            return null;
+        }
+
         return SellerInfoResponse.builder()
-                .userId(seller.getUserId().toString())
+                .userId(seller.getUserId() != null ? seller.getUserId().toString() : null) // Null 체크
                 .vendorName(seller.getVendorName())
                 .vendorProfileImage(seller.getVendorProfileImage())
                 .businessNumber(seller.getBusinessNumber())
                 .settlementBank(seller.getSettlementBank())
                 .settlementAcc(seller.getSettlementAcc())
                 .tags(seller.getTags())
-                .createdAt(seller.getCreatedAt().toLocalDateTime())
-                .updatedAt(seller.getUpdatedAt().toLocalDateTime())
+                .createdAt(seller.getCreatedAt() != null ? seller.getCreatedAt().toLocalDateTime() : null)
+                .updatedAt(seller.getUpdatedAt() != null ? seller.getUpdatedAt().toLocalDateTime() : null)
                 .build();
     }
 }
