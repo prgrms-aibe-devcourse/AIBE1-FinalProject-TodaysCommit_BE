@@ -37,8 +37,39 @@ public class Sellers extends BaseEntity {
     private String settlementBank;
 
     @Column(name = "settlement_acc", length = 30)
-    private String settlementAccount;
+    private String settlementAcc;
 
     @Column(name = "tags")
     private String tags;
+
+    public void updateVendorName(String vendorName) {
+        if (vendorName != null && !vendorName.trim().isEmpty()) {
+            this.vendorName = vendorName;
+        }
+    }
+
+    public void updateVendorProfileImage(String vendorProfileImage) {
+        if (vendorProfileImage != null && !vendorProfileImage.trim().isEmpty()) {
+            this.vendorProfileImage = vendorProfileImage;
+        }
+    }
+
+    public void updateBusinessNumber(String businessNumber) {
+        if (businessNumber != null && !businessNumber.trim().isEmpty()) {
+            this.businessNumber = businessNumber;
+        }
+    }
+
+    public void updateSettlementBank(String settlementBank) {
+        this.settlementBank = settlementBank;
+    }
+
+    public void updateSettlementAcc(String settlementAcc) {
+        this.settlementAcc = settlementAcc;
+    }
+
+    public void updateTags(String tags) {
+        this.tags = tags;
+    }
 }
+
