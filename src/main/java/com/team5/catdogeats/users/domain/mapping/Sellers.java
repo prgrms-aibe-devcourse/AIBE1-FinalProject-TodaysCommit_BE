@@ -15,7 +15,6 @@ import java.util.UUID;
 public class Sellers extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id", length = 36)
     private UUID userId;
 
