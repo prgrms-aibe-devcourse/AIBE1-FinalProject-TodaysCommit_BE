@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+      onload="this.rel='stylesheet'"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>CatDogEats Admin</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+      body {
+        font-family: "Noto Sans KR", "Work Sans", sans-serif;
+        background-color: #faf8f5;
+      }
+      .primary-bg {
+        background-color: #f5a623;
+      }
+      .primary-text {
+        color: #f5a623;
+      }
+      .secondary-text {
+        color: #a5d6a7;
+      }
+      .accent-text {
+        color: #7d6e63;
+      }
+      .secondary-bg {
+        background-color: #e8f5e9;
+      }
+      .active-tab {
+        border-left-width: 4px;
+        border-color: #f5a623;
+        background-color: #fff9f0;
+        color: #f5a623;
+        font-weight: 700;
+      }
+      .inactive-tab {
+        border-left-width: 4px;
+        border-color: transparent;
+        color: #7d6e63;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .inactive-tab:hover {
+        background-color: #fdfbf8;
+        color: #e69500;
+      }
+      .page-title {
+        color: #7d6e63;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .page-subtitle {
+        color: #a89a91;
+        font-size: 1rem;
+      }
+      .sidebar {
+        background-color: #fffdfb;
+        border-right: 1px solid #f0ebe5;
+      }
+      .sidebar-link-icon {
+        color: #bcaaa4;
+      }
+      .sidebar-link-text {
+        color: #7d6e63;
+      }
+      .active-tab .sidebar-link-icon,
+      .active-tab .sidebar-link-text {
+        color: #f5a623;
+      }
+      .inactive-tab:hover .sidebar-link-icon,
+      .inactive-tab:hover .sidebar-link-text {
+        color: #e69500;
+      }
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #7d6e63;
+        margin-bottom: 0.5rem;
+      }
+      .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background-color: white;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+      .form-input:focus {
+        outline: none;
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+      }
+      .action-button {
+        display: flex;
+        min-width: 84px;
+        max-width: 480px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.375rem;
+        height: 2.75rem;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      }
+      .primary-button {
+        background-color: #f5a623;
+        color: white;
+      }
+      .primary-button:hover {
+        background-color: #e69500;
+      }
+      .secondary-button {
+        background-color: #f8fafc;
+        color: #374151;
+        border: 1px solid #cbd5e1;
+      }
+      .secondary-button:hover {
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+      }
+      .danger-button {
+        background-color: #dc2626;
+        color: white;
+      }
+      .danger-button:hover {
+        background-color: #b91c1c;
+      }
+      .section-header {
+        color: #7d6e63;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #e2e8f0;
+      }
+      .settings-card {
+        background-color: white;
+        border-radius: 0.75rem;
+        padding: 2rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+    </style>
+  </head>
+  <body class="bg-FAF8F5">
+    <div
+      class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+    >
+      <aside
+        class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+      >
+        <div class="flex items-center gap-3 px-3 mb-6">
+          <div class="size-8 text-orange-500">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                fill="#F5A623"
+              ></path>
+              <path
+                d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                fill="white"
+              ></path>
+            </svg>
+          </div>
+          <h2
+            class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+          >
+            CatDogEats <br />관리자 페이지
+          </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >dashboard</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >report_problem</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >campaign</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >공지사항 관리</span
+            >
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >quiz</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >support_agent</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >1:1 문의 관리</span
+            >
+          </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+          <a
+            class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >settings</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">설정</span>
+          </a>
+        </div>
+      </aside>
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+          <div class="flex items-center"></div>
+          <div class="flex flex-1 justify-end gap-6 items-center">
+            <span class="text-sm accent-text">admin@catdogeats.com</span>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntqFRVigLCo6ehVPth_V8zN4jp2n7z3g5ST5ma8p4lCvbt0vlw0qD-c1aP-hWz6us6lXIgBmiw4wQbJho3t_XD6kPIW0ySAqBKKiFa_KL2O5KoYLaW8AwULGp1eQk72U-EGm7G2cD8ovTLUtYCJfGKb5L8jQixuExWreqbunZ3LQea4Hli3nJ5F9ZzDZ_csur2Tg2uuvPQOzN3eXtdqNY185Vdf02otSCwJbVJddXgBf5mVNfJ7Strvcw0Mt3AwIWFbu__yVjRwc');
+              "
+            ></div>
+          </div>
+        </header>
+        <main
+          class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+          <div class="flex flex-col w-full max-w-4xl mx-auto">
+            <div class="mb-8">
+              <h1 class="page-title">설정</h1>
+              <p class="page-subtitle">
+                관리자 계정 정보와 시스템 설정을 관리합니다.
+              </p>
+            </div>
+
+            <!-- 계정 정보 섹션 -->
+            <div class="settings-card">
+              <h2 class="section-header">계정 정보</h2>
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label class="form-label" for="admin-name">이름</label>
+                    <input
+                      class="form-input"
+                      id="admin-name"
+                      name="admin-name"
+                      placeholder="관리자 이름을 입력하세요"
+                      type="text"
+                      value="관리자"
+                    />
+                  </div>
+                  <div>
+                    <label class="form-label" for="admin-email">이메일</label>
+                    <input
+                      class="form-input"
+                      id="admin-email"
+                      name="admin-email"
+                      placeholder="이메일 주소를 입력하세요"
+                      type="email"
+                      value="admin@catdogeats.com"
+                      readonly
+                    />
+                  </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label class="form-label" for="admin-phone">연락처</label>
+                    <input
+                      class="form-input"
+                      id="admin-phone"
+                      name="admin-phone"
+                      placeholder="연락처를 입력하세요"
+                      type="tel"
+                      value="010-1234-5678"
+                    />
+                  </div>
+                  <div>
+                    <label class="form-label" for="admin-department"
+                      >부서</label
+                    >
+                    <input
+                      class="form-input"
+                      id="admin-department"
+                      name="admin-department"
+                      placeholder="부서명을 입력하세요"
+                      type="text"
+                      value="시스템 관리팀"
+                    />
+                  </div>
+                </div>
+                <div class="flex justify-start">
+                  <button type="submit" class="action-button primary-button">
+                    <span class="material-icons-outlined text-base mr-2"
+                      >save</span
+                    >
+                    변경사항 저장
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- 보안 설정 섹션 -->
+            <div class="settings-card">
+              <h2 class="section-header">보안 설정</h2>
+              <div class="space-y-6">
+                <div
+                  class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <h3 class="accent-text font-medium">비밀번호</h3>
+                    <p class="text-sm text-slate-500">
+                      마지막 변경: 2024년 6월 1일
+                    </p>
+                  </div>
+                  <button class="action-button secondary-button">
+                    <span class="material-icons-outlined text-base mr-2"
+                      >lock</span
+                    >
+                    비밀번호 변경
+                  </button>
+                </div>
+
+                <div
+                  class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <h3 class="accent-text font-medium">관리자 계정 비밀번호 초기화</h3>
+                    <p class="text-sm text-slate-500">다른 관리자 계정 비밀번호를 초기화 합니다</p>
+                  </div>
+                  <button class="action-button secondary-button">
+                    <span class="material-icons-outlined text-base mr-2"
+                      >security</span
+                    >
+                    설정하기
+                  </button>
+                </div>
+
+                <div
+                  class="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                >
+                  <div>
+                    <h3 class="accent-text font-medium">등록된 관라자</h3>
+                    <p class="text-sm text-slate-500">
+                      등록된 관리자 계정을 확인하세오
+                    </p>
+                  </div>
+                  <button class="action-button secondary-button">
+                    <span class="material-icons-outlined text-base mr-2"
+                      >history</span
+                    >
+                    기록 보기
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 고급 설정 섹션 -->
+            <div class="settings-card">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h3 class="text-red-700 font-medium">로그아웃</h3>
+                      <p class="text-sm text-red-600">
+                        관리자 계정에서 안전하게 로그아웃합니다
+                      </p>
+                    </div>
+                    <button class="action-button danger-button">
+                      <span class="material-icons-outlined text-base mr-2"
+                        >logout</span
+                      >
+                      로그아웃
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

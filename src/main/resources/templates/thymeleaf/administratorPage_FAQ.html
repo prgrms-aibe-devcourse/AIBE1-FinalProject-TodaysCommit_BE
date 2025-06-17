@@ -1,0 +1,1714 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+      onload="this.rel='stylesheet'"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>CatDogEats Admin</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+      body {
+        font-family: "Noto Sans KR", "Work Sans", sans-serif;
+        background-color: #faf8f5;
+      }
+      .primary-bg {
+        background-color: #f5a623;
+      }
+      .primary-text {
+        color: #f5a623;
+      }
+      .secondary-text {
+        color: #a5d6a7;
+      }
+      .accent-text {
+        color: #7d6e63;
+      }
+      .secondary-bg {
+        background-color: #e8f5e9;
+      }
+      .active-tab {
+        border-left-width: 4px;
+        border-color: #f5a623;
+        background-color: #fff9f0;
+        color: #f5a623;
+        font-weight: 700;
+      }
+      .inactive-tab {
+        border-left-width: 4px;
+        border-color: transparent;
+        color: #7d6e63;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .inactive-tab:hover {
+        background-color: #fdfbf8;
+        color: #e69500;
+      }
+      .page-title {
+        color: #7d6e63;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .page-subtitle {
+        color: #a89a91;
+        font-size: 1rem;
+      }
+      .sidebar {
+        background-color: #fffdfb;
+        border-right: 1px solid #f0ebe5;
+      }
+      .sidebar-link-icon {
+        color: #bcaaa4;
+      }
+      .sidebar-link-text {
+        color: #7d6e63;
+      }
+      .active-tab .sidebar-link-icon,
+      .active-tab .sidebar-link-text {
+        color: #f5a623;
+      }
+      .inactive-tab:hover .sidebar-link-icon,
+      .inactive-tab:hover .sidebar-link-text {
+        color: #e69500;
+      }
+      .filter-chip {
+        display: flex;
+        height: 2.5rem;
+        flex-shrink: 0;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        background-color: white;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        border: 1px solid #cbd5e1;
+      }
+      .filter-chip:hover {
+        background-color: #f8fafc;
+      }
+      .filter-chip.active {
+        background-color: #f5a623;
+        color: white;
+        border-color: #f5a623;
+      }
+      .filter-chip.active:hover {
+        background-color: #e69500;
+      }
+      .search-input {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        flex: 1 1 0%;
+        resize: none;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        height: 3rem;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.25rem;
+      }
+      .search-input::placeholder {
+        color: #9ca3af;
+      }
+      .search-input:focus {
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+        outline: none;
+      }
+      .table-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #374151;
+        background-color: #fdfbf8;
+      }
+      .bg-beige-100 {
+        background-color: #fdfbf8;
+      }
+      .table-cell {
+        height: 72px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: #374151;
+      }
+      .table-cell-highlight {
+        color: #111827;
+        font-weight: 500;
+      }
+      .action-button {
+        display: flex;
+        min-width: 84px;
+        max-width: 480px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.375rem;
+        height: 2.25rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      }
+      .primary-button {
+        background-color: #f5a623;
+        color: white;
+      }
+      .primary-button:hover {
+        background-color: #e69500;
+      }
+      .icon-button {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s ease-in-out;
+      }
+      .icon-button:hover {
+        background-color: #f8fafc;
+      }
+      .rating-excellent {
+        color: #16a34a;
+      }
+      .rating-good {
+        color: #65a30d;
+      }
+      .rating-average {
+        color: #d97706;
+      }
+      .rating-poor {
+        color: #dc2626;
+      }
+      .pagination-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        color: #374151;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .pagination-button:hover {
+        background-color: #f8fafc;
+        color: #f5a623;
+        border-color: #f5a623;
+      }
+      .pagination-button:first-child {
+        border-radius: 0.375rem 0 0 0.375rem;
+      }
+      .pagination-button:last-child {
+        border-radius: 0 0.375rem 0.375rem 0;
+        border-left: none;
+      }
+      .pagination-active {
+        background-color: #f5a623;
+        color: white;
+        border-color: #f5a623;
+      }
+      .pagination-active:hover {
+        background-color: #e69500;
+        border-color: #e69500;
+      }
+    </style>
+  </head>
+  <body class="bg-FAF8F5">
+    <div
+      class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+    >
+      <aside
+        class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+      >
+        <div class="flex items-center gap-3 px-3 mb-6">
+          <div class="size-8 text-orange-500">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                fill="#F5A623"
+              ></path>
+              <path
+                d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                fill="white"
+              ></path>
+            </svg>
+          </div>
+          <h2
+            class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+          >
+            CatDogEats <br />관리자 페이지
+          </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >dashboard</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >report_problem</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >campaign</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >공지사항 관리</span
+            >
+          </a>
+          <a
+            class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >quiz</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >support_agent</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >1:1 문의 관리</span
+            >
+          </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >settings</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">설정</span>
+          </a>
+        </div>
+      </aside>
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+          <div class="flex items-center"></div>
+          <div class="flex flex-1 justify-end gap-6 items-center">
+            <span class="text-sm accent-text">admin@catdogeats.com</span>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntqFRVigLCo6ehVPth_V8zN4jp2n7z3g5ST5ma8p4lCvbt0vlw0qD-c1aP-hWz6us6lXIgBmiw4wQbJho3t_XD6kPIW0ySAqBKKiFa_KL2O5KoYLaW8AwULGp1eQk72U-EGm7G2cD8ovTLUtYCJfGKb5L8jQixuExWreqbunZ3LQea4Hli3nJ5F9ZzDZ_csur2Tg2uuvPQOzN3eXtdqNY185Vdf02otSCwJbVJddXgBf5mVNfJ7Strvcw0Mt3AwIWFbu__yVjRwc');
+              "
+            ></div>
+          </div>
+        </header>
+        <main
+          class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+          <div class="flex flex-col w-full max-w-7xl mx-auto">
+            <div class="mb-8">
+              <h1 class="page-title">FAQ 관리</h1>
+              <p class="page-subtitle">
+                자주 묻는 질문과 답변을 관리하고 카테고리별로 분류합니다.
+              </p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+              <div class="p-6 space-y-6">
+                <!-- 상단 액션 바 -->
+                <div
+                  class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                >
+                  <div class="flex flex-wrap gap-3">
+                    <div class="filter-chip active">전체</div>
+                    <div class="filter-chip">계정</div>
+                    <div class="filter-chip">결제</div>
+                    <div class="filter-chip">배송</div>
+                    <div class="filter-chip">서비스</div>
+                    <div class="filter-chip">기술</div>
+                  </div>
+                  <button
+                    class="action-button primary-button"
+                    onclick="openFaqModal()"
+                  >
+                    <span class="material-icons-outlined text-base mr-2"
+                      >add</span
+                    >
+                    새 FAQ 추가
+                  </button>
+                </div>
+
+                <!-- 검색 -->
+                <div class="relative w-full sm:w-96">
+                  <span
+                    class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    >search</span
+                  >
+                  <input
+                    class="search-input !pl-10"
+                    placeholder="키워드로 FAQ 검색..."
+                    value=""
+                  />
+                </div>
+
+                <!-- 테이블 -->
+                <div class="overflow-x-auto @container">
+                  <div class="border border-slate-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-slate-200">
+                      <thead class="bg-beige-100">
+                        <tr>
+                          <th class="table-header w-[35%]">질문</th>
+                          <th class="table-header w-[12%]">등록일</th>
+                          <th class="table-header w-[10%]">조회수</th>
+                          <th class="table-header w-[15%]">도움 평가</th>
+                          <th class="table-header w-[8%]">순서</th>
+                          <th class="table-header w-[20%] text-center">작업</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-slate-200">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openFaqDetailModal('faq1')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              비밀번호를 어떻게 재설정하나요?
+                            </button>
+                          </td>
+                          <td class="table-cell">2023-08-15</td>
+                          <td class="table-cell">1,200</td>
+                          <td class="table-cell">
+                            <div class="flex items-center gap-1">
+                              <span
+                                class="material-icons-outlined text-sm rating-excellent"
+                                >thumb_up</span
+                              >
+                              <span class="rating-excellent font-medium"
+                                >85%</span
+                              >
+                            </div>
+                          </td>
+                          <td class="table-cell">1</td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editFaq('faq1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteFaq('faq1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openFaqDetailModal('faq1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openFaqDetailModal('faq2')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              어떤 결제 수단을 사용할 수 있나요?
+                            </button>
+                          </td>
+                          <td class="table-cell">2023-09-02</td>
+                          <td class="table-cell">950</td>
+                          <td class="table-cell">
+                            <div class="flex items-center gap-1">
+                              <span
+                                class="material-icons-outlined text-sm rating-excellent"
+                                >thumb_up</span
+                              >
+                              <span class="rating-excellent font-medium"
+                                >92%</span
+                              >
+                            </div>
+                          </td>
+                          <td class="table-cell">2</td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editFaq('faq2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteFaq('faq2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openFaqDetailModal('faq2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openFaqDetailModal('faq3')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              배송은 얼마나 걸리나요?
+                            </button>
+                          </td>
+                          <td class="table-cell">2023-09-18</td>
+                          <td class="table-cell">1,500</td>
+                          <td class="table-cell">
+                            <div class="flex items-center gap-1">
+                              <span
+                                class="material-icons-outlined text-sm rating-good"
+                                >thumb_up</span
+                              >
+                              <span class="rating-good font-medium">78%</span>
+                            </div>
+                          </td>
+                          <td class="table-cell">3</td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editFaq('faq3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteFaq('faq3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openFaqDetailModal('faq3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openFaqDetailModal('faq4')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              이메일 주소를 변경할 수 있나요?
+                            </button>
+                          </td>
+                          <td class="table-cell">2023-10-05</td>
+                          <td class="table-cell">800</td>
+                          <td class="table-cell">
+                            <div class="flex items-center gap-1">
+                              <span
+                                class="material-icons-outlined text-sm rating-excellent"
+                                >thumb_up</span
+                              >
+                              <span class="rating-excellent font-medium"
+                                >88%</span
+                              >
+                            </div>
+                          </td>
+                          <td class="table-cell">4</td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editFaq('faq4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteFaq('faq4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openFaqDetailModal('faq4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openFaqDetailModal('faq5')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              환불 정책은 어떻게 되나요?
+                            </button>
+                          </td>
+                          <td class="table-cell">2023-10-20</td>
+                          <td class="table-cell">1,100</td>
+                          <td class="table-cell">
+                            <div class="flex items-center gap-1">
+                              <span
+                                class="material-icons-outlined text-sm rating-good"
+                                >thumb_up</span
+                              >
+                              <span class="rating-good font-medium">80%</span>
+                            </div>
+                          </td>
+                          <td class="table-cell">5</td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editFaq('faq5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteFaq('faq5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openFaqDetailModal('faq5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 페이지네이션 -->
+                <div
+                  class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4"
+                >
+                  <span class="text-sm accent-text">
+                    총 <span class="font-medium">47</span>개 중
+                    <span class="font-medium">1</span> ~
+                    <span class="font-medium">5</span>개 표시
+                  </span>
+                  <div class="flex">
+                    <button class="pagination-button">이전</button>
+                    <button class="pagination-button pagination-active">
+                      1
+                    </button>
+                    <button class="pagination-button">2</button>
+                    <button class="pagination-button">3</button>
+                    <span class="px-3 py-2 text-slate-400">...</span>
+                    <button class="pagination-button">10</button>
+                    <button class="pagination-button">다음</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- FAQ 상세보기 모달 -->
+    <div id="faqDetailModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="p-6">
+          <!-- 모달 헤더 -->
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold accent-text">FAQ 상세보기</h2>
+            <button onclick="closeFaqDetailModal()" class="icon-button">
+              <span
+                class="material-icons-outlined text-xl text-slate-400 hover:text-slate-600"
+                >close</span
+              >
+            </button>
+          </div>
+
+          <!-- FAQ 정보 -->
+          <div class="space-y-6">
+            <!-- 기본 정보 -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span class="text-slate-500">카테고리</span>
+                  <p class="font-medium" id="detailFaqCategory">계정</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">등록일</span>
+                  <p class="font-medium" id="detailFaqDate">2023-08-15</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">조회수</span>
+                  <p class="font-medium" id="detailFaqViews">1,200</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">노출 순서</span>
+                  <p class="font-medium" id="detailFaqOrder">1</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 질문 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >질문</label
+              >
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <h3 class="text-lg font-semibold" id="detailFaqQuestion">
+                  비밀번호를 어떻게 재설정하나요?
+                </h3>
+              </div>
+            </div>
+
+            <!-- 답변 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >답변</label
+              >
+              <div
+                class="p-4 bg-gray-50 rounded-lg min-h-[150px] prose prose-slate max-w-none"
+                id="detailFaqAnswer"
+              >
+                <!-- 답변이 여기에 표시됩니다 -->
+              </div>
+            </div>
+
+            <!-- 도움 평가 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >도움 평가</label
+              >
+              <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                <div class="flex items-center gap-2" id="detailFaqRating">
+                  <span
+                    class="material-icons-outlined text-2xl rating-excellent"
+                    >thumb_up</span
+                  >
+                  <span class="text-xl font-bold rating-excellent">85%</span>
+                </div>
+                <div class="text-sm text-slate-600">
+                  <p>
+                    <span id="detailHelpfulCount">340</span>명이 도움이 되었다고
+                    했습니다
+                  </p>
+                  <p>
+                    <span id="detailTotalCount">400</span>명 중
+                    <span class="font-medium" id="detailRatingPercent"
+                      >85%</span
+                    >
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 검색 키워드 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >검색 키워드</label
+              >
+              <div class="flex flex-wrap gap-2" id="detailFaqKeywords">
+                <span
+                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                  >비밀번호</span
+                >
+                <span
+                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                  >재설정</span
+                >
+                <span
+                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                  >로그인</span
+                >
+                <span
+                  class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                  >계정</span
+                >
+              </div>
+            </div>
+
+            <!-- 관련 링크 -->
+            <div id="detailRelatedLinksSection">
+              <label class="block text-sm font-medium accent-text mb-2"
+                >관련 링크</label
+              >
+              <div class="space-y-2" id="detailRelatedLinks">
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="material-icons-outlined text-base text-blue-600"
+                    >link</span
+                  >
+                  <a href="#" class="text-blue-600 hover:underline"
+                    >계정 설정 가이드</a
+                  >
+                </div>
+                <div class="flex items-center gap-2 text-sm">
+                  <span class="material-icons-outlined text-base text-blue-600"
+                    >link</span
+                  >
+                  <a href="#" class="text-blue-600 hover:underline"
+                    >보안 설정 방법</a
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- 통계 정보 -->
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="material-icons-outlined text-blue-600"
+                  >analytics</span
+                >
+                <span class="font-medium text-blue-800">FAQ 통계</span>
+              </div>
+              <div class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span class="text-blue-600">최근 30일 조회수</span>
+                  <p class="font-medium text-blue-800" id="detailRecentViews">
+                    156회
+                  </p>
+                </div>
+                <div>
+                  <span class="text-blue-600">평균 만족도</span>
+                  <p class="font-medium text-blue-800" id="detailAvgRating">
+                    4.2/5.0
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 액션 버튼 -->
+            <div
+              class="flex items-center justify-between pt-4 border-t border-slate-200"
+            >
+              <div class="flex gap-3">
+                <button
+                  onclick="editFaqFromDetail()"
+                  class="action-button secondary-button"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >edit</span
+                  >
+                  편집
+                </button>
+                <button
+                  onclick="duplicateFaq()"
+                  class="action-button secondary-button"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >content_copy</span
+                  >
+                  복사
+                </button>
+                <button
+                  onclick="toggleFaqVisibility()"
+                  class="action-button secondary-button"
+                  id="visibilityButton"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >visibility_off</span
+                  >
+                  숨기기
+                </button>
+              </div>
+              <div class="flex gap-3">
+                <button
+                  onclick="deleteFaqFromDetail()"
+                  class="action-button"
+                  style="background-color: #dc2626; color: white"
+                  onmouseover="this.style.backgroundColor='#b91c1c'"
+                  onmouseout="this.style.backgroundColor='#dc2626'"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >delete</span
+                  >
+                  삭제
+                </button>
+                <button
+                  onclick="closeFaqDetailModal()"
+                  class="action-button secondary-button"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FAQ 추가/편집 모달 -->
+    <div id="faqModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="p-6">
+          <!-- 모달 헤더 -->
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold accent-text" id="modalTitle">
+              새 FAQ 추가
+            </h2>
+            <button onclick="closeFaqModal()" class="icon-button">
+              <span
+                class="material-icons-outlined text-xl text-slate-400 hover:text-slate-600"
+                >close</span
+              >
+            </button>
+          </div>
+
+          <!-- FAQ 작성 폼 -->
+          <form id="faqForm" onsubmit="submitFaq(event)" class="space-y-6">
+            <!-- 카테고리 및 우선순위 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">카테고리 *</label>
+                <select id="faqCategory" class="form-input" required>
+                  <option value="">카테고리를 선택하세요</option>
+                  <option value="account">계정</option>
+                  <option value="payment">결제</option>
+                  <option value="shipping">배송</option>
+                  <option value="service">서비스</option>
+                  <option value="technical">기술</option>
+                  <option value="other">기타</option>
+                </select>
+              </div>
+              <div>
+                <label class="form-label">노출 순서</label>
+                <input
+                  type="number"
+                  id="faqOrder"
+                  class="form-input"
+                  placeholder="1"
+                  min="1"
+                  value="1"
+                />
+              </div>
+            </div>
+
+            <!-- 질문 -->
+            <div>
+              <label class="form-label">질문 *</label>
+              <input
+                type="text"
+                id="faqQuestion"
+                class="form-input"
+                placeholder="자주 묻는 질문을 입력하세요"
+                required
+              />
+              <p class="text-sm text-slate-500 mt-1">
+                명확하고 간결한 질문으로 작성해주세요.
+              </p>
+            </div>
+
+            <!-- 답변 -->
+            <div>
+              <label class="form-label">답변 *</label>
+              <textarea
+                id="faqAnswer"
+                class="form-input form-textarea"
+                placeholder="질문에 대한 상세한 답변을 작성하세요"
+                required
+              ></textarea>
+              <p class="text-sm text-slate-500 mt-1">
+                사용자가 쉽게 이해할 수 있도록 자세히 설명해주세요.
+              </p>
+            </div>
+
+            <!-- 태그 및 키워드 -->
+            <div>
+              <label class="form-label">검색 키워드</label>
+              <input
+                type="text"
+                id="faqKeywords"
+                class="form-input"
+                placeholder="관련 키워드를 쉼표로 구분하여 입력 (예: 비밀번호, 로그인, 계정)"
+              />
+              <p class="text-sm text-slate-500 mt-1">
+                사용자가 검색할 때 이 FAQ를 찾을 수 있도록 관련 키워드를
+                입력하세요.
+              </p>
+            </div>
+
+            <!-- 관련 링크 -->
+            <div>
+              <label class="form-label">관련 링크 (선택사항)</label>
+              <div class="space-y-3">
+                <div class="flex gap-3">
+                  <input
+                    type="text"
+                    id="relatedLinkText1"
+                    class="form-input flex-1"
+                    placeholder="링크 텍스트 (예: 계정 설정 가이드)"
+                  />
+                  <input
+                    type="url"
+                    id="relatedLinkUrl1"
+                    class="form-input flex-1"
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div class="flex gap-3">
+                  <input
+                    type="text"
+                    id="relatedLinkText2"
+                    class="form-input flex-1"
+                    placeholder="링크 텍스트 (선택사항)"
+                  />
+                  <input
+                    type="url"
+                    id="relatedLinkUrl2"
+                    class="form-input flex-1"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- 상태 및 공개 설정 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="form-label">공개 상태</label>
+                <div class="flex items-center gap-4">
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="public"
+                      checked
+                      class="text-orange-500 focus:ring-orange-500"
+                    />
+                    <span class="text-sm text-slate-700">공개</span>
+                  </label>
+                  <label class="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="visibility"
+                      value="private"
+                      class="text-orange-500 focus:ring-orange-500"
+                    />
+                    <span class="text-sm text-slate-700">비공개</span>
+                  </label>
+                </div>
+              </div>
+              <div>
+                <label class="form-label">중요도</label>
+                <select id="faqImportance" class="form-input">
+                  <option value="normal">일반</option>
+                  <option value="important">중요</option>
+                  <option value="urgent">긴급</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- 미리보기 섹션 -->
+            <div class="border-t border-slate-200 pt-6">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="material-icons-outlined text-slate-500"
+                  >preview</span
+                >
+                <label class="text-lg font-medium accent-text">미리보기</label>
+              </div>
+              <div class="bg-gray-50 p-4 rounded-lg border">
+                <div class="space-y-3">
+                  <div>
+                    <h3 class="font-medium text-slate-800" id="previewQuestion">
+                      질문이 여기에 표시됩니다
+                    </h3>
+                    <span
+                      class="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded"
+                      id="previewCategory"
+                      >카테고리</span
+                    >
+                  </div>
+                  <div class="border-l-4 border-orange-300 pl-4">
+                    <p class="text-slate-600" id="previewAnswer">
+                      답변이 여기에 표시됩니다
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 버튼 -->
+            <div
+              class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200"
+            >
+              <button
+                type="button"
+                onclick="closeFaqModal()"
+                class="action-button secondary-button"
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                onclick="previewFaq()"
+                class="action-button secondary-button"
+              >
+                <span class="material-icons-outlined text-base mr-2"
+                  >preview</span
+                >
+                미리보기 업데이트
+              </button>
+              <button type="submit" class="action-button primary-button">
+                <span class="material-icons-outlined text-base mr-2">save</span>
+                FAQ 저장
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <style>
+      /* 모달 스타일 */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-content {
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 800px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.95) translateY(-20px);
+        transition: transform 0.3s ease-in-out;
+      }
+
+      .modal-overlay.active .modal-content {
+        transform: scale(1) translateY(0);
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #7d6e63;
+        margin-bottom: 0.5rem;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background-color: white;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+      }
+
+      .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+    </style>
+
+    <script>
+      // FAQ 데이터 (실제로는 서버에서 가져올 데이터)
+      const faqData = {
+        faq1: {
+          question: "비밀번호를 어떻게 재설정하나요?",
+          answer: `<p>비밀번호 재설정은 다음과 같은 방법으로 가능합니다:</p>
+                   <br>
+                   <p><strong>1. 로그인 페이지에서 재설정</strong></p>
+                   <ul>
+                   <li>• 로그인 페이지에서 "비밀번호 찾기" 클릭</li>
+                   <li>• 가입 시 등록한 이메일 주소 입력</li>
+                   <li>• 이메일로 전송된 재설정 링크 클릭</li>
+                   <li>• 새로운 비밀번호 설정</li>
+                   </ul>
+                   <br>
+                   <p><strong>2. 마이페이지에서 변경</strong></p>
+                   <ul>
+                   <li>• 로그인 후 마이페이지 접속</li>
+                   <li>• 계정 설정 메뉴 선택</li>
+                   <li>• 현재 비밀번호 입력 후 새 비밀번호 설정</li>
+                   </ul>
+                   <br>
+                   <p><strong>비밀번호 요구사항:</strong> 8자 이상, 영문+숫자+특수문자 조합</p>`,
+          category: "계정",
+          date: "2023-08-15",
+          views: "1,200",
+          rating: 85,
+          helpfulCount: 340,
+          totalCount: 400,
+          keywords: ["비밀번호", "재설정", "로그인", "계정", "찾기"],
+          relatedLinks: [
+            { text: "계정 설정 가이드", url: "/guide/account" },
+            { text: "보안 설정 방법", url: "/guide/security" },
+          ],
+          order: 1,
+          visibility: "public",
+        },
+        faq2: {
+          question: "어떤 결제 수단을 사용할 수 있나요?",
+          answer: `<p>CatDogEats에서는 다양한 결제 수단을 제공합니다:</p>
+                   <br>
+                   <p><strong>신용카드/체크카드</strong></p>
+                   <ul>
+                   <li>• 비자(VISA), 마스터카드(MasterCard)</li>
+                   <li>• 국내 모든 신용카드 및 체크카드</li>
+                   <li>• 해외 발급 카드도 사용 가능</li>
+                   </ul>
+                   <br>
+                   <p><strong>간편결제</strong></p>
+                   <ul>
+                   <li>• 카카오페이, 네이버페이</li>
+                   <li>• 삼성페이, 애플페이</li>
+                   <li>• 페이코, 토스페이</li>
+                   </ul>
+                   <br>
+                   <p><strong>기타 결제 방법</strong></p>
+                   <ul>
+                   <li>• 무통장 입금 (가상계좌)</li>
+                   <li>• 휴대폰 소액결제</li>
+                   <li>• 포인트 및 적립금 사용</li>
+                   </ul>`,
+          category: "결제",
+          date: "2023-09-02",
+          views: "950",
+          rating: 92,
+          helpfulCount: 437,
+          totalCount: 475,
+          keywords: ["결제", "신용카드", "간편결제", "카카오페이", "결제수단"],
+          relatedLinks: [
+            { text: "결제 방법 안내", url: "/guide/payment" },
+            { text: "포인트 사용법", url: "/guide/points" },
+          ],
+          order: 2,
+          visibility: "public",
+        },
+        faq3: {
+          question: "배송은 얼마나 걸리나요?",
+          answer: `<p>배송 소요 시간은 지역과 상품에 따라 다릅니다:</p>
+                   <br>
+                   <p><strong>일반 배송</strong></p>
+                   <ul>
+                   <li>• 서울/경기: 익일 배송</li>
+                   <li>• 기타 지역: 2-3일</li>
+                   <li>• 제주/도서산간: 3-5일</li>
+                   </ul>
+                   <br>
+                   <p><strong>특급 배송 (당일/새벽배송)</strong></p>
+                   <ul>
+                   <li>• 서울 일부 지역: 당일 배송</li>
+                   <li>• 수도권: 새벽 배송 (오전 7시 이전)</li>
+                   <li>• 오후 2시 이전 주문 시</li>
+                   </ul>
+                   <br>
+                   <p><strong>배송 불가 시간</strong></p>
+                   <p>토요일 오후 3시 ~ 월요일 오전 9시 주문은 화요일 발송</p>`,
+          category: "배송",
+          date: "2023-09-18",
+          views: "1,500",
+          rating: 78,
+          helpfulCount: 351,
+          totalCount: 450,
+          keywords: ["배송", "배송시간", "당일배송", "새벽배송", "택배"],
+          relatedLinks: [
+            { text: "배송 정책 안내", url: "/guide/shipping" },
+            { text: "배송비 안내", url: "/guide/shipping-cost" },
+          ],
+          order: 3,
+          visibility: "public",
+        },
+        faq4: {
+          question: "이메일 주소를 변경할 수 있나요?",
+          answer: `<p>이메일 주소 변경은 보안상 제한적으로 가능합니다:</p>
+                   <br>
+                   <p><strong>변경 가능한 경우</strong></p>
+                   <ul>
+                   <li>• 기존 이메일 주소가 사용 불가능한 경우</li>
+                   <li>• 회사 이메일에서 개인 이메일로 변경</li>
+                   <li>• 보안상 문제가 있는 경우</li>
+                   </ul>
+                   <br>
+                   <p><strong>변경 절차</strong></p>
+                   <ol>
+                   <li>1. 고객센터로 변경 요청</li>
+                   <li>2. 본인 확인 절차 진행</li>
+                   <li>3. 새 이메일 주소로 인증 메일 발송</li>
+                   <li>4. 인증 완료 후 변경 처리</li>
+                   </ol>
+                   <br>
+                   <p><strong>주의사항:</strong> 이메일 변경 후 기존 주문 내역은 그대로 유지됩니다.</p>`,
+          category: "계정",
+          date: "2023-10-05",
+          views: "800",
+          rating: 88,
+          helpfulCount: 264,
+          totalCount: 300,
+          keywords: ["이메일", "이메일변경", "계정정보", "본인확인"],
+          relatedLinks: [
+            { text: "고객센터 문의", url: "/support" },
+            { text: "본인 인증 방법", url: "/guide/verification" },
+          ],
+          order: 4,
+          visibility: "public",
+        },
+        faq5: {
+          question: "환불 정책은 어떻게 되나요?",
+          answer: `<p>CatDogEats의 환불 정책은 다음과 같습니다:</p>
+                   <br>
+                   <p><strong>환불 가능 기간</strong></p>
+                   <ul>
+                   <li>• 상품 수령 후 7일 이내</li>
+                   <li>• 미개봉/미사용 상품에 한함</li>
+                   <li>• 사료의 경우 포장 미개봉 시에만</li>
+                   </ul>
+                   <br>
+                   <p><strong>환불 불가 상품</strong></p>
+                   <ul>
+                   <li>• 개봉된 사료 및 간식</li>
+                   <li>• 맞춤 제작 상품</li>
+                   <li>• 위생상품 (목걸이, 장난감 등)</li>
+                   <li>• 할인가로 구매한 상품 (일부)</li>
+                   </ul>
+                   <br>
+                   <p><strong>환불 처리 시간</strong></p>
+                   <p>환불 요청 후 3-5영업일 내 카드사 또는 계좌로 환불 처리</p>`,
+          category: "서비스",
+          date: "2023-10-20",
+          views: "1,100",
+          rating: 80,
+          helpfulCount: 352,
+          totalCount: 440,
+          keywords: ["환불", "교환", "반품", "환불정책", "취소"],
+          relatedLinks: [
+            { text: "환불 신청 방법", url: "/guide/refund" },
+            { text: "교환 정책 안내", url: "/guide/exchange" },
+          ],
+          order: 5,
+          visibility: "public",
+        },
+      };
+
+      // FAQ 모달 열기
+      function openFaqModal() {
+        document.getElementById("modalTitle").textContent = "새 FAQ 추가";
+        const modal = document.getElementById("faqModal");
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+
+        // 미리보기 초기화
+        previewFaq();
+      }
+
+      // FAQ 모달 닫기
+      function closeFaqModal() {
+        const modal = document.getElementById("faqModal");
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto";
+
+        // 폼 초기화
+        document.getElementById("faqForm").reset();
+        document.getElementById("faqOrder").value = "1";
+        previewFaq();
+      }
+
+      // FAQ 상세보기 모달 열기
+      function openFaqDetailModal(faqId) {
+        const faq = faqData[faqId];
+        if (!faq) return;
+
+        // 모달 내용 설정
+        document.getElementById("detailFaqQuestion").textContent = faq.question;
+        document.getElementById("detailFaqAnswer").innerHTML = faq.answer;
+        document.getElementById("detailFaqCategory").textContent = faq.category;
+        document.getElementById("detailFaqDate").textContent = faq.date;
+        document.getElementById("detailFaqViews").textContent = faq.views;
+        document.getElementById("detailFaqOrder").textContent = faq.order;
+
+        // 도움 평가 설정
+        const ratingElement = document.getElementById("detailFaqRating");
+        const ratingIcon = ratingElement.querySelector(
+          ".material-icons-outlined"
+        );
+        const ratingText = ratingElement.querySelector("span:last-child");
+
+        // 평가에 따른 색상 설정
+        let ratingClass;
+        if (faq.rating >= 85) {
+          ratingClass = "rating-excellent";
+        } else if (faq.rating >= 75) {
+          ratingClass = "rating-good";
+        } else if (faq.rating >= 65) {
+          ratingClass = "rating-average";
+        } else {
+          ratingClass = "rating-poor";
+        }
+
+        ratingIcon.className = `material-icons-outlined text-2xl ${ratingClass}`;
+        ratingText.className = `text-xl font-bold ${ratingClass}`;
+        ratingText.textContent = `${faq.rating}%`;
+
+        document.getElementById("detailHelpfulCount").textContent =
+          faq.helpfulCount;
+        document.getElementById("detailTotalCount").textContent =
+          faq.totalCount;
+        document.getElementById(
+          "detailRatingPercent"
+        ).textContent = `${faq.rating}%`;
+
+        // 검색 키워드 설정
+        const keywordsContainer = document.getElementById("detailFaqKeywords");
+        keywordsContainer.innerHTML = faq.keywords
+          .map(
+            (keyword) =>
+              `<span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">${keyword}</span>`
+          )
+          .join("");
+
+        // 관련 링크 설정
+        const relatedLinksContainer =
+          document.getElementById("detailRelatedLinks");
+        if (faq.relatedLinks && faq.relatedLinks.length > 0) {
+          relatedLinksContainer.innerHTML = faq.relatedLinks
+            .map(
+              (link) =>
+                `<div class="flex items-center gap-2 text-sm">
+              <span class="material-icons-outlined text-base text-blue-600">link</span>
+              <a href="${link.url}" class="text-blue-600 hover:underline">${link.text}</a>
+            </div>`
+            )
+            .join("");
+          document
+            .getElementById("detailRelatedLinksSection")
+            .classList.remove("hidden");
+        } else {
+          document
+            .getElementById("detailRelatedLinksSection")
+            .classList.add("hidden");
+        }
+
+        // 통계 정보 (랜덤 생성)
+        document.getElementById(
+          "detailRecentViews"
+        ).textContent = `${Math.floor(Math.random() * 200 + 50)}회`;
+        document.getElementById("detailAvgRating").textContent = `${(
+          faq.rating / 20
+        ).toFixed(1)}/5.0`;
+
+        // 현재 보고 있는 FAQ ID 저장
+        document
+          .getElementById("faqDetailModal")
+          .setAttribute("data-faq-id", faqId);
+
+        // 모달 열기
+        const modal = document.getElementById("faqDetailModal");
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+
+      // FAQ 상세보기 모달 닫기
+      function closeFaqDetailModal() {
+        const modal = document.getElementById("faqDetailModal");
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto";
+      }
+
+      // FAQ 편집 (상세보기에서)
+      function editFaqFromDetail() {
+        const modal = document.getElementById("faqDetailModal");
+        const faqId = modal.getAttribute("data-faq-id");
+        editFaq(faqId);
+      }
+
+      // FAQ 삭제 (상세보기에서)
+      function deleteFaqFromDetail() {
+        const modal = document.getElementById("faqDetailModal");
+        const faqId = modal.getAttribute("data-faq-id");
+        if (confirm("정말로 이 FAQ를 삭제하시겠습니까?")) {
+          deleteFaq(faqId);
+          closeFaqDetailModal();
+        }
+      }
+
+      // FAQ 복사
+      function duplicateFaq() {
+        const modal = document.getElementById("faqDetailModal");
+        const faqId = modal.getAttribute("data-faq-id");
+        alert(`${faqId} 복사 기능 (개발 예정)`);
+      }
+
+      // FAQ 공개/비공개 토글
+      function toggleFaqVisibility() {
+        const modal = document.getElementById("faqDetailModal");
+        const faqId = modal.getAttribute("data-faq-id");
+        const button = document.getElementById("visibilityButton");
+
+        if (confirm("이 FAQ의 공개 상태를 변경하시겠습니까?")) {
+          // 실제로는 서버 API 호출
+          if (faqData[faqId].visibility === "public") {
+            faqData[faqId].visibility = "private";
+            button.innerHTML =
+              '<span class="material-icons-outlined text-base mr-2">visibility</span>공개하기';
+            alert("FAQ가 비공개로 설정되었습니다.");
+          } else {
+            faqData[faqId].visibility = "public";
+            button.innerHTML =
+              '<span class="material-icons-outlined text-base mr-2">visibility_off</span>숨기기';
+            alert("FAQ가 공개로 설정되었습니다.");
+          }
+        }
+      }
+
+      // 편집 기능들 (실제 구현은 서버 연동 필요)
+      function editFaq(faqId) {
+        alert(`${faqId} 편집 기능 (개발 예정)`);
+      }
+
+      function deleteFaq(faqId) {
+        if (confirm("정말로 이 FAQ를 삭제하시겠습니까?")) {
+          alert(`${faqId} 삭제 기능 (개발 예정)`);
+        }
+      }
+
+      // 모달 외부 클릭 시 닫기
+      document
+        .getElementById("faqModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeFaqModal();
+          }
+        });
+
+      document
+        .getElementById("faqDetailModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeFaqDetailModal();
+          }
+        });
+
+      // ESC 키로 모달 닫기
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          const writeModal = document.getElementById("faqModal");
+          const detailModal = document.getElementById("faqDetailModal");
+
+          if (writeModal.classList.contains("active")) {
+            closeFaqModal();
+          } else if (detailModal.classList.contains("active")) {
+            closeFaqDetailModal();
+          }
+        }
+      });
+
+      // 미리보기 업데이트
+      function previewFaq() {
+        const question =
+          document.getElementById("faqQuestion").value ||
+          "질문이 여기에 표시됩니다";
+        const answer =
+          document.getElementById("faqAnswer").value ||
+          "답변이 여기에 표시됩니다";
+        const category =
+          document.getElementById("faqCategory").value || "카테고리";
+
+        const categoryNames = {
+          account: "계정",
+          payment: "결제",
+          shipping: "배송",
+          service: "서비스",
+          technical: "기술",
+          other: "기타",
+        };
+
+        document.getElementById("previewQuestion").textContent = question;
+        document.getElementById("previewAnswer").textContent = answer;
+        document.getElementById("previewCategory").textContent =
+          categoryNames[category] || category;
+      }
+
+      // 실시간 미리보기 업데이트
+      document
+        .getElementById("faqQuestion")
+        .addEventListener("input", previewFaq);
+      document
+        .getElementById("faqAnswer")
+        .addEventListener("input", previewFaq);
+      document
+        .getElementById("faqCategory")
+        .addEventListener("change", previewFaq);
+
+      // FAQ 제출 처리
+      function submitFaq(event) {
+        event.preventDefault();
+
+        const formData = {
+          category: document.getElementById("faqCategory").value,
+          order: document.getElementById("faqOrder").value,
+          question: document.getElementById("faqQuestion").value,
+          answer: document.getElementById("faqAnswer").value,
+          keywords: document.getElementById("faqKeywords").value,
+          relatedLinks: [
+            {
+              text: document.getElementById("relatedLinkText1").value,
+              url: document.getElementById("relatedLinkUrl1").value,
+            },
+            {
+              text: document.getElementById("relatedLinkText2").value,
+              url: document.getElementById("relatedLinkUrl2").value,
+            },
+          ].filter((link) => link.text && link.url),
+          visibility: document.querySelector('input[name="visibility"]:checked')
+            .value,
+          importance: document.getElementById("faqImportance").value,
+        };
+
+        console.log("FAQ 데이터:", formData);
+
+        // 여기에 실제 서버 전송 로직 구현
+        alert("FAQ가 성공적으로 저장되었습니다!");
+        closeFaqModal();
+      }
+    </script>
+  </body>
+</html>

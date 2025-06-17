@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+      onload="this.rel='stylesheet'"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>CatDogEats Admin</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+      body {
+        font-family: "Noto Sans KR", "Work Sans", sans-serif;
+        background-color: #faf8f5;
+      }
+      .primary-bg {
+        background-color: #f5a623;
+      }
+      .primary-text {
+        color: #f5a623;
+      }
+      .secondary-text {
+        color: #a5d6a7;
+      }
+      .accent-text {
+        color: #7d6e63;
+      }
+      .secondary-bg {
+        background-color: #e8f5e9;
+      }
+      .active-tab {
+        border-left-width: 4px;
+        border-color: #f5a623;
+        background-color: #fff9f0;
+        color: #f5a623;
+        font-weight: 700;
+      }
+      .inactive-tab {
+        border-left-width: 4px;
+        border-color: transparent;
+        color: #7d6e63;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .inactive-tab:hover {
+        background-color: #fdfbf8;
+        color: #e69500;
+      }
+      .filter-chip {
+        display: flex;
+        height: 2.5rem;
+        flex-shrink: 0;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        background-color: white;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      }
+      .filter-chip:hover {
+        background-color: #f8fafc;
+      }
+      .filter-chip.active {
+        background-color: #fb923c;
+        color: white;
+      }
+      .filter-chip.active:hover {
+        background-color: #f97316;
+      }
+      .action-button {
+        display: flex;
+        min-width: 84px;
+        max-width: 480px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.375rem;
+        height: 2.25rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      }
+      .pending-button {
+        background-color: #fed7aa;
+        color: #c2410c;
+      }
+      .pending-button:hover {
+        background-color: #fdba74;
+      }
+      .processed-button {
+        background-color: #dcfce7;
+        color: #15803d;
+      }
+      .processed-button:hover {
+        background-color: #bbf7d0;
+      }
+      .view-details-button {
+        color: #f97316;
+      }
+      .view-details-button:hover {
+        text-decoration: underline;
+      }
+      .search-input {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        flex: 1 1 0%;
+        resize: none;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        height: 3rem;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.25rem;
+      }
+      .search-input::placeholder {
+        color: #9ca3af;
+      }
+      .search-input:focus {
+        border-color: #f97316;
+        box-shadow: 0 0 0 1px #f97316;
+        outline: none;
+      }
+      .filter-dropdown {
+        display: flex;
+        height: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        border-radius: 0.375rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        transition: background-color 0.15s ease-in-out;
+        cursor: pointer;
+        position: relative;
+      }
+      .filter-dropdown:hover {
+        background-color: #f8fafc;
+      }
+      .dropdown-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        top: 100%;
+        left: 0;
+        border-radius: 0.375rem;
+        border: 1px solid #cbd5e1;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .dropdown-content.show {
+        display: block;
+      }
+      .dropdown-item {
+        color: #374151;
+        padding: 8px 12px;
+        text-decoration: none;
+        display: block;
+        cursor: pointer;
+        font-size: 0.875rem;
+      }
+      .dropdown-item:hover {
+        background-color: #f8fafc;
+      }
+      .date-input {
+        display: flex;
+        height: 2.5rem;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        border-radius: 0.375rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        cursor: pointer;
+      }
+      .date-input:focus {
+        border-color: #f97316;
+        box-shadow: 0 0 0 1px #f97316;
+        outline: none;
+      }
+      .table-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #374151;
+        background-color: #fdfbf8;
+      }
+      .bg-beige-100 {
+        background-color: #fdfbf8;
+      }
+      .table-cell {
+        height: 72px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: #374151;
+      }
+      .table-cell-highlight {
+        color: #111827;
+        font-weight: 500;
+      }
+      .page-title {
+        color: #7d6e63;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .page-subtitle {
+        color: #a89a91;
+        font-size: 1rem;
+      }
+      .sidebar {
+        background-color: #fffdfb;
+        border-right: 1px solid #f0ebe5;
+      }
+      .sidebar-link-icon {
+        color: #bcaaa4;
+      }
+      .sidebar-link-text {
+        color: #7d6e63;
+      }
+      .active-tab .sidebar-link-icon,
+      .active-tab .sidebar-link-text {
+        color: #f5a623;
+      }
+      .inactive-tab:hover .sidebar-link-icon,
+      .inactive-tab:hover .sidebar-link-text {
+        color: #e69500;
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+
+      /* 모달 스타일 */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+      .modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-content {
+        background-color: white;
+        border-radius: 0.5rem;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      }
+      .modal-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .modal-body {
+        padding: 1.5rem;
+      }
+      .modal-footer {
+        padding: 1.5rem;
+        border-top: 1px solid #e5e7eb;
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+      }
+      .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #6b7280;
+      }
+      .modal-close:hover {
+        color: #374151;
+      }
+      .info-row {
+        display: flex;
+        margin-bottom: 1rem;
+      }
+      .info-label {
+        font-weight: 600;
+        color: #374151;
+        width: 120px;
+        flex-shrink: 0;
+      }
+      .info-value {
+        color: #6b7280;
+        flex: 1;
+      }
+      .action-btn {
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background-color 0.15s ease-in-out;
+        border: none;
+      }
+      .btn-delete {
+        background-color: #dc2626;
+        color: white;
+      }
+      .btn-delete:hover {
+        background-color: #b91c1c;
+      }
+      .btn-hold {
+        background-color: #f59e0b;
+        color: white;
+      }
+      .btn-hold:hover {
+        background-color: #d97706;
+      }
+      .btn-approve {
+        background-color: #059669;
+        color: white;
+      }
+      .btn-approve:hover {
+        background-color: #047857;
+      }
+      .btn-cancel {
+        background-color: #6b7280;
+        color: white;
+      }
+      .btn-cancel:hover {
+        background-color: #4b5563;
+      }
+    </style>
+  </head>
+  <body class="bg-FAF8F5">
+    <div
+      class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+    >
+      <aside
+        class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+      >
+        <div class="flex items-center gap-3 px-3 mb-6">
+          <div class="size-8 text-orange-500">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                fill="#F5A623"
+              ></path>
+              <path
+                d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                fill="white"
+              ></path>
+            </svg>
+          </div>
+          <h2
+            class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+          >
+            CatDogEats <br />관리자 페이지
+          </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >dashboard</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+          </a>
+          <a
+            class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >report_problem</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >campaign</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >공지사항 관리</span
+            >
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >quiz</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >support_agent</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >1:1 문의 관리</span
+            >
+          </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >settings</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">설정</span>
+          </a>
+        </div>
+      </aside>
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+          <div class="flex items-center"></div>
+          <div class="flex flex-1 justify-end gap-6 items-center">
+            <span class="text-sm accent-text">admin@catdogeats.com</span>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntqFRVigLCo6ehVPth_V8zN4jp2n7z3g5ST5ma8p4lCvbt0vlw0qD-c1aP-hWz6us6lXIgBmiw4wQbJho3t_XD6kPIW0ySAqBKKiFa_KL2O5KoYLaW8AwULGp1eQk72U-EGm7G2cD8ovTLUtYCJfGKb5L8jQixuExWreqbunZ3LQea4Hli3nJ5F9ZzDZ_csur2Tg2uuvPQOzN3eXtdqNY185Vdf02otSCwJbVJddXgBf5mVNfJ7Strvcw0Mt3AwIWFbu__yVjRwc');
+              "
+            ></div>
+          </div>
+        </header>
+        <main
+          class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+          <div class="flex flex-col w-full max-w-7xl mx-auto">
+            <div class="mb-8">
+              <h1 class="page-title">신고 관리</h1>
+              <p class="page-subtitle">
+                상품 및 리뷰 신고 내역을 확인하고 관리합니다.
+              </p>
+            </div>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+              <div class="p-6 space-y-6">
+                <div
+                  class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                >
+                  <div class="flex flex-wrap gap-3">
+                    <div
+                      class="filter-chip active"
+                      onclick="switchTab('product')"
+                    >
+                      상품 신고
+                    </div>
+                    <div class="filter-chip" onclick="switchTab('review')">
+                      리뷰 신고
+                    </div>
+                  </div>
+                  <div class="relative w-full sm:w-72">
+                    <span
+                      class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      >search</span
+                    >
+                    <input
+                      class="search-input !pl-10"
+                      id="searchInput"
+                      placeholder="사용자 ID, 상품 ID로 검색"
+                      value=""
+                    />
+                  </div>
+                </div>
+
+                <!-- 상품 신고 필터 -->
+                <div
+                  id="productFilters"
+                  class="flex flex-wrap gap-3 items-center"
+                >
+                  <div
+                    class="filter-dropdown"
+                    onclick="toggleDropdown('reasonDropdown')"
+                  >
+                    <span id="reasonText">신고 사유</span>
+                    <span class="material-icons text-base text-slate-500"
+                      >expand_more</span
+                    >
+                    <div id="reasonDropdown" class="dropdown-content">
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '전체')"
+                      >
+                        전체
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '불량 상품')"
+                      >
+                        불량 상품
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '사이즈 오류')"
+                      >
+                        사이즈 오류
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '파손된 상품')"
+                      >
+                        파손된 상품
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '작동 불능')"
+                      >
+                        작동 불능
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '가짜 상품')"
+                      >
+                        가짜 상품
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reasonText', '배송 문제')"
+                      >
+                        배송 문제
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="date-input">
+                      <span class="material-icons text-lg mr-1 text-slate-500"
+                        >calendar_today</span
+                      >
+                      <input
+                        type="date"
+                        id="startDateFilter"
+                        class="border-0 bg-transparent text-slate-700 text-sm w-32"
+                        placeholder="시작일"
+                      />
+                    </div>
+                    <span class="text-slate-500">~</span>
+                    <div class="date-input">
+                      <input
+                        type="date"
+                        id="endDateFilter"
+                        class="border-0 bg-transparent text-slate-700 text-sm w-32"
+                        placeholder="종료일"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="filter-dropdown"
+                    onclick="toggleDropdown('statusDropdown')"
+                  >
+                    <span id="statusText">처리 상태</span>
+                    <span class="material-icons text-base text-slate-500"
+                      >expand_more</span
+                    >
+                    <div id="statusDropdown" class="dropdown-content">
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('statusText', '전체')"
+                      >
+                        전체
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('statusText', '대기 중')"
+                      >
+                        대기 중
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('statusText', '처리 완료')"
+                      >
+                        처리 완료
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('statusText', '반려됨')"
+                      >
+                        반려됨
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 리뷰 신고 필터 -->
+                <div
+                  id="reviewFilters"
+                  class="flex flex-wrap gap-3 items-center"
+                  style="display: none"
+                >
+                  <div
+                    class="filter-dropdown"
+                    onclick="toggleDropdown('reviewReasonDropdown')"
+                  >
+                    <span id="reviewReasonText">신고 사유</span>
+                    <span class="material-icons text-base text-slate-500"
+                      >expand_more</span
+                    >
+                    <div id="reviewReasonDropdown" class="dropdown-content">
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewReasonText', '전체')"
+                      >
+                        전체
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewReasonText', '욕설/비방')"
+                      >
+                        욕설/비방
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewReasonText', '거짓 정보')"
+                      >
+                        거짓 정보
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewReasonText', '스팸/광고')"
+                      >
+                        스팸/광고
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewReasonText', '부적절한 내용')"
+                      >
+                        부적절한 내용
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewReasonText', '저작권 침해')"
+                      >
+                        저작권 침해
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="date-input">
+                      <span class="material-icons text-lg mr-1 text-slate-500"
+                        >calendar_today</span
+                      >
+                      <input
+                        type="date"
+                        id="reviewStartDateFilter"
+                        class="border-0 bg-transparent text-slate-700 text-sm w-32"
+                        placeholder="시작일"
+                      />
+                    </div>
+                    <span class="text-slate-500">~</span>
+                    <div class="date-input">
+                      <input
+                        type="date"
+                        id="reviewEndDateFilter"
+                        class="border-0 bg-transparent text-slate-700 text-sm w-32"
+                        placeholder="종료일"
+                      />
+                    </div>
+                  </div>
+                  <div
+                    class="filter-dropdown"
+                    onclick="toggleDropdown('reviewStatusDropdown')"
+                  >
+                    <span id="reviewStatusText">처리 상태</span>
+                    <span class="material-icons text-base text-slate-500"
+                      >expand_more</span
+                    >
+                    <div id="reviewStatusDropdown" class="dropdown-content">
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewStatusText', '전체')"
+                      >
+                        전체
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewStatusText', '대기 중')"
+                      >
+                        대기 중
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewStatusText', '처리 완료')"
+                      >
+                        처리 완료
+                      </div>
+                      <div
+                        class="dropdown-item"
+                        onclick="selectFilter('reviewStatusText', '반려됨')"
+                      >
+                        반려됨
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 상품 신고 테이블 -->
+                <div
+                  id="productTable"
+                  class="tab-content active overflow-x-auto"
+                >
+                  <div class="border border-slate-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-slate-200">
+                      <thead class="bg-beige-100">
+                        <tr>
+                          <th class="table-header w-[120px]">신고 ID</th>
+                          <th class="table-header w-[120px]">카테고리</th>
+                          <th class="table-header w-[150px]">신고 사유</th>
+                          <th class="table-header w-[120px]">사용자 ID</th>
+                          <th class="table-header w-[120px]">상품 ID</th>
+                          <th class="table-header w-[150px]">판매자 정보</th>
+                          <th class="table-header w-[120px]">신고 날짜</th>
+                          <th class="table-header w-[120px]">처리 상태</th>
+                          <th class="table-header w-[100px] text-center">
+                            조치
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-slate-200">
+                        <tr
+                          data-category="전자기기"
+                          data-reason="불량 상품"
+                          data-status="대기 중"
+                          data-date="2024-07-26"
+                          data-user="user123"
+                          data-product="prod456"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #12345
+                          </td>
+                          <td class="table-cell">전자기기</td>
+                          <td class="table-cell">불량 상품</td>
+                          <td class="table-cell">user123</td>
+                          <td class="table-cell">prod456</td>
+                          <td class="table-cell">
+                            <div class="text-xs">
+                              <div class="font-medium">테크스토어</div>
+                              <div class="text-gray-500">123-45-67890</div>
+                            </div>
+                          </td>
+                          <td class="table-cell">2024-07-26</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('product', '#12345', '전자기기', '불량 상품', 'user123', 'prod456', '테크스토어', '123-45-67890', '2024-07-26', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-category="의류"
+                          data-reason="사이즈 오류"
+                          data-status="처리 완료"
+                          data-date="2024-07-25"
+                          data-user="user456"
+                          data-product="prod789"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #12346
+                          </td>
+                          <td class="table-cell">의류</td>
+                          <td class="table-cell">사이즈 오류</td>
+                          <td class="table-cell">user456</td>
+                          <td class="table-cell">prod789</td>
+                          <td class="table-cell">
+                            <div class="text-xs">
+                              <div class="font-medium">패션몰</div>
+                              <div class="text-gray-500">234-56-78901</div>
+                            </div>
+                          </td>
+                          <td class="table-cell">2024-07-25</td>
+                          <td class="table-cell">
+                            <button
+                              class="action-button processed-button w-full"
+                            >
+                              <span class="truncate">처리 완료</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('product', '#12346', '의류', '사이즈 오류', 'user456', 'prod789', '패션몰', '234-56-78901', '2024-07-25', '처리 완료')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-category="도서"
+                          data-reason="파손된 상품"
+                          data-status="대기 중"
+                          data-date="2024-07-24"
+                          data-user="user789"
+                          data-product="prod101"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #12347
+                          </td>
+                          <td class="table-cell">도서</td>
+                          <td class="table-cell">파손된 상품</td>
+                          <td class="table-cell">user789</td>
+                          <td class="table-cell">prod101</td>
+                          <td class="table-cell">
+                            <div class="text-xs">
+                              <div class="font-medium">북스토어</div>
+                              <div class="text-gray-500">345-67-89012</div>
+                            </div>
+                          </td>
+                          <td class="table-cell">2024-07-24</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('product', '#12347', '도서', '파손된 상품', 'user789', 'prod101', '북스토어', '345-67-89012', '2024-07-24', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-category="생활용품"
+                          data-reason="작동 불능"
+                          data-status="처리 완료"
+                          data-date="2024-07-23"
+                          data-user="user101"
+                          data-product="prod202"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #12348
+                          </td>
+                          <td class="table-cell">생활용품</td>
+                          <td class="table-cell">작동 불능</td>
+                          <td class="table-cell">user101</td>
+                          <td class="table-cell">prod202</td>
+                          <td class="table-cell">
+                            <div class="text-xs">
+                              <div class="font-medium">라이프마켓</div>
+                              <div class="text-gray-500">456-78-90123</div>
+                            </div>
+                          </td>
+                          <td class="table-cell">2024-07-23</td>
+                          <td class="table-cell">
+                            <button
+                              class="action-button processed-button w-full"
+                            >
+                              <span class="truncate">처리 완료</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('product', '#12348', '생활용품', '작동 불능', 'user101', 'prod202', '라이프마켓', '456-78-90123', '2024-07-23', '처리 완료')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-category="스포츠/레저"
+                          data-reason="가짜 상품"
+                          data-status="대기 중"
+                          data-date="2024-07-22"
+                          data-user="user202"
+                          data-product="prod303"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #12349
+                          </td>
+                          <td class="table-cell">스포츠/레저</td>
+                          <td class="table-cell">가짜 상품</td>
+                          <td class="table-cell">user202</td>
+                          <td class="table-cell">prod303</td>
+                          <td class="table-cell">
+                            <div class="text-xs">
+                              <div class="font-medium">스포츠월드</div>
+                              <div class="text-gray-500">567-89-01234</div>
+                            </div>
+                          </td>
+                          <td class="table-cell">2024-07-22</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('product', '#12349', '스포츠/레저', '가짜 상품', 'user202', 'prod303', '스포츠월드', '567-89-01234', '2024-07-22', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-category="식품"
+                          data-reason="배송 문제"
+                          data-status="대기 중"
+                          data-date="2024-07-21"
+                          data-user="user303"
+                          data-product="prod404"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #12350
+                          </td>
+                          <td class="table-cell">식품</td>
+                          <td class="table-cell">배송 문제</td>
+                          <td class="table-cell">user303</td>
+                          <td class="table-cell">prod404</td>
+                          <td class="table-cell">
+                            <div class="text-xs">
+                              <div class="font-medium">프레시마트</div>
+                              <div class="text-gray-500">678-90-12345</div>
+                            </div>
+                          </td>
+                          <td class="table-cell">2024-07-21</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('product', '#12350', '식품', '배송 문제', 'user303', 'prod404', '프레시마트', '678-90-12345', '2024-07-21', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 리뷰 신고 테이블 -->
+                <div id="reviewTable" class="tab-content overflow-x-auto">
+                  <div class="border border-slate-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-slate-200">
+                      <thead class="bg-beige-100">
+                        <tr>
+                          <th class="table-header w-[120px]">신고 ID</th>
+                          <th class="table-header w-[150px]">신고 사유</th>
+                          <th class="table-header w-[120px]">
+                            신고한 사용자 ID
+                          </th>
+                          <th class="table-header w-[120px]">리뷰 ID</th>
+                          <th class="table-header w-[120px]">리뷰 작성자 ID</th>
+                          <th class="table-header w-[120px]">신고 날짜</th>
+                          <th class="table-header w-[120px]">처리 상태</th>
+                          <th class="table-header w-[100px] text-center">
+                            조치
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-slate-200">
+                        <tr
+                          data-reason="욕설/비방"
+                          data-status="대기 중"
+                          data-date="2024-07-26"
+                          data-reporter="user123"
+                          data-review="rev456"
+                          data-reviewer="reviewer789"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #R12345
+                          </td>
+                          <td class="table-cell">욕설/비방</td>
+                          <td class="table-cell">user123</td>
+                          <td class="table-cell">rev456</td>
+                          <td class="table-cell">reviewer789</td>
+                          <td class="table-cell">2024-07-26</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('review', '#R12345', '욕설/비방', 'user123', 'rev456', 'reviewer789', '2024-07-26', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-reason="거짓 정보"
+                          data-status="처리 완료"
+                          data-date="2024-07-25"
+                          data-reporter="user456"
+                          data-review="rev789"
+                          data-reviewer="reviewer101"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #R12346
+                          </td>
+                          <td class="table-cell">거짓 정보</td>
+                          <td class="table-cell">user456</td>
+                          <td class="table-cell">rev789</td>
+                          <td class="table-cell">reviewer101</td>
+                          <td class="table-cell">2024-07-25</td>
+                          <td class="table-cell">
+                            <button
+                              class="action-button processed-button w-full"
+                            >
+                              <span class="truncate">처리 완료</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('review', '#R12346', '거짓 정보', 'user456', 'rev789', 'reviewer101', '2024-07-25', '처리 완료')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-reason="스팸/광고"
+                          data-status="대기 중"
+                          data-date="2024-07-24"
+                          data-reporter="user789"
+                          data-review="rev202"
+                          data-reviewer="reviewer303"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #R12347
+                          </td>
+                          <td class="table-cell">스팸/광고</td>
+                          <td class="table-cell">user789</td>
+                          <td class="table-cell">rev202</td>
+                          <td class="table-cell">reviewer303</td>
+                          <td class="table-cell">2024-07-24</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('review', '#R12347', '스팸/광고', 'user789', 'rev202', 'reviewer303', '2024-07-24', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-reason="부적절한 내용"
+                          data-status="처리 완료"
+                          data-date="2024-07-23"
+                          data-reporter="user101"
+                          data-review="rev505"
+                          data-reviewer="reviewer404"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #R12348
+                          </td>
+                          <td class="table-cell">부적절한 내용</td>
+                          <td class="table-cell">user101</td>
+                          <td class="table-cell">rev505</td>
+                          <td class="table-cell">reviewer404</td>
+                          <td class="table-cell">2024-07-23</td>
+                          <td class="table-cell">
+                            <button
+                              class="action-button processed-button w-full"
+                            >
+                              <span class="truncate">처리 완료</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('review', '#R12348', '부적절한 내용', 'user101', 'rev505', 'reviewer404', '2024-07-23', '처리 완료')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-reason="저작권 침해"
+                          data-status="대기 중"
+                          data-date="2024-07-22"
+                          data-reporter="user202"
+                          data-review="rev606"
+                          data-reviewer="reviewer505"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #R12349
+                          </td>
+                          <td class="table-cell">저작권 침해</td>
+                          <td class="table-cell">user202</td>
+                          <td class="table-cell">rev606</td>
+                          <td class="table-cell">reviewer505</td>
+                          <td class="table-cell">2024-07-22</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('review', '#R12349', '저작권 침해', 'user202', 'rev606', 'reviewer505', '2024-07-22', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                        <tr
+                          data-reason="욕설/비방"
+                          data-status="대기 중"
+                          data-date="2024-07-21"
+                          data-reporter="user303"
+                          data-review="rev707"
+                          data-reviewer="reviewer606"
+                        >
+                          <td class="table-cell table-cell-highlight">
+                            #R12350
+                          </td>
+                          <td class="table-cell">욕설/비방</td>
+                          <td class="table-cell">user303</td>
+                          <td class="table-cell">rev707</td>
+                          <td class="table-cell">reviewer606</td>
+                          <td class="table-cell">2024-07-21</td>
+                          <td class="table-cell">
+                            <button class="action-button pending-button w-full">
+                              <span class="truncate">대기 중</span>
+                            </button>
+                          </td>
+                          <td class="table-cell text-center">
+                            <a
+                              class="view-details-button text-sm font-semibold"
+                              href="#"
+                              onclick="openModal('review', '#R12350', '욕설/비방', 'user303', 'rev707', 'reviewer606', '2024-07-21', '대기 중')"
+                              >상세 보기</a
+                            >
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- 신고 상세 모달 -->
+    <div id="reportModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="text-xl font-bold accent-text">신고 상세 정보</h2>
+          <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="modalContent">
+            <!-- 모달 내용이 동적으로 여기에 삽입됩니다 -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="action-btn btn-cancel" onclick="closeModal()">
+            닫기
+          </button>
+          <div id="actionButtons">
+            <!-- 액션 버튼들이 동적으로 여기에 삽입됩니다 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentTab = "product";
+
+      // 드롭다운 토글 함수
+      function toggleDropdown(dropdownId) {
+        const dropdown = document.getElementById(dropdownId);
+        const isShown = dropdown.classList.contains("show");
+
+        // 모든 드롭다운 닫기
+        document.querySelectorAll(".dropdown-content").forEach((d) => {
+          d.classList.remove("show");
+        });
+
+        // 클릭한 드롭다운만 토글
+        if (!isShown) {
+          dropdown.classList.add("show");
+        }
+      }
+
+      // 필터 선택 함수
+      function selectFilter(elementId, value) {
+        document.getElementById(elementId).textContent = value;
+
+        // 드롭다운 닫기
+        document.querySelectorAll(".dropdown-content").forEach((d) => {
+          d.classList.remove("show");
+        });
+
+        // 필터링 실행
+        applyFilters();
+      }
+
+      // 실시간 필터링 함수
+      function applyFilters() {
+        const searchValue = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        let reasonFilter, statusFilter, startDate, endDate;
+
+        if (currentTab === "product") {
+          reasonFilter = document.getElementById("reasonText").textContent;
+          statusFilter = document.getElementById("statusText").textContent;
+          startDate = document.getElementById("startDateFilter").value;
+          endDate = document.getElementById("endDateFilter").value;
+        } else {
+          reasonFilter =
+            document.getElementById("reviewReasonText").textContent;
+          statusFilter =
+            document.getElementById("reviewStatusText").textContent;
+          startDate = document.getElementById("reviewStartDateFilter").value;
+          endDate = document.getElementById("reviewEndDateFilter").value;
+        }
+
+        const tableId =
+          currentTab === "product" ? "productTable" : "reviewTable";
+        const rows = document.querySelectorAll(`#${tableId} tbody tr`);
+
+        rows.forEach((row) => {
+          let show = true;
+
+          // 검색어 필터
+          if (searchValue) {
+            const text = row.textContent.toLowerCase();
+            if (!text.includes(searchValue)) {
+              show = false;
+            }
+          }
+
+          // 신고 사유 필터
+          if (reasonFilter !== "신고 사유" && reasonFilter !== "전체") {
+            const rowReason = row.getAttribute("data-reason");
+            if (rowReason !== reasonFilter) {
+              show = false;
+            }
+          }
+
+          // 처리 상태 필터
+          if (statusFilter !== "처리 상태" && statusFilter !== "전체") {
+            const rowStatus = row.getAttribute("data-status");
+            if (rowStatus !== statusFilter) {
+              show = false;
+            }
+          }
+
+          // 날짜 범위 필터
+          if (startDate || endDate) {
+            const rowDate = row.getAttribute("data-date");
+            if (startDate && rowDate < startDate) {
+              show = false;
+            }
+            if (endDate && rowDate > endDate) {
+              show = false;
+            }
+          }
+
+          row.style.display = show ? "" : "none";
+        });
+      }
+
+      // 탭 전환 함수
+      function switchTab(tab) {
+        currentTab = tab;
+
+        // 탭 버튼 활성화 상태 변경
+        document.querySelectorAll(".filter-chip").forEach((chip) => {
+          chip.classList.remove("active");
+        });
+        event.target.classList.add("active");
+
+        // 필터와 테이블 표시/숨김
+        if (tab === "product") {
+          document.getElementById("productFilters").style.display = "flex";
+          document.getElementById("reviewFilters").style.display = "none";
+          document.getElementById("productTable").classList.add("active");
+          document.getElementById("reviewTable").classList.remove("active");
+          document.getElementById("searchInput").placeholder =
+            "사용자 ID, 상품 ID로 검색";
+        } else if (tab === "review") {
+          document.getElementById("productFilters").style.display = "none";
+          document.getElementById("reviewFilters").style.display = "flex";
+          document.getElementById("productTable").classList.remove("active");
+          document.getElementById("reviewTable").classList.add("active");
+          document.getElementById("searchInput").placeholder =
+            "사용자 ID, 리뷰 ID로 검색";
+        }
+
+        // 필터 초기화
+        resetFilters();
+        applyFilters();
+      }
+
+      // 필터 초기화 함수
+      function resetFilters() {
+        document.getElementById("searchInput").value = "";
+        if (currentTab === "product") {
+          document.getElementById("reasonText").textContent = "신고 사유";
+          document.getElementById("statusText").textContent = "처리 상태";
+          document.getElementById("startDateFilter").value = "";
+          document.getElementById("endDateFilter").value = "";
+        } else {
+          document.getElementById("reviewReasonText").textContent = "신고 사유";
+          document.getElementById("reviewStatusText").textContent = "처리 상태";
+          document.getElementById("reviewStartDateFilter").value = "";
+          document.getElementById("reviewEndDateFilter").value = "";
+        }
+      }
+
+      // 모달 열기 함수
+      function openModal(type, ...args) {
+        const modal = document.getElementById("reportModal");
+        const modalContent = document.getElementById("modalContent");
+        const actionButtons = document.getElementById("actionButtons");
+
+        if (type === "product") {
+          const [
+            id,
+            category,
+            reason,
+            userId,
+            productId,
+            sellerName,
+            sellerNum,
+            date,
+            status,
+          ] = args;
+          modalContent.innerHTML = `
+            <div class="info-row">
+              <div class="info-label">신고 ID:</div>
+              <div class="info-value">${id}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">카테고리:</div>
+              <div class="info-value">${category}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고 사유:</div>
+              <div class="info-value">${reason}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고한 사용자:</div>
+              <div class="info-value">${userId}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">상품 ID:</div>
+              <div class="info-value">${productId}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">판매자:</div>
+              <div class="info-value">${sellerName}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">사업자등록번호:</div>
+              <div class="info-value">${sellerNum}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고 날짜:</div>
+              <div class="info-value">${date}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">현재 상태:</div>
+              <div class="info-value">${status}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고 내용:</div>
+              <div class="info-value">상품이 설명과 다르며, 품질이 매우 떨어집니다. 환불을 요청했으나 판매자가 응답하지 않고 있습니다.</div>
+            </div>
+          `;
+
+          actionButtons.innerHTML = `
+            <button class="action-btn btn-delete" onclick="handleAction('deleteProduct', '${id}')">상품 삭제</button>
+            <button class="action-btn btn-hold" onclick="handleAction('hold', '${id}')">보류</button>
+            <button class="action-btn btn-approve" onclick="handleAction('approve', '${id}')">문제 없음</button>
+          `;
+        } else if (type === "review") {
+          const [id, reason, reporterId, reviewId, reviewerId, date, status] =
+            args;
+          modalContent.innerHTML = `
+            <div class="info-row">
+              <div class="info-label">신고 ID:</div>
+              <div class="info-value">${id}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고 사유:</div>
+              <div class="info-value">${reason}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고한 사용자:</div>
+              <div class="info-value">${reporterId}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">리뷰 ID:</div>
+              <div class="info-value">${reviewId}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">리뷰 작성자:</div>
+              <div class="info-value">${reviewerId}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고 날짜:</div>
+              <div class="info-value">${date}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">현재 상태:</div>
+              <div class="info-value">${status}</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">리뷰 내용:</div>
+              <div class="info-value">"이 상품은 정말 최악입니다. 돈 낭비하지 마세요. 판매자도 불친절하고..."</div>
+            </div>
+            <div class="info-row">
+              <div class="info-label">신고 내용:</div>
+              <div class="info-value">리뷰에 욕설과 비방이 포함되어 있으며, 부적절한 표현이 사용되었습니다.</div>
+            </div>
+          `;
+
+          actionButtons.innerHTML = `
+            <button class="action-btn btn-delete" onclick="handleAction('deleteReview', '${id}')">리뷰 삭제</button>
+            <button class="action-btn btn-hold" onclick="handleAction('hold', '${id}')">보류</button>
+            <button class="action-btn btn-approve" onclick="handleAction('approve', '${id}')">문제 없음</button>
+          `;
+        }
+
+        modal.classList.add("show");
+      }
+
+      // 모달 닫기 함수
+      function closeModal() {
+        document.getElementById("reportModal").classList.remove("show");
+      }
+
+      // 액션 처리 함수
+      function handleAction(action, reportId) {
+        let message = "";
+        switch (action) {
+          case "deleteProduct":
+            message = `상품을 삭제하시겠습니까? (신고 ID: ${reportId})`;
+            break;
+          case "deleteReview":
+            message = `리뷰를 삭제하시겠습니까? (신고 ID: ${reportId})`;
+            break;
+          case "hold":
+            message = `처리를 보류하시겠습니까? (신고 ID: ${reportId})`;
+            break;
+          case "approve":
+            message = `"문제 없음"으로 처리하시겠습니까? (신고 ID: ${reportId})`;
+            break;
+        }
+
+        if (confirm(message)) {
+          alert(`처리되었습니다. (${action}: ${reportId})`);
+          closeModal();
+          // 실제로는 서버에 요청을 보내고 테이블을 업데이트해야 함
+        }
+      }
+
+      // 이벤트 리스너 등록
+      document.addEventListener("DOMContentLoaded", function () {
+        // 검색 입력 이벤트
+        document
+          .getElementById("searchInput")
+          .addEventListener("input", applyFilters);
+
+        // 날짜 필터 이벤트
+        document
+          .getElementById("startDateFilter")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("endDateFilter")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("reviewStartDateFilter")
+          .addEventListener("change", applyFilters);
+        document
+          .getElementById("reviewEndDateFilter")
+          .addEventListener("change", applyFilters);
+
+        // 외부 클릭 시 드롭다운 닫기
+        document.addEventListener("click", function (event) {
+          if (!event.target.closest(".filter-dropdown")) {
+            document.querySelectorAll(".dropdown-content").forEach((d) => {
+              d.classList.remove("show");
+            });
+          }
+        });
+
+        // 모달 외부 클릭 시 닫기
+        document
+          .getElementById("reportModal")
+          .addEventListener("click", function (event) {
+            if (event.target === this) {
+              closeModal();
+            }
+          });
+      });
+    </script>
+  </body>
+</html>

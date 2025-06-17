@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+      onload="this.rel='stylesheet'"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>CatDogEats Admin</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+      body {
+        font-family: "Noto Sans KR", "Work Sans", sans-serif;
+        background-color: #faf8f5;
+      }
+      .primary-bg {
+        background-color: #f5a623;
+      }
+      .primary-text {
+        color: #f5a623;
+      }
+      .secondary-text {
+        color: #a5d6a7;
+      }
+      .accent-text {
+        color: #7d6e63;
+      }
+      .secondary-bg {
+        background-color: #e8f5e9;
+      }
+      .active-tab {
+        border-left-width: 4px;
+        border-color: #f5a623;
+        background-color: #fff9f0;
+        color: #f5a623;
+        font-weight: 700;
+      }
+      .inactive-tab {
+        border-left-width: 4px;
+        border-color: transparent;
+        color: #7d6e63;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .inactive-tab:hover {
+        background-color: #fdfbf8;
+        color: #e69500;
+      }
+      .page-title {
+        color: #7d6e63;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .page-subtitle {
+        color: #a89a91;
+        font-size: 1rem;
+      }
+      .sidebar {
+        background-color: #fffdfb;
+        border-right: 1px solid #f0ebe5;
+      }
+      .sidebar-link-icon {
+        color: #bcaaa4;
+      }
+      .sidebar-link-text {
+        color: #7d6e63;
+      }
+      .active-tab .sidebar-link-icon,
+      .active-tab .sidebar-link-text {
+        color: #f5a623;
+      }
+      .inactive-tab:hover .sidebar-link-icon,
+      .inactive-tab:hover .sidebar-link-text {
+        color: #e69500;
+      }
+      .filter-chip {
+        display: flex;
+        height: 2.5rem;
+        flex-shrink: 0;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 9999px;
+        background-color: white;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+        border: 1px solid #cbd5e1;
+      }
+      .filter-chip:hover {
+        background-color: #f8fafc;
+      }
+      .filter-chip.active {
+        background-color: #f5a623;
+        color: white;
+        border-color: #f5a623;
+      }
+      .filter-chip.active:hover {
+        background-color: #e69500;
+      }
+      .search-input {
+        display: flex;
+        width: 100%;
+        min-width: 0;
+        flex: 1 1 0%;
+        resize: none;
+        overflow: hidden;
+        border-radius: 0.5rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        height: 3rem;
+        padding: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        line-height: 1.25rem;
+      }
+      .search-input::placeholder {
+        color: #9ca3af;
+      }
+      .search-input:focus {
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+        outline: none;
+      }
+      .table-header {
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #374151;
+        background-color: #fdfbf8;
+      }
+      .bg-beige-100 {
+        background-color: #fdfbf8;
+      }
+      .table-cell {
+        height: 72px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: #374151;
+      }
+      .table-cell-highlight {
+        color: #111827;
+        font-weight: 500;
+      }
+      .action-button {
+        display: flex;
+        min-width: 84px;
+        max-width: 480px;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        border-radius: 0.375rem;
+        height: 2.25rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.15s ease-in-out, color 0.15s ease-in-out;
+      }
+      .primary-button {
+        background-color: #f5a623;
+        color: white;
+      }
+      .primary-button:hover {
+        background-color: #e69500;
+      }
+      .status-published {
+        background-color: #dcfce7;
+        color: #15803d;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .status-draft {
+        background-color: #fed7aa;
+        color: #c2410c;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .status-archived {
+        background-color: #f1f5f9;
+        color: #64748b;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .icon-button {
+        padding: 0.5rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s ease-in-out;
+      }
+      .icon-button:hover {
+        background-color: #f8fafc;
+      }
+      .pagination-button {
+        padding: 0.5rem 1rem;
+        border: 1px solid #cbd5e1;
+        background-color: white;
+        color: #374151;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .pagination-button:hover {
+        background-color: #f8fafc;
+        color: #f5a623;
+        border-color: #f5a623;
+      }
+      .pagination-button:first-child {
+        border-radius: 0.375rem 0 0 0.375rem;
+      }
+      .pagination-button:last-child {
+        border-radius: 0 0.375rem 0.375rem 0;
+        border-left: none;
+      }
+
+      /* 모달 스타일 */
+      .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 50;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+      }
+
+      .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .modal-content {
+        background-color: white;
+        border-radius: 0.75rem;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        max-width: 600px;
+        width: 90%;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.95) translateY(-20px);
+        transition: transform 0.3s ease-in-out;
+      }
+
+      .modal-overlay.active .modal-content {
+        transform: scale(1) translateY(0);
+      }
+
+      .form-label {
+        display: block;
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #374151;
+        margin-bottom: 0.5rem;
+      }
+
+      .form-input {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background-color: white;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+      }
+
+      .form-input:focus {
+        outline: none;
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+      }
+
+      .form-textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .form-select {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        color: #374151;
+        background-color: white;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.5rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        transition: border-color 0.2s ease-in-out;
+      }
+
+      .form-select:focus {
+        outline: none;
+        border-color: #f5a623;
+        box-shadow: 0 0 0 1px #f5a623;
+      }
+
+      .secondary-button {
+        background-color: #f8fafc;
+        color: #374151;
+        border: 1px solid #cbd5e1;
+      }
+
+      .secondary-button:hover {
+        background-color: #f1f5f9;
+        border-color: #94a3b8;
+      }
+    </style>
+  </head>
+  <body class="bg-FAF8F5">
+    <div
+      class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+    >
+      <aside
+        class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+      >
+        <div class="flex items-center gap-3 px-3 mb-6">
+          <div class="size-8 text-orange-500">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                fill="#F5A623"
+              ></path>
+              <path
+                d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                fill="white"
+              ></path>
+            </svg>
+          </div>
+          <h2
+            class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+          >
+            CatDogEats <br />관리자 페이지
+          </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >dashboard</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >report_problem</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+          </a>
+          <a
+            class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >campaign</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >공지사항 관리</span
+            >
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >quiz</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >support_agent</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >1:1 문의 관리</span
+            >
+          </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >settings</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">설정</span>
+          </a>
+        </div>
+      </aside>
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+          <div class="flex items-center"></div>
+          <div class="flex flex-1 justify-end gap-6 items-center">
+            <span class="text-sm accent-text">admin@catdogeats.com</span>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntqFRVigLCo6ehVPth_V8zN4jp2n7z3g5ST5ma8p4lCvbt0vlw0qD-c1aP-hWz6us6lXIgBmiw4wQbJho3t_XD6kPIW0ySAqBKKiFa_KL2O5KoYLaW8AwULGp1eQk72U-EGm7G2cD8ovTLUtYCJfGKb5L8jQixuExWreqbunZ3LQea4Hli3nJ5F9ZzDZ_csur2Tg2uuvPQOzN3eXtdqNY185Vdf02otSCwJbVJddXgBf5mVNfJ7Strvcw0Mt3AwIWFbu__yVjRwc');
+              "
+            ></div>
+          </div>
+        </header>
+        <main
+          class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+          <div class="flex flex-col w-full max-w-7xl mx-auto">
+            <div class="mb-8">
+              <h1 class="page-title">공지사항 관리</h1>
+              <p class="page-subtitle">
+                사용자에게 전달할 공지사항을 작성하고 관리합니다.
+              </p>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+              <div class="p-6 space-y-6">
+                <!-- 상단 액션 바 -->
+                <div
+                  class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between"
+                >
+                  <div class="flex flex-wrap gap-3">
+                    <div class="filter-chip active">전체</div>
+                    <div class="filter-chip">게시됨</div>
+                    <div class="filter-chip">초안</div>
+                    <div class="filter-chip">보관됨</div>
+                  </div>
+                  <button
+                    class="action-button primary-button"
+                    onclick="openModal()"
+                  >
+                    <span class="material-icons-outlined text-base mr-2"
+                      >add</span
+                    >
+                    공지사항 작성
+                  </button>
+                </div>
+
+                <!-- 검색 -->
+                <div class="relative w-full sm:w-96">
+                  <span
+                    class="material-icons absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                    >search</span
+                  >
+                  <input
+                    class="search-input !pl-10"
+                    placeholder="제목으로 검색..."
+                    value=""
+                  />
+                </div>
+
+                <!-- 테이블 -->
+                <div class="overflow-x-auto @container">
+                  <div class="border border-slate-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-slate-200">
+                      <thead class="bg-beige-100">
+                        <tr>
+                          <th class="table-header w-[40%]">제목</th>
+                          <th class="table-header w-[15%]">작성일</th>
+                          <th class="table-header w-[10%]">조회수</th>
+                          <th class="table-header w-[15%]">상태</th>
+                          <th class="table-header w-[20%] text-center">작업</th>
+                        </tr>
+                      </thead>
+                      <tbody class="bg-white divide-y divide-slate-200">
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openNoticeDetailModal('notice1')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              예정된 시스템 점검 안내
+                            </button>
+                          </td>
+                          <td class="table-cell">2024-07-26</td>
+                          <td class="table-cell">1,234</td>
+                          <td class="table-cell">
+                            <span class="status-published">게시됨</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openNoticeDetailModal('notice1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editNotice('notice1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteNotice('notice1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="복사"
+                                onclick="copyNotice('notice1')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-slate-600"
+                                  >content_copy</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openNoticeDetailModal('notice2')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              새로운 기능 출시: 향상된 분석 도구
+                            </button>
+                          </td>
+                          <td class="table-cell">2024-07-20</td>
+                          <td class="table-cell">2,567</td>
+                          <td class="table-cell">
+                            <span class="status-published">게시됨</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openNoticeDetailModal('notice2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editNotice('notice2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteNotice('notice2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="복사"
+                                onclick="copyNotice('notice2')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-slate-600"
+                                  >content_copy</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openNoticeDetailModal('notice3')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              보안 업데이트: 비밀번호 정책 변경
+                            </button>
+                          </td>
+                          <td class="table-cell">2024-07-15</td>
+                          <td class="table-cell">1,890</td>
+                          <td class="table-cell">
+                            <span class="status-draft">초안</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openNoticeDetailModal('notice3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editNotice('notice3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteNotice('notice3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="복사"
+                                onclick="copyNotice('notice3')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-slate-600"
+                                  >content_copy</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openNoticeDetailModal('notice4')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              서버 업그레이드를 위한 예정된 다운타임
+                            </button>
+                          </td>
+                          <td class="table-cell">2024-07-10</td>
+                          <td class="table-cell">3,210</td>
+                          <td class="table-cell">
+                            <span class="status-archived">보관됨</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openNoticeDetailModal('notice4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editNotice('notice4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteNotice('notice4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="복사"
+                                onclick="copyNotice('notice4')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-slate-600"
+                                  >content_copy</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        <tr class="hover:bg-slate-50 transition-colors">
+                          <td class="table-cell table-cell-highlight">
+                            <button
+                              onclick="openNoticeDetailModal('notice5')"
+                              class="text-left hover:text-blue-600 hover:underline"
+                            >
+                              중요: 서비스 약관 업데이트
+                            </button>
+                          </td>
+                          <td class="table-cell">2024-07-05</td>
+                          <td class="table-cell">2,109</td>
+                          <td class="table-cell">
+                            <span class="status-published">게시됨</span>
+                          </td>
+                          <td class="table-cell text-center">
+                            <div class="flex items-center justify-center gap-1">
+                              <button
+                                class="icon-button"
+                                title="보기"
+                                onclick="openNoticeDetailModal('notice5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-blue-600"
+                                  >visibility</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="편집"
+                                onclick="editNotice('notice5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-amber-600"
+                                  >edit</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="삭제"
+                                onclick="deleteNotice('notice5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-red-600"
+                                  >delete</span
+                                >
+                              </button>
+                              <button
+                                class="icon-button"
+                                title="복사"
+                                onclick="copyNotice('notice5')"
+                              >
+                                <span
+                                  class="material-icons-outlined text-lg text-slate-600"
+                                  >content_copy</span
+                                >
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 페이지네이션 -->
+                <div
+                  class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4"
+                >
+                  <span class="text-sm accent-text">
+                    총 <span class="font-medium">25</span>개 중
+                    <span class="font-medium">1</span> ~
+                    <span class="font-medium">5</span>개 표시
+                  </span>
+                  <div class="flex">
+                    <button class="pagination-button">이전</button>
+                    <button class="pagination-button">다음</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- 공지사항 상세보기 모달 -->
+    <div id="noticeDetailModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="p-6">
+          <!-- 모달 헤더 -->
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold accent-text">공지사항 상세보기</h2>
+            <button onclick="closeNoticeDetailModal()" class="icon-button">
+              <span
+                class="material-icons-outlined text-xl text-slate-400 hover:text-slate-600"
+                >close</span
+              >
+            </button>
+          </div>
+
+          <!-- 공지사항 정보 -->
+          <div class="space-y-6">
+            <!-- 기본 정보 -->
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                  <span class="text-slate-500">작성일</span>
+                  <p class="font-medium" id="detailNoticeDate">2024-07-26</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">조회수</span>
+                  <p class="font-medium" id="detailNoticeViews">1,234</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">상태</span>
+                  <p class="font-medium" id="detailNoticeStatus">게시됨</p>
+                </div>
+                <div>
+                  <span class="text-slate-500">중요도</span>
+                  <p class="font-medium" id="detailNoticePriority">일반</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 제목 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >제목</label
+              >
+              <div class="p-3 bg-gray-50 rounded-lg">
+                <h3 class="text-lg font-semibold" id="detailNoticeTitle">
+                  예정된 시스템 점검 안내
+                </h3>
+              </div>
+            </div>
+
+            <!-- 내용 -->
+            <div>
+              <label class="block text-sm font-medium accent-text mb-2"
+                >내용</label
+              >
+              <div
+                class="p-4 bg-gray-50 rounded-lg min-h-[200px] prose prose-slate max-w-none"
+                id="detailNoticeContent"
+              >
+                <!-- 내용이 여기에 표시됩니다 -->
+              </div>
+            </div>
+
+            <!-- 첨부파일 (있는 경우) -->
+            <div id="detailAttachmentSection" class="hidden">
+              <label class="block text-sm font-medium accent-text mb-2"
+                >첨부파일</label
+              >
+              <div
+                class="flex items-center gap-2 text-sm text-slate-600"
+                id="detailAttachment"
+              >
+                <span class="material-icons-outlined text-base"
+                  >attach_file</span
+                >
+                <span>첨부파일명.pdf (125KB)</span>
+                <button class="text-primary-text hover:underline ml-2">
+                  다운로드
+                </button>
+              </div>
+            </div>
+
+            <!-- 공개 상태 안내 -->
+            <div id="statusNotice" class="p-4 rounded-lg border">
+              <div class="flex items-center gap-2 mb-2">
+                <span
+                  class="material-icons-outlined text-blue-600"
+                  id="statusIcon"
+                  >info</span
+                >
+                <span class="font-medium text-blue-800" id="statusTitle"
+                  >공개 상태</span
+                >
+              </div>
+              <p class="text-blue-700 text-sm" id="statusDescription">
+                이 공지사항은 현재 게시됨 상태로 사용자에게 공개되고 있습니다.
+              </p>
+            </div>
+
+            <!-- 액션 버튼 -->
+            <div
+              class="flex items-center justify-between pt-4 border-t border-slate-200"
+            >
+              <div class="flex gap-3">
+                <button
+                  onclick="editNoticeFromDetail()"
+                  class="action-button secondary-button"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >edit</span
+                  >
+                  편집
+                </button>
+                <button
+                  onclick="copyNoticeFromDetail()"
+                  class="action-button secondary-button"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >content_copy</span
+                  >
+                  복사
+                </button>
+              </div>
+              <div class="flex gap-3">
+                <button
+                  id="publishButton"
+                  onclick="publishNotice()"
+                  class="action-button primary-button hidden"
+                >
+                  <span class="material-icons-outlined text-base mr-2"
+                    >publish</span
+                  >
+                  최종 등록하기
+                </button>
+                <button
+                  onclick="closeNoticeDetailModal()"
+                  class="action-button secondary-button"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 공지사항 작성 모달 -->
+    <div id="noticeModal" class="modal-overlay">
+      <div class="modal-content">
+        <div class="p-6">
+          <!-- 모달 헤더 -->
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold accent-text">공지사항 작성</h2>
+            <button onclick="closeModal()" class="icon-button">
+              <span
+                class="material-icons-outlined text-xl text-slate-400 hover:text-slate-600"
+                >close</span
+              >
+            </button>
+          </div>
+
+          <!-- 모달 폼 -->
+          <form id="noticeForm" class="space-y-6">
+            <!-- 제목 -->
+            <div>
+              <label class="form-label">제목 *</label>
+              <input
+                type="text"
+                id="noticeTitle"
+                class="form-input"
+                placeholder="공지사항 제목을 입력하세요"
+                required
+              />
+            </div>
+
+            <!-- 내용 -->
+            <div>
+              <label class="form-label">내용 *</label>
+              <textarea
+                id="noticeContent"
+                class="form-input form-textarea"
+                placeholder="공지사항 내용을 입력하세요"
+                required
+              ></textarea>
+            </div>
+
+            <!-- 상태 -->
+            <div>
+              <label class="form-label">상태</label>
+              <select id="noticeStatus" class="form-select">
+                <option value="draft">초안</option>
+                <option value="published">게시됨</option>
+                <option value="archived">보관됨</option>
+              </select>
+            </div>
+
+            <!-- 중요도 -->
+            <div>
+              <label class="form-label">중요도</label>
+              <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="priority"
+                    value="normal"
+                    checked
+                    class="text-orange-500 focus:ring-orange-500"
+                  />
+                  <span class="text-sm text-slate-700">일반</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="priority"
+                    value="important"
+                    class="text-orange-500 focus:ring-orange-500"
+                  />
+                  <span class="text-sm text-slate-700">중요</span>
+                </label>
+                <label class="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="priority"
+                    value="urgent"
+                    class="text-orange-500 focus:ring-orange-500"
+                  />
+                  <span class="text-sm text-slate-700">긴급</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- 버튼 -->
+            <div
+              class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200"
+            >
+              <button
+                type="button"
+                onclick="closeModal()"
+                class="action-button secondary-button"
+              >
+                취소
+              </button>
+              <button type="submit" class="action-button primary-button">
+                <span class="material-icons-outlined text-base mr-2">save</span>
+                저장
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // 공지사항 작성 모달 열기
+      function openModal() {
+        const modal = document.getElementById("noticeModal");
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden"; // 배경 스크롤 방지
+      }
+
+      // 공지사항 작성 모달 닫기
+      function closeModal() {
+        const modal = document.getElementById("noticeModal");
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto"; // 배경 스크롤 복원
+
+        // 폼 초기화
+        document.getElementById("noticeForm").reset();
+      }
+
+      // 공지사항 데이터 (실제로는 서버에서 가져올 데이터)
+      const noticeData = {
+        notice1: {
+          title: "예정된 시스템 점검 안내",
+          content: `<p>안녕하세요. CatDogEats를 이용해 주시는 고객 여러분께 감사드립니다.</p>
+                   <br>
+                   <p>서비스 품질 향상을 위한 시스템 점검을 다음과 같이 실시하고자 합니다.</p>
+                   <br>
+                   <p><strong>점검 일시:</strong> 2024년 7월 30일(화) 오전 2시 ~ 오전 6시 (4시간)</p>
+                   <p><strong>점검 내용:</strong></p>
+                   <ul>
+                   <li>• 서버 성능 최적화</li>
+                   <li>• 보안 업데이트 적용</li>
+                   <li>• 결제 시스템 안정성 개선</li>
+                   </ul>
+                   <br>
+                   <p>점검 시간 동안 서비스 이용이 일시적으로 중단될 수 있습니다.</p>
+                   <p>이용에 불편을 드려 죄송하며, 보다 나은 서비스를 제공하기 위한 것이니 양해 부탁드립니다.</p>`,
+          date: "2024-07-26",
+          views: "1,234",
+          status: "published",
+          priority: "중요",
+        },
+        notice2: {
+          title: "새로운 기능 출시: 향상된 분석 도구",
+          content: `<p>CatDogEats의 새로운 기능이 출시되었습니다!</p>
+                   <br>
+                   <p><strong>주요 신기능:</strong></p>
+                   <ul>
+                   <li>• 주문 패턴 분석 대시보드</li>
+                   <li>• 개인맞춤 상품 추천</li>
+                   <li>• 실시간 배송 추적</li>
+                   <li>• 영양성분 분석 리포트</li>
+                   </ul>
+                   <br>
+                   <p>이제 더욱 스마트하게 반려동물을 위한 쇼핑을 즐기실 수 있습니다.</p>`,
+          date: "2024-07-20",
+          views: "2,567",
+          status: "published",
+          priority: "일반",
+        },
+        notice3: {
+          title: "보안 업데이트: 비밀번호 정책 변경",
+          content: `<p>계정 보안 강화를 위해 비밀번호 정책이 변경됩니다.</p>
+                   <br>
+                   <p><strong>새로운 비밀번호 요구사항:</strong></p>
+                   <ul>
+                   <li>• 최소 8자 이상</li>
+                   <li>• 영문 대/소문자, 숫자, 특수문자 조합</li>
+                   <li>• 개인정보 포함 금지</li>
+                   <li>• 90일마다 변경 권장</li>
+                   </ul>
+                   <br>
+                   <p>기존 사용자는 다음 로그인 시 비밀번호 변경이 필요합니다.</p>`,
+          date: "2024-07-15",
+          views: "1,890",
+          status: "draft",
+          priority: "중요",
+        },
+        notice4: {
+          title: "서버 업그레이드를 위한 예정된 다운타임",
+          content: `<p>서버 인프라 업그레이드로 인한 일시적 서비스 중단 안내</p>
+                   <br>
+                   <p><strong>업그레이드 일정:</strong> 2024년 7월 15일(월) 오전 1시 ~ 오전 5시</p>
+                   <p><strong>영향 서비스:</strong> 전체 웹사이트 및 모바일 앱</p>
+                   <br>
+                   <p>업그레이드 완료 후 더욱 빠르고 안정적인 서비스를 제공해드릴 예정입니다.</p>`,
+          date: "2024-07-10",
+          views: "3,210",
+          status: "archived",
+          priority: "일반",
+        },
+        notice5: {
+          title: "중요: 서비스 약관 업데이트",
+          content: `<p>CatDogEats 서비스 약관이 업데이트되었습니다.</p>
+                   <br>
+                   <p><strong>주요 변경사항:</strong></p>
+                   <ul>
+                   <li>• 개인정보 처리 방침 개선</li>
+                   <li>• 환불 정책 명확화</li>
+                   <li>• 배송 관련 약관 추가</li>
+                   </ul>
+                   <br>
+                   <p>변경된 약관은 2024년 8월 1일부터 적용됩니다.</p>
+                   <p>자세한 내용은 약관 페이지에서 확인하실 수 있습니다.</p>`,
+          date: "2024-07-05",
+          views: "2,109",
+          status: "published",
+          priority: "긴급",
+        },
+      };
+
+      // 공지사항 상세보기 모달 열기
+      function openNoticeDetailModal(noticeId) {
+        const notice = noticeData[noticeId];
+        if (!notice) return;
+
+        // 모달 내용 설정
+        document.getElementById("detailNoticeTitle").textContent = notice.title;
+        document.getElementById("detailNoticeContent").innerHTML =
+          notice.content;
+        document.getElementById("detailNoticeDate").textContent = notice.date;
+        document.getElementById("detailNoticeViews").textContent = notice.views;
+        document.getElementById("detailNoticePriority").textContent =
+          notice.priority;
+
+        // 상태에 따른 UI 설정
+        const statusElement = document.getElementById("detailNoticeStatus");
+        const statusNotice = document.getElementById("statusNotice");
+        const statusIcon = document.getElementById("statusIcon");
+        const statusTitle = document.getElementById("statusTitle");
+        const statusDescription = document.getElementById("statusDescription");
+        const publishButton = document.getElementById("publishButton");
+
+        switch (notice.status) {
+          case "published":
+            statusElement.textContent = "게시됨";
+            statusElement.className = "status-published font-medium";
+            statusNotice.className =
+              "p-4 rounded-lg border bg-green-50 border-green-200";
+            statusIcon.className = "material-icons-outlined text-green-600";
+            statusIcon.textContent = "check_circle";
+            statusTitle.textContent = "공개 상태";
+            statusTitle.className = "font-medium text-green-800";
+            statusDescription.textContent =
+              "이 공지사항은 현재 게시됨 상태로 사용자에게 공개되고 있습니다.";
+            statusDescription.className = "text-green-700 text-sm";
+            publishButton.classList.add("hidden");
+            break;
+          case "draft":
+            statusElement.textContent = "초안";
+            statusElement.className = "status-draft font-medium";
+            statusNotice.className =
+              "p-4 rounded-lg border bg-orange-50 border-orange-200";
+            statusIcon.className = "material-icons-outlined text-orange-600";
+            statusIcon.textContent = "edit";
+            statusTitle.textContent = "초안 상태";
+            statusTitle.className = "font-medium text-orange-800";
+            statusDescription.textContent =
+              "이 공지사항은 초안 상태입니다. 최종 등록하면 사용자에게 공개됩니다.";
+            statusDescription.className = "text-orange-700 text-sm";
+            publishButton.classList.remove("hidden");
+            break;
+          case "archived":
+            statusElement.textContent = "보관됨";
+            statusElement.className = "status-archived font-medium";
+            statusNotice.className =
+              "p-4 rounded-lg border bg-gray-50 border-gray-200";
+            statusIcon.className = "material-icons-outlined text-gray-600";
+            statusIcon.textContent = "archive";
+            statusTitle.textContent = "보관 상태";
+            statusTitle.className = "font-medium text-gray-800";
+            statusDescription.textContent =
+              "이 공지사항은 보관 상태입니다. 최종 등록하면 사용자에게 공개됩니다.";
+            statusDescription.className = "text-gray-700 text-sm";
+            publishButton.classList.remove("hidden");
+            break;
+        }
+
+        // 현재 보고 있는 공지사항 ID 저장
+        document
+          .getElementById("noticeDetailModal")
+          .setAttribute("data-notice-id", noticeId);
+
+        // 모달 열기
+        const modal = document.getElementById("noticeDetailModal");
+        modal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      }
+
+      // 공지사항 상세보기 모달 닫기
+      function closeNoticeDetailModal() {
+        const modal = document.getElementById("noticeDetailModal");
+        modal.classList.remove("active");
+        document.body.style.overflow = "auto";
+      }
+
+      // 공지사항 최종 등록하기
+      function publishNotice() {
+        const modal = document.getElementById("noticeDetailModal");
+        const noticeId = modal.getAttribute("data-notice-id");
+
+        if (
+          confirm(
+            "이 공지사항을 최종 등록하시겠습니까? 등록하면 사용자에게 즉시 공개됩니다."
+          )
+        ) {
+          // 실제로는 서버 API 호출
+          noticeData[noticeId].status = "published";
+
+          // 테이블의 상태 업데이트
+          const tableRows = document.querySelectorAll("tbody tr");
+          tableRows.forEach((row) => {
+            const button = row.querySelector(
+              'button[onclick*="' + noticeId + '"]'
+            );
+            if (button) {
+              const statusSpan = row.querySelector("td:nth-child(4) span");
+              statusSpan.textContent = "게시됨";
+              statusSpan.className = "status-published";
+            }
+          });
+
+          alert("공지사항이 성공적으로 등록되었습니다!");
+          closeNoticeDetailModal();
+        }
+      }
+
+      // 편집 기능들 (실제 구현은 서버 연동 필요)
+      function editNotice(noticeId) {
+        alert(`${noticeId} 편집 기능 (개발 예정)`);
+      }
+
+      function editNoticeFromDetail() {
+        const modal = document.getElementById("noticeDetailModal");
+        const noticeId = modal.getAttribute("data-notice-id");
+        editNotice(noticeId);
+      }
+
+      function deleteNotice(noticeId) {
+        if (confirm("정말로 이 공지사항을 삭제하시겠습니까?")) {
+          alert(`${noticeId} 삭제 기능 (개발 예정)`);
+        }
+      }
+
+      function copyNotice(noticeId) {
+        alert(`${noticeId} 복사 기능 (개발 예정)`);
+      }
+
+      function copyNoticeFromDetail() {
+        const modal = document.getElementById("noticeDetailModal");
+        const noticeId = modal.getAttribute("data-notice-id");
+        copyNotice(noticeId);
+      }
+
+      // 기존 모달 관련 함수들
+      // 모달 외부 클릭 시 닫기
+      document
+        .getElementById("noticeModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeModal();
+          }
+        });
+
+      document
+        .getElementById("noticeDetailModal")
+        .addEventListener("click", function (e) {
+          if (e.target === this) {
+            closeNoticeDetailModal();
+          }
+        });
+
+      // ESC 키로 모달 닫기
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+          const writeModal = document.getElementById("noticeModal");
+          const detailModal = document.getElementById("noticeDetailModal");
+
+          if (writeModal.classList.contains("active")) {
+            closeModal();
+          } else if (detailModal.classList.contains("active")) {
+            closeNoticeDetailModal();
+          }
+        }
+      });
+
+      // 폼 제출 처리
+      document
+        .getElementById("noticeForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          // 폼 데이터 수집
+          const formData = {
+            title: document.getElementById("noticeTitle").value,
+            content: document.getElementById("noticeContent").value,
+            status: document.getElementById("noticeStatus").value,
+            priority: document.querySelector('input[name="priority"]:checked')
+              .value,
+          };
+
+          console.log("공지사항 데이터:", formData);
+
+          // 여기에 실제 저장 로직 구현
+          alert("공지사항이 저장되었습니다!");
+          closeModal();
+        });
+    </script>
+  </body>
+</html>

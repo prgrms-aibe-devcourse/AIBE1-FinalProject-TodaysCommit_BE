@@ -4,7 +4,6 @@ import com.team5.catdogeats.users.domain.Users;
 
 import java.util.UUID;
 
-public interface UserTestService {
-    int MapperTest();
+public interface UserTestJpaService {
     Users JpaTest(UUID id);
 }

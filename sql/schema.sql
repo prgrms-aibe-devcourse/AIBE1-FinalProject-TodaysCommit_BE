@@ -1,105 +1,107 @@
 CREATE TABLE users (
-    id VARCHAR(36) PRIMARY KEY,
-    provider VARCHAR(10) NOT NULL ,
-    provider_id VARCHAR(100) NOT NULL,
-    user_name_attribute VARCHAR(50) NOT NULL ,
-    name VARCHAR(100) NOT NULL ,
-    role ENUM('ROLE_BUYERS', 'ROLE_SELLERS') ,
-    account_disable BOOLEAN DEFAULT FALSE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE KEY uk_provider_provider_id (provider, provider_id)
+                       id VARCHAR(36) PRIMARY KEY,
+                       provider VARCHAR(10) NOT NULL ,
+                       provider_id VARCHAR(100) NOT NULL,
+                       user_name_attribute VARCHAR(50) NOT NULL ,
+                       name VARCHAR(100) NOT NULL ,
+                       role ENUM('ROLE_BUYERS', 'ROLE_SELLERS') ,
+                       account_disable BOOLEAN DEFAULT FALSE,
+                       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                       UNIQUE KEY uk_provider_provider_id (provider, provider_id)
 );
 
 -- users와 1대1 관계
 CREATE TABLE buyers (
-    user_id    VARCHAR(36) PRIMARY KEY,
-    name_masking_status TINYINT(1) DEFAULT TRUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_buyers_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                        user_id    VARCHAR(36) PRIMARY KEY,
+                        name_masking_status TINYINT(1) DEFAULT TRUE,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                        CONSTRAINT fk_buyers_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- users와 1대1 관계
 CREATE TABLE sellers (
-     user_id         VARCHAR(36) PRIMARY KEY,
-     vendor_name     VARCHAR(100) NOT NULL,
-     vendor_profile_image VARCHAR(255) NOT NULL ,
-     business_number     VARCHAR(20)  NOT NULL,
-     settlement_bank VARCHAR(50),
-     settlement_acc  VARCHAR(30),
-     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-     CONSTRAINT fk_sellers_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                         user_id         VARCHAR(36) PRIMARY KEY,
+                         vendor_name     VARCHAR(100) NOT NULL,
+                         vendor_profile_image VARCHAR(255) NOT NULL ,
+                         business_number     VARCHAR(20)  NOT NULL,
+                         settlement_bank VARCHAR(50),
+                         settlement_acc  VARCHAR(30),
+                         tags VARCHAR(36),
+                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                         CONSTRAINT fk_sellers_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 
 -- 주소 불러오는거는 api로 불러와야합니다~ 그 주소를 저장하는 테이블
 CREATE TABLE addresses (
-   id VARCHAR(36) PRIMARY KEY,
-   user_id VARCHAR(36) NOT NULL ,
-   title VARCHAR(30),
-   city VARCHAR(100) NOT NULL,              -- 시/도
-   district VARCHAR(100) NOT NULL,          -- 시/군/구
-   neighborhood VARCHAR(100) NOT NULL,      -- 읍/면/동
-   street_address VARCHAR(200) NOT NULL,    -- 도로명 주소
-   postal_code VARCHAR(20),                  -- 우편번호
-   detail_address VARCHAR(200),              -- 상세 주소 (빌딩명, 호수 등)
-   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-   CONSTRAINT fk_addresses_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                           id VARCHAR(36) PRIMARY KEY,
+                           user_id VARCHAR(36) NOT NULL ,
+                           title VARCHAR(30) NOT NULL ,
+                           city VARCHAR(100) NOT NULL,              -- 시/도
+                           district VARCHAR(100) NOT NULL,          -- 시/군/구
+                           neighborhood VARCHAR(100) NOT NULL,      -- 읍/면/동
+                           street_address VARCHAR(200) NOT NULL,    -- 도로명 주소
+                           postal_code VARCHAR(20) NOT NULL ,                  -- 우편번호
+                           detail_address VARCHAR(200) NOT NULL ,              -- 상세 주소 (빌딩명, 호수 등)
+                           phone_number VARCHAR(30) NOT NULL ,
+                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                           CONSTRAINT fk_addresses_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- buyer와 1:N 관계
 CREATE TABLE pets (
-    id VARCHAR(36) PRIMARY KEY ,
-    buyer_id VARCHAR(36) NOT NULL,
-    name VARCHAR(100)    NOT NULL,       -- 펫 이름
-    species VARCHAR(50),                 -- 종(개·고양이·기타)
-    breed VARCHAR(100),                  -- 품종
-    age   TINYINT UNSIGNED,              -- 생년월일
-    gender ENUM('M','F'),                -- 성별
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_pets_buyers_id FOREIGN KEY (buyer_id) REFERENCES buyers(user_id) ON DELETE CASCADE
+                      id VARCHAR(36) PRIMARY KEY ,
+                      buyer_id VARCHAR(36) NOT NULL,
+                      name VARCHAR(100)    NOT NULL,       -- 펫 이름
+                      species VARCHAR(50),                 -- 종(개·고양이·기타)
+                      breed VARCHAR(100),                  -- 품종
+                      age   TINYINT UNSIGNED,              -- 생년월일
+                      gender ENUM('M','F'),                -- 성별
+                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                      CONSTRAINT fk_pets_buyers_id FOREIGN KEY (buyer_id) REFERENCES buyers(user_id) ON DELETE CASCADE
 );
 
 
 CREATE TABLE products (
-    id VARCHAR(36) PRIMARY KEY ,
-    product_number BIGINT NOT NULL,
+                          id VARCHAR(36) PRIMARY KEY ,
+                          product_number BIGINT NOT NULL,
     -- 유저에게 보여지는 상품 아이디 숫자 형태로 보여질 예정 id랑 다르게 uuid 아님 별도의 로직으로 구성해야함
-    seller_id VARCHAR(36) NOT NULL ,
-    title VARCHAR(50) NOT NULL ,
-    contents TEXT NOT NULL ,
-    category ENUM('dog', 'cat'),
-    stock_status ENUM('IN_STOCK', 'OUT_OF_STOCK'),
-    is_discounted TINYINT(1) DEFAULT FALSE,
-    discount_rate DECIMAL(10,2) DEFAULT 0.00,
-    price BIGINT NOT NULL ,
-    quantity INT UNSIGNED NOT NULL ,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    UNIQUE uk_products_product_name (product_number),
-    CONSTRAINT fk_products_seller_id FOREIGN KEY (seller_id) REFERENCES sellers(user_id)
+                          seller_id VARCHAR(36) NOT NULL ,
+                          title VARCHAR(50) NOT NULL ,
+                          contents TEXT NOT NULL ,
+                          category ENUM('dog', 'cat'),
+                          stock_status ENUM('IN_STOCK', 'OUT_OF_STOCK'),
+                          is_discounted TINYINT(1) DEFAULT FALSE,
+                          discount_rate DECIMAL(10,2) DEFAULT 0.00,
+                          price BIGINT NOT NULL ,
+                          quantity INT UNSIGNED NOT NULL ,
+                          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                          UNIQUE uk_products_product_name (product_number),
+                          CONSTRAINT fk_products_seller_id FOREIGN KEY (seller_id) REFERENCES sellers(user_id)
 );
 
 -- 1. 재고 조정 로그 테이블 생성
 CREATE TABLE inventory_adjustments (
-    id                VARCHAR(36) PRIMARY KEY,
-    product_id        VARCHAR(36) NOT NULL,
-    adjustment_type   ENUM(
-    'IN',        -- 입고
-    'OUT',       -- 출고
-    'RETURN',    -- 반품
-    'DISPOSE',   -- 폐기
-    'ADJUSTMENT' -- 기타 재고 조정
-    ) NOT NULL,
-    quantity          INT NOT NULL,           -- 조정 수량 (음수 불가, 타입에 따라 처리)
-    note              VARCHAR(255),           -- 조정 사유나 메모
-    created_by        VARCHAR(36),            -- 조정 작업자 (optional)
-    created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_inv_adj_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+                                       id                VARCHAR(36) PRIMARY KEY,
+                                       product_id        VARCHAR(36) NOT NULL,
+                                       adjustment_type   ENUM(
+                                           'IN',        -- 입고
+                                           'OUT',       -- 출고
+                                           'RETURN',    -- 반품
+                                           'DISPOSE',   -- 폐기
+                                           'ADJUSTMENT' -- 기타 재고 조정
+                                           ) NOT NULL,
+                                       quantity          INT NOT NULL,           -- 조정 수량 (음수 불가, 타입에 따라 처리)
+                                       note              VARCHAR(255),           -- 조정 사유나 메모
+                                       created_by        VARCHAR(36),            -- 조정 작업자 (optional)
+                                       created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
+                                       CONSTRAINT fk_inv_adj_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- 2. products 테이블에 현재 재고를 관리하는 컬럼이 이미 있다면,
@@ -188,7 +190,7 @@ CREATE TABLE orders (
                             'READY_FOR_SHIPMENT',
                             'IN_DELIVERY',
                             'DELIVERED'
-                            ) DEFAULT 'PAYMENT_PENDING',
+                            ) ,
                         total_price BIGINT NOT NULL,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -198,42 +200,42 @@ CREATE TABLE orders (
 
 -- 장바구니 헤더
 CREATE TABLE carts (
-       id           VARCHAR(36) PRIMARY KEY,
-       user_id      VARCHAR(36) NOT NULL ,
-       created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
-       CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+                       id           VARCHAR(36) PRIMARY KEY,
+                       user_id      VARCHAR(36) NOT NULL ,
+                       created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+                       CONSTRAINT fk_carts_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- 장바구니 아이템
 CREATE TABLE cart_items (
-        id         VARCHAR(36) PRIMARY KEY,
-        cart_id    VARCHAR(36) NOT NULL,
-        product_id VARCHAR(36) NOT NULL,
-        quantity   INT UNSIGNED NOT NULL,
-        added_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
-        CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
-        CONSTRAINT fk_cart_items_product FOREIGN KEY (product_id) REFERENCES products(id)
+                            id         VARCHAR(36) PRIMARY KEY,
+                            cart_id    VARCHAR(36) NOT NULL,
+                            product_id VARCHAR(36) NOT NULL,
+                            quantity   INT UNSIGNED NOT NULL,
+                            added_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
+                            CONSTRAINT fk_cart_items_cart FOREIGN KEY (cart_id) REFERENCES carts(id) ON DELETE CASCADE,
+                            CONSTRAINT fk_cart_items_product FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 
 CREATE TABLE orders_compare_llm (
-    id VARCHAR(36) PRIMARY KEY ,
-    buyer_id VARCHAR(36) NOT NULL ,
-    order_id VARCHAR(36) NOT NULL ,
-    category ENUM('dog', 'cat'),
-    contents TEXT NOT NULL ,
-    CONSTRAINT fk_products_compare_llm_order_id FOREIGN KEY (order_id) REFERENCES orders(id)
+                                    id VARCHAR(36) PRIMARY KEY ,
+                                    buyer_id VARCHAR(36) NOT NULL ,
+                                    order_id VARCHAR(36) NOT NULL ,
+                                    category ENUM('dog', 'cat'),
+                                    contents TEXT NOT NULL ,
+                                    CONSTRAINT fk_products_compare_llm_order_id FOREIGN KEY (order_id) REFERENCES orders(id)
 );
 
 -- 주문 상세 페이지에 사용되는것!
 CREATE TABLE order_items (
-         id VARCHAR(36) PRIMARY KEY,
-         order_id BIGINT NOT NULL, -- 주문 번호는 유저에게 보이기 때문에 숫자로
-         product_id VARCHAR(36) NOT NULL,
-         quantity INT UNSIGNED NOT NULL,
-         price BIGINT NOT NULL,  -- 주문 시점 상품 가격 저장 (변경 대비)
-         CONSTRAINT fk_order_items_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-         CONSTRAINT fk_order_items_product_id FOREIGN KEY (product_id) REFERENCES products(id)
+                             id VARCHAR(36) PRIMARY KEY,
+                             order_id BIGINT NOT NULL, -- 주문 번호는 유저에게 보이기 때문에 숫자로
+                             product_id VARCHAR(36) NOT NULL,
+                             quantity INT UNSIGNED NOT NULL,
+                             price BIGINT NOT NULL,  -- 주문 시점 상품 가격 저장 (변경 대비)
+                             CONSTRAINT fk_order_items_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+                             CONSTRAINT fk_order_items_product_id FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
 CREATE TABLE payments (
@@ -249,14 +251,14 @@ CREATE TABLE payments (
 );
 
 CREATE TABLE refunds (
-         id VARCHAR(36) PRIMARY KEY,
-         payment_id VARCHAR(36) NOT NULL,
-         order_issue_id VARCHAR(36) NULL, -- 추가
-         buyer_id VARCHAR(36) NOT NULL ,
-         reason TEXT,
-         refunded_at DATETIME,
-         CONSTRAINT fk_refunds_payment_id FOREIGN KEY (payment_id) REFERENCES payments(id),
-         CONSTRAINT fk_refunds_order_issue FOREIGN KEY (order_issue_id) REFERENCES order_issues(id) ON DELETE SET NULL
+                         id VARCHAR(36) PRIMARY KEY,
+                         payment_id VARCHAR(36) NOT NULL,
+                         order_issue_id VARCHAR(36) NULL, -- 추가
+                         buyer_id VARCHAR(36) NOT NULL ,
+                         reason TEXT,
+                         refunded_at DATETIME,
+                         CONSTRAINT fk_refunds_payment_id FOREIGN KEY (payment_id) REFERENCES payments(id),
+                         CONSTRAINT fk_refunds_order_issue FOREIGN KEY (order_issue_id) REFERENCES order_issues(id) ON DELETE SET NULL
 );
 
 CREATE TABLE coupons (
@@ -348,20 +350,20 @@ CREATE TABLE shipments (
 
 -- 정산 테이블이고 이 테이블은 좀 더 고민해봐야함 사유 : 정산 로직을 정하지 않았기 때문
 CREATE TABLE settlements (
-                 id VARCHAR(36) PRIMARY KEY,
-                 seller_id VARCHAR(36) NOT NULL,
-                 order_item_id VARCHAR(36) NOT NULL,  -- 어떤 상품 주문인지
-                 item_price BIGINT NOT NULL,          -- 실제 판매가
-                 commission_rate DECIMAL(5,2) NOT NULL, -- 예: 10.00 (%)
-                 commission_amount BIGINT NOT NULL,   -- 수수료 금액 (계산된 값)
-                 settlement_amount BIGINT NOT NULL,   -- 정산 금액 (item_price - commission_amount)
-                 settlement_status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED') DEFAULT 'PENDING',
-                 settled_at DATETIME,
-                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                             id VARCHAR(36) PRIMARY KEY,
+                             seller_id VARCHAR(36) NOT NULL,
+                             order_item_id VARCHAR(36) NOT NULL,  -- 어떤 상품 주문인지
+                             item_price BIGINT NOT NULL,          -- 실제 판매가
+                             commission_rate DECIMAL(5,2) NOT NULL, -- 예: 10.00 (%)
+                             commission_amount BIGINT NOT NULL,   -- 수수료 금액 (계산된 값)
+                             settlement_amount BIGINT NOT NULL,   -- 정산 금액 (item_price - commission_amount)
+                             settlement_status ENUM('PENDING', 'IN_PROGRESS', 'COMPLETED') DEFAULT 'PENDING',
+                             settled_at DATETIME,
+                             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                             updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-                 CONSTRAINT fk_settlements_seller FOREIGN KEY (seller_id) REFERENCES sellers(user_id),
-                 CONSTRAINT fk_settlements_order_item FOREIGN KEY (order_item_id) REFERENCES order_items(id)
+                             CONSTRAINT fk_settlements_seller FOREIGN KEY (seller_id) REFERENCES sellers(user_id),
+                             CONSTRAINT fk_settlements_order_item FOREIGN KEY (order_item_id) REFERENCES order_items(id)
 );
 
 
@@ -435,53 +437,59 @@ CREATE TABLE reports (
 
 -- 관리자 페이지는 내부망으로 외부 접근 차단 따라서 어드민 테이블은 따로둠
 CREATE TABLE admins (
-    id VARCHAR(36) PRIMARY KEY ,
-    role ENUM('ROLE_ADMIN'),
-    email VARCHAR(50) NOT NULL ,
-    password VARCHAR(255) NOT NULL ,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        id VARCHAR(36) PRIMARY KEY ,
+                        role ENUM('ROLE_ADMIN'),
+                        email VARCHAR(50) NOT NULL ,
+                        password VARCHAR(255) NOT NULL ,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 
 CREATE TABLE notices (
-     id VARCHAR(36) PRIMARY KEY,
-     title VARCHAR(255) NOT NULL,
-     content TEXT NOT NULL,
-     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                         id VARCHAR(36) PRIMARY KEY,
+                         title VARCHAR(255) NOT NULL,
+                         content TEXT NOT NULL,
+                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE faqs (
-  id VARCHAR(36) PRIMARY KEY,
-  question VARCHAR(255) NOT NULL,
-  answer TEXT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                      id VARCHAR(36) PRIMARY KEY,
+                      question VARCHAR(255) NOT NULL,
+                      answer TEXT NOT NULL,
+                      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 CREATE TABLE inquiries (
-   id VARCHAR(36) PRIMARY KEY,
-   user_id VARCHAR(36) NOT NULL,
-   parent_id VARCHAR(36) NULL,
-   admin_id VARCHAR(36) NULL,
-   title VARCHAR(255) NULL,
-   content TEXT NOT NULL,
-   status ENUM('pending', 'answered') NOT NULL DEFAULT 'pending',
-   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-   FOREIGN KEY (user_id) REFERENCES users(id),
-   FOREIGN KEY (parent_id) REFERENCES inquiries(id) ON DELETE SET NULL,
-   FOREIGN KEY (admin_id) REFERENCES admins(id)
+                           id VARCHAR(36) PRIMARY KEY,
+                           user_id VARCHAR(36) NOT NULL,
+                           parent_id VARCHAR(36) NULL,
+                           admin_id VARCHAR(36) NULL,
+                           title VARCHAR(255) NULL,
+                           content TEXT NOT NULL,
+                           status ENUM('pending', 'answered') NOT NULL DEFAULT 'pending',
+                           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                           FOREIGN KEY (user_id) REFERENCES users(id),
+                           FOREIGN KEY (parent_id) REFERENCES inquiries(id) ON DELETE SET NULL,
+                           FOREIGN KEY (admin_id) REFERENCES admins(id)
 );
 
 CREATE TABLE files (
-    id VARCHAR(36) PRIMARY KEY ,
-    file_url VARCHAR(255) NOT NULL
+                       id VARCHAR(36) PRIMARY KEY ,
+                       file_url VARCHAR(255) NOT NULL
 );
 
 CREATE TABLE inquiry_files (
-    id VARCHAR(36) PRIMARY KEY,
-    inquiry_id VARCHAR(36) NOT NULL ,
-    CONSTRAINT fk_inquiry_files_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries(id)
+                               id VARCHAR(36) PRIMARY KEY,
+                               inquiry_id VARCHAR(36) NOT NULL ,
+                               CONSTRAINT fk_inquiry_files_inquiry_id FOREIGN KEY (inquiry_id) REFERENCES inquiries(id)
+);
+
+CREATE TABLE notice_files (
+                              id VARCHAR(36) PRIMARY KEY ,
+                              notice_id VARCHAR(36) NOT NULL ,
+                              CONSTRAINT fk_notice_files_notice_id FOREIGN KEY (notice_id) REFERENCES notices(id)
 );

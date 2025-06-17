@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+      as="style"
+      href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+      onload="this.rel='stylesheet'"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+      rel="stylesheet"
+    />
+    <title>CatDogEats Admin</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+      body {
+        font-family: "Noto Sans KR", "Work Sans", sans-serif;
+        background-color: #faf8f5;
+      }
+      .primary-bg {
+        background-color: #f5a623;
+      }
+      .primary-text {
+        color: #f5a623;
+      }
+      .secondary-text {
+        color: #a5d6a7;
+      }
+      .accent-text {
+        color: #7d6e63;
+      }
+      .secondary-bg {
+        background-color: #e8f5e9;
+      }
+      .active-tab {
+        border-left-width: 4px;
+        border-color: #f5a623;
+        background-color: #fff9f0;
+        color: #f5a623;
+        font-weight: 700;
+      }
+      .inactive-tab {
+        border-left-width: 4px;
+        border-color: transparent;
+        color: #7d6e63;
+        font-weight: 500;
+        transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+      }
+      .inactive-tab:hover {
+        background-color: #fdfbf8;
+        color: #e69500;
+      }
+      .page-title {
+        color: #7d6e63;
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+      }
+      .page-subtitle {
+        color: #a89a91;
+        font-size: 1rem;
+      }
+      .sidebar {
+        background-color: #fffdfb;
+        border-right: 1px solid #f0ebe5;
+      }
+      .sidebar-link-icon {
+        color: #bcaaa4;
+      }
+      .sidebar-link-text {
+        color: #7d6e63;
+      }
+      .active-tab .sidebar-link-icon,
+      .active-tab .sidebar-link-text {
+        color: #f5a623;
+      }
+      .inactive-tab:hover .sidebar-link-icon,
+      .inactive-tab:hover .sidebar-link-text {
+        color: #e69500;
+      }
+      .stat-card {
+        background-color: white;
+        border: 1px solid #f0ebe5;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s ease-in-out;
+      }
+      .stat-card:hover {
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .stat-card-highlight {
+        background-color: #fff9f0;
+        border-color: #f5a623;
+      }
+      .chart-card {
+        background-color: white;
+        border: 1px solid #f0ebe5;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+      .growth-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #16a085;
+        font-weight: 500;
+      }
+      .chart-bar {
+        background-color: #f5a623;
+        border-radius: 0.25rem 0.25rem 0 0;
+        transition: background-color 0.2s ease-in-out;
+      }
+      .chart-bar.current {
+        background-color: #e69500;
+      }
+      .chart-bar.muted {
+        background-color: #fdd5a3;
+      }
+    </style>
+  </head>
+  <body class="bg-FAF8F5">
+    <div
+      class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+    >
+      <aside
+        class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+      >
+        <div class="flex items-center gap-3 px-3 mb-6">
+          <div class="size-8 text-orange-500">
+            <svg
+              fill="none"
+              viewBox="0 0 48 48"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                fill="#F5A623"
+              ></path>
+              <path
+                d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                fill="white"
+              ></path>
+            </svg>
+          </div>
+          <h2
+            class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+          >
+            CatDogEats <br />관리자 페이지
+          </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+          <a
+            class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >dashboard</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >report_problem</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >campaign</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >공지사항 관리</span
+            >
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >quiz</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+          </a>
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >support_agent</span
+            >
+            <span class="sidebar-link-text text-sm font-medium"
+              >1:1 문의 관리</span
+            >
+          </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+          <a
+            class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+            href="#"
+          >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+              >settings</span
+            >
+            <span class="sidebar-link-text text-sm font-medium">설정</span>
+          </a>
+        </div>
+      </aside>
+      <div class="layout-container flex h-full grow flex-col">
+        <header
+          class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+          <div class="flex items-center"></div>
+          <div class="flex flex-1 justify-end gap-6 items-center">
+            <span class="text-sm accent-text">admin@catdogeats.com</span>
+            <div
+              class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200"
+              style="
+                background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBntqFRVigLCo6ehVPth_V8zN4jp2n7z3g5ST5ma8p4lCvbt0vlw0qD-c1aP-hWz6us6lXIgBmiw4wQbJho3t_XD6kPIW0ySAqBKKiFa_KL2O5KoYLaW8AwULGp1eQk72U-EGm7G2cD8ovTLUtYCJfGKb5L8jQixuExWreqbunZ3LQea4Hli3nJ5F9ZzDZ_csur2Tg2uuvPQOzN3eXtdqNY185Vdf02otSCwJbVJddXgBf5mVNfJ7Strvcw0Mt3AwIWFbu__yVjRwc');
+              "
+            ></div>
+          </div>
+        </header>
+        <main
+          class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+          <div class="flex flex-col w-full max-w-7xl mx-auto">
+            <div class="mb-8">
+              <h1 class="page-title">대시보드</h1>
+              <p class="page-subtitle">
+                CatDogEats의 주요 지표와 현황을 한눈에 확인하세요.
+              </p>
+            </div>
+
+            <!-- 통계 카드 -->
+            <div
+              class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4"
+            >
+              <div class="stat-card">
+                <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl accent-text"
+                    >group</span
+                  >
+                  <p class="accent-text text-sm font-medium">총 회원 수</p>
+                </div>
+                <p class="text-slate-900 text-3xl font-bold">1,234</p>
+              </div>
+
+              <div class="stat-card">
+                <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl accent-text"
+                    >person_add</span
+                  >
+                  <p class="accent-text text-sm font-medium">월간 신규 회원</p>
+                </div>
+                <p class="text-slate-900 text-3xl font-bold">123</p>
+              </div>
+
+              <div class="stat-card">
+                <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl accent-text"
+                    >attach_money</span
+                  >
+                  <p class="accent-text text-sm font-medium">이번 달 수익</p>
+                </div>
+                <p class="text-slate-900 text-3xl font-bold">₩45,678,000</p>
+              </div>
+
+              <div class="stat-card stat-card-highlight">
+                <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl primary-text"
+                    >report_problem</span
+                  >
+                  <p class="primary-text text-sm font-medium">
+                    처리 대기 중인 신고
+                  </p>
+                </div>
+                <p class="primary-text text-3xl font-bold">5</p>
+              </div>
+            </div>
+
+            <!-- 차트 섹션 -->
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              <!-- 월간 신규 회원 차트 -->
+              <div class="chart-card">
+                <div class="flex items-center justify-between mb-6">
+                  <h3 class="accent-text text-lg font-semibold">
+                    월간 신규 회원 수
+                  </h3>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm text-slate-500">이번 달</span>
+                    <div class="growth-indicator">
+                      <span class="material-icons-outlined text-sm"
+                        >trending_up</span
+                      >
+                      <span class="text-sm">+10%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="h-64">
+                  <div
+                    class="grid h-full grid-flow-col gap-4 grid-rows-[1fr_auto] items-end justify-items-center px-3 pt-4"
+                  >
+                    <div
+                      class="chart-bar muted w-full"
+                      style="height: 70%"
+                    ></div>
+                    <p class="text-slate-500 text-xs font-medium">1월</p>
+                    <div
+                      class="chart-bar muted w-full"
+                      style="height: 80%"
+                    ></div>
+                    <p class="text-slate-500 text-xs font-medium">2월</p>
+                    <div
+                      class="chart-bar muted w-full"
+                      style="height: 50%"
+                    ></div>
+                    <p class="text-slate-500 text-xs font-medium">3월</p>
+                    <div
+                      class="chart-bar muted w-full"
+                      style="height: 60%"
+                    ></div>
+                    <p class="text-slate-500 text-xs font-medium">4월</p>
+                    <div
+                      class="chart-bar muted w-full"
+                      style="height: 90%"
+                    ></div>
+                    <p class="text-slate-500 text-xs font-medium">5월</p>
+                    <div
+                      class="chart-bar current w-full"
+                      style="height: 85%"
+                    ></div>
+                    <p class="text-slate-900 text-xs font-bold">6월</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 연간 수익 차트 -->
+              <div class="chart-card">
+                <div class="flex items-center justify-between mb-6">
+                  <h3 class="accent-text text-lg font-semibold">연간 수익</h3>
+                  <div class="flex items-center gap-2">
+                    <span class="text-sm text-slate-500">올해</span>
+                    <div class="growth-indicator">
+                      <span class="material-icons-outlined text-sm"
+                        >trending_up</span
+                      >
+                      <span class="text-sm">+5%</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="h-64">
+                  <svg
+                    fill="none"
+                    height="100%"
+                    preserveAspectRatio="none"
+                    viewBox="-3 0 478 150"
+                    width="100%"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25V149H326.769H0V109Z"
+                      fill="url(#paint0_linear_annual_revenue)"
+                    ></path>
+                    <path
+                      d="M0 109C18.1538 109 18.1538 21 36.3077 21C54.4615 21 54.4615 41 72.6154 41C90.7692 41 90.7692 93 108.923 93C127.077 93 127.077 33 145.231 33C163.385 33 163.385 101 181.538 101C199.692 101 199.692 61 217.846 61C236 61 236 45 254.154 45C272.308 45 272.308 121 290.462 121C308.615 121 308.615 149 326.769 149C344.923 149 344.923 1 363.077 1C381.231 1 381.231 81 399.385 81C417.538 81 417.538 129 435.692 129C453.846 129 453.846 25 472 25"
+                      stroke="#f5a623"
+                      stroke-linecap="round"
+                      stroke-width="3"
+                    ></path>
+                    <defs>
+                      <linearGradient
+                        gradientUnits="userSpaceOnUse"
+                        id="paint0_linear_annual_revenue"
+                        x1="236"
+                        x2="236"
+                        y1="1"
+                        y2="149"
+                      >
+                        <stop stop-color="#f5a623" stop-opacity="0.3"></stop>
+                        <stop
+                          offset="1"
+                          stop-color="#f5a623"
+                          stop-opacity="0"
+                        ></stop>
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div class="flex justify-around mt-2">
+                    <p class="text-slate-500 text-xs font-medium">2020년</p>
+                    <p class="text-slate-500 text-xs font-medium">2021년</p>
+                    <p class="text-slate-500 text-xs font-medium">2022년</p>
+                    <p class="text-slate-500 text-xs font-medium">2023년</p>
+                    <p class="text-slate-900 text-xs font-bold">2024년</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

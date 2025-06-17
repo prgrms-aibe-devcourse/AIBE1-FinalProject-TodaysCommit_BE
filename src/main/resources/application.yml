@@ -6,3 +6,8 @@ spring:
   springdoc:
     swagger-ui:
       path: /swagger-ui.html
+  thymeleaf:
+    view-names: thymeleaf/*
+  web:
+    resources:
+      static-locations: classpath:/static/
