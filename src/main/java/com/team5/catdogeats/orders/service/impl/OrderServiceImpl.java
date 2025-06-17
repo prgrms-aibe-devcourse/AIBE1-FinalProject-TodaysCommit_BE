@@ -7,8 +7,6 @@ import com.team5.catdogeats.orders.domain.dto.request.OrderCreateRequest;
 import com.team5.catdogeats.orders.domain.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.orders.repository.OrderRepository;
 import com.team5.catdogeats.orders.service.OrderService;
-import com.team5.catdogeats.products.domain.Products;
-import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +25,8 @@ import java.util.UUID;
  * 주문 관리 서비스 구현체
  *
  * 주문 생성 및 관리를 위한 핵심 비즈니스 로직을 처리합니다.
+ *
+ * TODO: Products 도메인 완성 후 실제 상품 검증 로직 추가 예정
  */
 @Slf4j
 @Service
@@ -36,7 +36,8 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    private final ProductRepository productRepository;
+    // TODO: Products 도메인 완성 후 추가 예정
+    // private final ProductRepository productRepository;
 
     // 토스 페이먼츠 설정값들 (application-dev.yml에서 주입)
     @Value("${toss.payments.client-key}")
@@ -99,21 +100,29 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 주문 상품들 검증 및 정보 수집
+     * TODO: Products 도메인 완성 후 실제 상품 검증 로직으로 교체
      */
     private List<OrderItemInfo> validateAndCollectOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
         for (OrderCreateRequest.OrderItemRequest item : orderItems) {
-            // 상품 존재 여부 확인
+            // TODO: 실제 상품 검증 로직 (Products 도메인 완성 후 활성화)
+            /*
             Products product = productRepository.findById(UUID.fromString(item.getProductId()))
-                    .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + item.getProductId()));
+                .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + item.getProductId()));
+            */
 
-            // 재고 확인 (TODO: 실제 재고 로직 구현 필요)
+            // 임시 Mock 상품 정보 (개발 완료 전까지 사용)
+            MockProduct mockProduct = createMockProduct(item.getProductId());
+
+            // 기본 수량 검증
             if (item.getQuantity() <= 0) {
                 throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다.");
             }
 
-            orderItemInfos.add(OrderItemInfo.of(product, item.getQuantity()));
+            // TODO: 실제 재고 확인 로직 추가 필요
+
+            orderItemInfos.add(OrderItemInfo.of(mockProduct, item.getQuantity()));
         }
 
         return orderItemInfos;
@@ -124,7 +133,7 @@ public class OrderServiceImpl implements OrderService {
      */
     private Long calculateTotalPrice(List<OrderItemInfo> orderItemInfos) {
         return orderItemInfos.stream()
-                .mapToLong(info -> info.getProduct().getPrice() * info.getQuantity())
+                .mapToLong(info -> info.getMockProduct().getPrice() * info.getQuantity())  // Mock 상품 사용
                 .sum();
     }
 
@@ -147,6 +156,7 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 주문 아이템들 생성 및 저장
+     * TODO: Products 도메인 완성 후 실제 Products 엔티티 사용
      */
     private List<OrderItems> createAndSaveOrderItems(Orders order, List<OrderItemInfo> orderItemInfos) {
         List<OrderItems> orderItems = new ArrayList<>();
@@ -154,9 +164,10 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItemInfo info : orderItemInfos) {
             OrderItems orderItem = OrderItems.builder()
                     .orders(order)
-                    .products(info.getProduct())
+                    // .products(info.getProduct())  // TODO: Products 도메인 완성 후 활성화
+                    .products(null)  // 임시로 null (실제로는 Products 엔티티 필요)
                     .quantity(info.getQuantity())
-                    .price(info.getProduct().getPrice()) // 주문 시점 가격 저장
+                    .price(info.getMockProduct().getPrice()) // Mock 상품 가격 사용
                     .build();
 
             orderItems.add(orderItem);
@@ -164,6 +175,7 @@ public class OrderServiceImpl implements OrderService {
 
         // TODO: OrderItems Repository를 통한 저장 (현재는 예시)
         // return orderItemRepository.saveAll(orderItems);
+        log.warn("⚠️  OrderItems 저장은 실제 OrderItemRepository 구현 후 활성화 예정");
         return orderItems; // 임시 반환
     }
 
@@ -194,17 +206,22 @@ public class OrderServiceImpl implements OrderService {
     private OrderCreateResponse buildOrderCreateResponse(
             Orders order, List<OrderItems> orderItems, OrderCreateResponse.TossPaymentInfo tossPaymentInfo) {
 
-        // 주문 아이템 응답 목록 생성
-        List<OrderCreateResponse.OrderItemResponse> orderItemResponses = orderItems.stream()
-                .map(item -> OrderCreateResponse.OrderItemResponse.builder()
-                        .orderItemId(item.getId().toString())
-                        .productId(item.getProducts().getId().toString())
-                        .productName(item.getProducts().getName())
-                        .quantity(item.getQuantity())
-                        .unitPrice(item.getPrice())
-                        .totalPrice(item.getPrice() * item.getQuantity())
-                        .build())
-                .toList();
+        // 주문 아이템 응답 목록 생성 (임시 Mock 데이터 사용)
+        List<OrderCreateResponse.OrderItemResponse> orderItemResponses = new ArrayList<>();
+
+        for (int i = 0; i < orderItems.size(); i++) {
+            OrderItems item = orderItems.get(i);
+
+            // TODO: 실제 Products 엔티티 정보 사용 (Products 도메인 완성 후)
+            orderItemResponses.add(OrderCreateResponse.OrderItemResponse.builder()
+                    .orderItemId(item.getId() != null ? item.getId().toString() : "temp-" + i) // 임시 ID
+                    .productId("mock-product-" + i) // 임시 상품 ID
+                    .productName("임시 상품 " + (i + 1)) // 임시 상품명
+                    .quantity(item.getQuantity())
+                    .unitPrice(item.getPrice())
+                    .totalPrice(item.getPrice() * item.getQuantity())
+                    .build());
+        }
 
         return OrderCreateResponse.builder()
                 .orderId(order.getId().toString())
@@ -218,22 +235,56 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 아이템 정보를 담는 내부 클래스
+     * 임시 Mock 상품 생성 (Products 도메인 완성 전까지 사용)
+     * TODO: Products 도메인 완성 후 제거
+     */
+    private MockProduct createMockProduct(String productId) {
+        // 상품 ID에 따라 다른 Mock 데이터 생성
+        String productName = "임시 상품 " + productId.substring(0, 8);
+        Long price = 10000L + (productId.hashCode() % 50000); // 10,000원 ~ 60,000원 랜덤
+
+        return new MockProduct(productId, productName, price);
+    }
+
+    /**
+     * 임시 Mock 상품 클래스 (Products 엔티티 대체용)
+     * TODO: Products 도메인 완성 후 제거
+     */
+    private static class MockProduct {
+        private final String id;
+        private final String name;
+        private final Long price;
+
+        public MockProduct(String id, String name, Long price) {
+            this.id = id;
+            this.name = name;
+            this.price = price;
+        }
+
+        public String getId() { return id; }
+        public String getName() { return name; }
+        public Long getPrice() { return price; }
+    }
+
+    /**
+     * 주문 아이템 정보를 담는 내부 클래스 (수정됨)
      */
     private static class OrderItemInfo {
-        private final Products product;
+        // private final Products product;  // TODO: Products 도메인 완성 후 활성화
+        private final MockProduct mockProduct;  // 임시 Mock 상품 사용
         private final Integer quantity;
 
-        private OrderItemInfo(Products product, Integer quantity) {
-            this.product = product;
+        private OrderItemInfo(MockProduct mockProduct, Integer quantity) {
+            this.mockProduct = mockProduct;
             this.quantity = quantity;
         }
 
-        public static OrderItemInfo of(Products product, Integer quantity) {
-            return new OrderItemInfo(product, quantity);
+        public static OrderItemInfo of(MockProduct mockProduct, Integer quantity) {
+            return new OrderItemInfo(mockProduct, quantity);
         }
 
-        public Products getProduct() { return product; }
+        // public Products getProduct() { return product; }  // TODO: 나중에 활성화
+        public MockProduct getMockProduct() { return mockProduct; }
         public Integer getQuantity() { return quantity; }
     }
 }
