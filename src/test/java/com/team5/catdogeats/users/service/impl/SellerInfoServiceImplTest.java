@@ -23,7 +23,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any; // ✅ 올바른 import
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -85,9 +85,10 @@ class SellerInfoServiceTest {
                 .accountDisable(false)
                 .build();
 
-        // 테스트 판매자 정보 - userId 자동 설정됨
+        // 테스트 판매자 정보 - userId 명시적 설정
         testSeller = Sellers.builder()
-                .user(testSellerUser)  // Users 설정하면 userId는 @MapsId로 자동 설정
+                .userId(testUserId)  //
+                .user(testSellerUser)
                 .vendorName("펫푸드 공방")
                 .vendorProfileImage("https://example.com/logo.jpg")
                 .businessNumber("123-45-67890")
@@ -96,9 +97,10 @@ class SellerInfoServiceTest {
                 .tags("수제간식")
                 .build();
 
-        // 다른 판매자 정보 (중복 테스트용) - ✅ Users 객체 포함
+        //  다른 판매자 정보 - userId 명시적 설정
         otherSeller = Sellers.builder()
-                .user(otherSellerUser)  // Users 설정하면 userId는 @MapsId로 자동 설정
+                .userId(otherUserId)  // 직접 설정
+                .user(otherSellerUser)
                 .vendorName("다른 공방")
                 .businessNumber("123-45-67890") // 같은 사업자번호
                 .build();
@@ -116,7 +118,7 @@ class SellerInfoServiceTest {
     // ===== 권한 검증 포함 메서드 테스트 =====
 
     @Test
-    @DisplayName("판매자 정보 조회 성공 (권한 검증 포함)")
+    @DisplayName("판매자 정보 조회 성공")
     void getSellerInfo_Success() {
         // given
         given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
@@ -156,87 +158,8 @@ class SellerInfoServiceTest {
                 .hasMessage("판매자 권한이 필요합니다.");
     }
 
-    // ===== 권한 검증 없는 메서드 테스트 =====
-
-    @Test
-    @DisplayName("판매자 정보 조회 성공 (권한 검증 없음)")
-    void getSellerInfoWithoutAuth_Success() {
-        // given
-        given(userRepository.existsById(testUserId)).willReturn(true);
-        given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller));
-
-        // when
-        SellerInfoResponse result = sellerInfoService.getSellerInfoWithoutAuth(testUserId);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getVendorName()).isEqualTo("펫푸드 공방");
-        assertThat(result.getBusinessNumber()).isEqualTo("123-45-67890");
-    }
-
-    @Test
-    @DisplayName("판매자 정보 조회 - 정보 없음 (권한 검증 없음)")
-    void getSellerInfoWithoutAuth_NotFound() {
-        // given
-        given(userRepository.existsById(testUserId)).willReturn(true);
-        given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
-
-        // when
-        SellerInfoResponse result = sellerInfoService.getSellerInfoWithoutAuth(testUserId);
-
-        // then
-        assertThat(result).isNull();
-    }
-
-    @Test
-    @DisplayName("판매자 정보 조회 실패 - 사용자 없음 (권한 검증 없음)")
-    void getSellerInfoWithoutAuth_UserNotFound() {
-        // given
-        given(userRepository.existsById(testUserId)).willReturn(false);
-
-        // when & then
-        assertThatThrownBy(() -> sellerInfoService.getSellerInfoWithoutAuth(testUserId))
-                .isInstanceOf(UserNotFoundException.class)
-                .hasMessage("존재하지 않는 사용자입니다.");
-    }
 
     // ===== 등록/수정 테스트 =====
-
-    @Test
-    @DisplayName("판매자 정보 등록 성공 (권한 검증 없음)")
-    void upsertSellerInfoWithoutAuth_Create_Success() {
-        // given
-        given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
-        given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty()); // 기존 정보 없음
-        given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.empty()); // 중복 없음
-        given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller); // ✅ 올바른 any() 사용
-
-        // when
-        SellerInfoResponse result = sellerInfoService.upsertSellerInfoWithoutAuth(testUserId, testRequest);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getVendorName()).isEqualTo("펫푸드 공방");
-        verify(sellersRepository).save(any(Sellers.class)); // ✅ 올바른 any() 사용
-    }
-
-    @Test
-    @DisplayName("판매자 정보 수정 성공 (권한 검증 없음)")
-    void upsertSellerInfoWithoutAuth_Update_Success() {
-        // given
-        given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
-        given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller)); // 기존 정보 있음
-        given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(testSeller)); // 본인 것
-        given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
-
-        // when
-        SellerInfoResponse result = sellerInfoService.upsertSellerInfoWithoutAuth(testUserId, testRequest);
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getVendorName()).isEqualTo("펫푸드 공방");
-        verify(sellersRepository).save(any(Sellers.class));
-    }
 
     @Test
     @DisplayName("판매자 정보 등록 실패 - 사업자번호 중복")
@@ -246,7 +169,7 @@ class SellerInfoServiceTest {
         given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(otherSeller)); // 다른 사람이 사용중
 
         // when & then
-        assertThatThrownBy(() -> sellerInfoService.upsertSellerInfoWithoutAuth(testUserId, testRequest))
+        assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
                 .isInstanceOf(BusinessNumberDuplicateException.class)
                 .hasMessage("이미 등록된 사업자 등록번호입니다.");
     }
@@ -258,7 +181,7 @@ class SellerInfoServiceTest {
         given(userRepository.findById(testUserId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> sellerInfoService.upsertSellerInfoWithoutAuth(testUserId, testRequest))
+        assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessage("존재하지 않는 사용자입니다.");
     }

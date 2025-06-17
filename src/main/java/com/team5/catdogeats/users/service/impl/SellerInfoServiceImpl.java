@@ -30,7 +30,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
     @Override
     public SellerInfoResponse getSellerInfo(UUID userId) {
-        log.info("판매자 정보 조회 (권한 검증 포함) - userId: {}", userId);
+        log.info("판매자 정보 조회 - userId: {}", userId);
 
         // 사용자 존재 여부 및 판매자 권한 확인
         validateSellerUser(userId);
@@ -38,22 +38,11 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return getSellerInfoInternal(userId);
     }
 
-    @Override
-    public SellerInfoResponse getSellerInfoWithoutAuth(UUID userId) {
-        log.info("판매자 정보 조회 (권한 검증 없음) - userId: {}", userId);
-
-        // 사용자 존재 여부만 확인 (권한 확인 안함)
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("존재하지 않는 사용자입니다.");
-        }
-
-        return getSellerInfoInternal(userId);
-    }
 
     @Override
     @Transactional
     public SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request) {
-        log.info("판매자 정보 등록/수정 (권한 검증 포함) - userId: {}, vendorName: {}", userId, request.getVendorName());
+        log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.getVendorName());
 
         // 사용자 존재 여부 및 판매자 권한 확인
         Users user = validateSellerUser(userId);
@@ -61,20 +50,10 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return upsertSellerInfoInternal(user, userId, request);
     }
 
-    @Override
-    @Transactional
-    public SellerInfoResponse upsertSellerInfoWithoutAuth(UUID userId, SellerInfoRequest request) {
-        log.info("판매자 정보 등록/수정 (권한 검증 없음) - userId: {}, vendorName: {}", userId, request.getVendorName());
 
-        // 사용자 존재 여부만 확인 (권한 확인 안함)
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
-
-        return upsertSellerInfoInternal(user, userId, request);
-    }
 
     /**
-     * 판매자 정보 조회 공통 로직 (권한 검증 분리)
+     * 판매자 정보 조회 로직 (권한 검증 분리)
      */
     private SellerInfoResponse getSellerInfoInternal(UUID userId) {
         Optional<Sellers> sellerOpt = sellersRepository.findByUserId(userId);
@@ -88,7 +67,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     }
 
     /**
-     * 판매자 정보 등록/수정 공통 로직 (권한 검증 분리)
+     * 판매자 정보 등록/수정 로직
      */
     private SellerInfoResponse upsertSellerInfoInternal(Users user, UUID userId, SellerInfoRequest request) {
         // 사업자 등록번호 중복 체크

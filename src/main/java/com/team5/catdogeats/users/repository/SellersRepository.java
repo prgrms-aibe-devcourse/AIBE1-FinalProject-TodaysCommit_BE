@@ -20,8 +20,5 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
      */
     Optional<Sellers> findByBusinessNumber(String businessNumber);
 
-    /**
-     * 사용자 ID로 판매자 정보 존재 여부 확인
-     */
-    boolean existsByUserId(UUID userId);
+
 }
