@@ -1,5 +1,7 @@
 package com.team5.catdogeats.global.config;
 
+import com.team5.catdogeats.auth.handler.OAuth2AuthenticationSuccessHandler;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,7 +19,10 @@ import org.springframework.security.web.SecurityFilterChain;
         prePostEnabled = true
 )
 @Slf4j
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
 
     @Bean
     @Order(value = 1)
@@ -70,7 +75,13 @@ public class SecurityConfig {
                             .requestMatchers("/v1/users/**").hasAnyRole("BUYER", "SELLER")
                             .requestMatchers("/v1/sellers/**").hasRole("SELLER")
                             .requestMatchers("/v1/buyers/**").hasRole("BUYER")
-                            .anyRequest().authenticated());
+                            .anyRequest().authenticated())
+
+                    .oauth2Login(oauth2 -> oauth2
+                            .successHandler(oAuth2AuthenticationSuccessHandler)
+                    )
+                    .httpBasic(AbstractHttpConfigurer::disable)
+                    .formLogin(AbstractHttpConfigurer::disable);
             return http.build();
         } catch (Exception e) {
             log.error("User SecurityFilterChain 설정 중 예외 발생: ", e);
