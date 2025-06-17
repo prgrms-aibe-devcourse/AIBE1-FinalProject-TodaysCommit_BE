@@ -13,6 +13,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -25,6 +28,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
+    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService; // 추가
 
     @Bean
     @Order(value = 1)
@@ -81,6 +85,9 @@ public class SecurityConfig {
 
                     .oauth2Login(oauth2 -> oauth2
                             .successHandler(oAuth2AuthenticationSuccessHandler)
+                            .userInfoEndpoint(userInfo -> userInfo
+                                    .userService(customOAuth2UserService) // 여기에 커스텀 서비스 주입
+                            )
                     )
                     .httpBasic(AbstractHttpConfigurer::disable)
                     .formLogin(AbstractHttpConfigurer::disable)

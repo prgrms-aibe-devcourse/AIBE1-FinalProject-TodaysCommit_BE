@@ -26,11 +26,11 @@ public class CustomOAuth2UserServiceImpl implements OAuth2UserService<OAuth2User
     private final UserDuplicateService userDuplicateService;
     private final OAuthDTOFactory oAuthDTOFactory;
     private final UserFactory userFactory;
-
+    private final DefaultOAuth2UserService defaultOAuth2UserService;
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) {
         try {
-            OAuth2User oAuth2User = new DefaultOAuth2UserService().loadUser(userRequest);
+            OAuth2User oAuth2User = defaultOAuth2UserService.loadUser(userRequest);
             OAuthDTO dto = oAuthDTOFactory.create(userRequest, oAuth2User);
             validateOAuthInfo(dto);
 
