@@ -37,7 +37,9 @@ dependencies {
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'org.postgresql:postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6'
+	testRuntimeOnly 'com.h2database:h2' //repository 테스트 코드용
 
 }
 
