@@ -8,7 +8,6 @@ import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
 import com.team5.catdogeats.users.exception.UserNotFoundException;
 import com.team5.catdogeats.users.service.SellerInfoService;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,25 +30,23 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/v1/sellers")
 @RequiredArgsConstructor
-@Tag(name = "판매자 정보 관리", description = "판매자 정보 조회 및 등록/수정 API")
+@Tag(name = "판매자 정보 관리", description = "판매자 정보 조회 및 등록/수정 API (개발 단계 - JWT 구현 전)")
 public class SellerInfoController {
 
     private final SellerInfoService sellerInfoService;
 
     /**
-     * 판매자 정보 조회 (JWT 토큰에서 사용자 ID 추출)
+     * 판매자 정보 조회 (개발용 - 하드코딩된 사용자 ID 사용)
      */
     @Operation(
-            summary = "판매자 정보 조회",
-            description = "로그인한 판매자의 정보를 조회합니다. JWT 토큰에서 사용자 ID를 추출하여 해당 판매자의 정보만 조회할 수 있습니다.",
-            parameters = {
-                    @Parameter(
-                            name = "Authorization",
-                            description = "JWT 토큰 (Bearer {token})",
-                            required = true,
-                            example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    )
-            }
+            summary = "판매자 정보 조회 (개발용)",
+            description = """
+                    현재 개발 단계에서는 하드코딩된 사용자 ID를 사용합니다.
+                    
+                    **개발용 사용자 ID**: 2ceb807f-586f-4450-b470-d1ece7173749
+                    
+                    JWT 구현 완료 후에는 토큰에서 사용자 ID를 추출하여 사용합니다.
+                    """
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -95,26 +92,8 @@ public class SellerInfoController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "401",
-                    description = "인증 실패 - 유효하지 않은 토큰",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                    {
-                      "success": false,
-                      "message": "유효하지 않은 토큰입니다.",
-                      "data": null,
-                      "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
-                    }
-                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "403",
-                    description = "권한 없음 - 판매자 권한 필요",
+                    description = "권한 없음 - 하드코딩된 사용자가 판매자 권한이 없는 경우",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
@@ -124,7 +103,7 @@ public class SellerInfoController {
                       "message": "판매자 권한이 필요합니다.",
                       "data": null,
                       "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
+                      "path": "/v1/sellers/info"
                     }
                     """
                             )
@@ -132,7 +111,7 @@ public class SellerInfoController {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "404",
-                    description = "사용자를 찾을 수 없음",
+                    description = "하드코딩된 사용자를 찾을 수 없음",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
@@ -142,7 +121,7 @@ public class SellerInfoController {
                       "message": "존재하지 않는 사용자입니다.",
                       "data": null,
                       "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
+                      "path": "/v1/sellers/info"
                     }
                     """
                             )
@@ -153,13 +132,13 @@ public class SellerInfoController {
     public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo(
             HttpServletRequest request) {
 
-        // TODO: JWT 토큰에서 사용자 ID 추출하는 로직 추가
+        // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
         // String token = extractTokenFromHeader(request);
         // UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
-        // 임시로 하드코딩된 사용자 ID 사용 (개발용)
+        // 현재: 하드코딩된 사용자 ID 사용 (개발용)
         UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
-        log.info("판매자 정보 조회 요청 - tempUserId: {}", tempUserId);
+        log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
 
         try {
             SellerInfoResponse response = sellerInfoService.getSellerInfo(tempUserId);
@@ -192,19 +171,18 @@ public class SellerInfoController {
     }
 
     /**
-     * 판매자 정보 등록/수정 (JWT 토큰에서 사용자 ID 추출)
+     * 판매자 정보 등록/수정 (개발용 - 하드코딩된 사용자 ID 사용)
      */
     @Operation(
-            summary = "판매자 정보 등록/수정",
-            description = "로그인한 판매자의 정보를 등록하거나 수정합니다. 기존 정보가 있으면 수정, 없으면 신규 등록됩니다.",
-            parameters = {
-                    @Parameter(
-                            name = "Authorization",
-                            description = "JWT 토큰 (Bearer {token})",
-                            required = true,
-                            example = "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                    )
-            }
+            summary = "판매자 정보 등록/수정 (개발용)",
+            description = """
+                    현재 개발 단계에서는 하드코딩된 사용자 ID를 사용합니다.
+                    
+                    **개발용 사용자 ID**: 2ceb807f-586f-4450-b470-d1ece7173749
+                    
+                    기존 정보가 있으면 수정, 없으면 신규 등록됩니다.
+                    JWT 구현 완료 후에는 토큰에서 사용자 ID를 추출하여 사용합니다.
+                    """
     )
     @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "판매자 정보 등록/수정 요청",
@@ -268,7 +246,7 @@ public class SellerInfoController {
                       "message": "입력값 검증 실패",
                       "data": null,
                       "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info",
+                      "path": "/v1/sellers/info",
                       "errors": [
                         {
                           "field": "vendorName",
@@ -285,26 +263,8 @@ public class SellerInfoController {
                     )
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
-                    responseCode = "401",
-                    description = "인증 실패 - 유효하지 않은 토큰",
-                    content = @Content(
-                            mediaType = "application/json",
-                            examples = @ExampleObject(
-                                    value = """
-                    {
-                      "success": false,
-                      "message": "유효하지 않은 토큰입니다.",
-                      "data": null,
-                      "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
-                    }
-                    """
-                            )
-                    )
-            ),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "403",
-                    description = "권한 없음 - 판매자 권한 필요",
+                    description = "권한 없음 - 하드코딩된 사용자가 판매자 권한이 없는 경우",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
@@ -314,7 +274,7 @@ public class SellerInfoController {
                       "message": "판매자 권한이 필요합니다.",
                       "data": null,
                       "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
+                      "path": "/v1/sellers/info"
                     }
                     """
                             )
@@ -322,7 +282,7 @@ public class SellerInfoController {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "404",
-                    description = "사용자를 찾을 수 없음",
+                    description = "하드코딩된 사용자를 찾을 수 없음",
                     content = @Content(
                             mediaType = "application/json",
                             examples = @ExampleObject(
@@ -332,7 +292,7 @@ public class SellerInfoController {
                       "message": "존재하지 않는 사용자입니다.",
                       "data": null,
                       "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
+                      "path": "/v1/sellers/info"
                     }
                     """
                             )
@@ -350,7 +310,7 @@ public class SellerInfoController {
                       "message": "이미 등록된 사업자 등록번호입니다.",
                       "data": null,
                       "timestamp": "2024-01-20T15:30:00",
-                      "path": "/v1/seller/info"
+                      "path": "/v1/sellers/info"
                     }
                     """
                             )
@@ -363,13 +323,13 @@ public class SellerInfoController {
             BindingResult bindingResult,
             HttpServletRequest httpRequest) {
 
-        // TODO: JWT 토큰에서 사용자 ID 추출하는 로직 추가
+        // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
         // String token = extractTokenFromHeader(httpRequest);
         // UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
-        // 임시로 하드코딩된 사용자 ID 사용 (개발용)
+        // 현재: 하드코딩된 사용자 ID 사용 (개발용)
         UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
-        log.info("판매자 정보 등록/수정 요청 - tempUserId: {}, vendorName: {}",
+        log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
                 tempUserId, request.getVendorName());
 
         // 유효성 검증 오류 처리
@@ -415,8 +375,7 @@ public class SellerInfoController {
         }
     }
 
-
-    // TODO: JWT 구현 후 추가할 메서드들
+    // TODO: JWT 구현 후 실제 토큰 추출 로직 추가 예정
     /*
     private String extractTokenFromHeader(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
