@@ -11,15 +11,14 @@ import org.springframework.stereotype.Component;
 public class OAuthDTOFactory {
     public OAuthDTO create(OAuth2UserRequest userRequest, OAuth2User oAuth2User) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
-        String userNameAttribute = userRequest.getClientRegistration()
+        String userNameAttributeName = userRequest.getClientRegistration()
                 .getProviderDetails()
                 .getUserInfoEndpoint()
                 .getUserNameAttributeName();
 
-        Oauth2UserInfo userInfo = OAuth2UserInfoFactory.
+            Oauth2UserInfo userInfo = OAuth2UserInfoFactory.
                 getOAuth2UserInfo(registrationId, oAuth2User.getAttributes());
 
-        return new OAuthDTO(registrationId, userInfo.getId(), userInfo.getName(), userNameAttribute);
+        return new OAuthDTO(registrationId, userInfo.getId(), userInfo.getName(), userNameAttributeName);
     }
 }
-

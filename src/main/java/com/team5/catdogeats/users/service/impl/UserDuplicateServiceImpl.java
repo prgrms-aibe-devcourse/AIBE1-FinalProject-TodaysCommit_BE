@@ -1,7 +1,6 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.UserDuplicateService;
@@ -33,10 +32,6 @@ public class UserDuplicateServiceImpl implements UserDuplicateService {
                 return userRepository.save(userOpt);
 
             }
-            Buyers buyer = Buyers.builder()
-                    .user(users)
-                    .build();
-            buyerRepository.save(buyer);
             return userRepository.save(users);
         } catch (Exception e) {
             log.error("유저 정보 저장 중 오류 발생");
