@@ -6,6 +6,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -81,11 +83,23 @@ public class SecurityConfig {
                             .successHandler(oAuth2AuthenticationSuccessHandler)
                     )
                     .httpBasic(AbstractHttpConfigurer::disable)
-                    .formLogin(AbstractHttpConfigurer::disable);
+                    .formLogin(AbstractHttpConfigurer::disable)
+                    .logout(logout -> logout
+                            .logoutUrl("/logout")
+//                            .logoutSuccessHandler(customLogoutSuccessHandler)
+//                            .invalidateHttpSession(true)
+//                            .deleteCookies("JSESSIONID", "jwt_token")
+                            .permitAll()
+                    );
             return http.build();
         } catch (Exception e) {
             log.error("User SecurityFilterChain 설정 중 예외 발생: ", e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+        return authenticationConfiguration.getAuthenticationManager();
     }
 }
