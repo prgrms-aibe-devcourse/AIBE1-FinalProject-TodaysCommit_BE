@@ -4,7 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import java.time.ZonedDateTime;
+
+import java.time.LocalTime;
 
 public record SellerInfoRequest(
         @NotBlank(message = "업체명은 필수 입력 항목입니다.")
@@ -29,9 +30,9 @@ public record SellerInfoRequest(
         @Size(max = 36, message = "태그는 최대 36자까지 입력 가능합니다.")
         String tags,
 
-        ZonedDateTime operatingStartTime,
+        LocalTime operatingStartTime,
 
-        ZonedDateTime operatingEndTime,
+        LocalTime operatingEndTime,
 
         @Size(max = 20, message = "휴무일은 최대 20자까지 입력 가능합니다.")
         String closedDays

@@ -144,8 +144,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      */
     private void validateOperatingHours(SellerInfoRequest request) {
         if (request.operatingStartTime() != null && request.operatingEndTime() != null) {
-            if (request.operatingStartTime().toLocalTime()
-                    .isAfter(request.operatingEndTime().toLocalTime())) {
+            if (request.operatingStartTime().isAfter(request.operatingEndTime())) {
                 throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
             }
         }

@@ -3,8 +3,8 @@ package com.team5.catdogeats.users.dto;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import lombok.*;
 
-
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 public record SellerInfoResponse(
         String userId,
@@ -14,11 +14,11 @@ public record SellerInfoResponse(
         String settlementBank,
         String settlementAcc,
         String tags,
-        ZonedDateTime operatingStartTime,
-        ZonedDateTime operatingEndTime,
+        LocalTime operatingStartTime,
+        LocalTime operatingEndTime,
         String closedDays,
-        ZonedDateTime createdAt,
-        ZonedDateTime updatedAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
     public static SellerInfoResponse from(Sellers seller) {
         if (seller == null) {
@@ -36,8 +36,8 @@ public record SellerInfoResponse(
                 seller.getOperatingStartTime(),
                 seller.getOperatingEndTime(),
                 seller.getClosedDays(),
-                seller.getCreatedAt(),
-                seller.getUpdatedAt()
+                seller.getCreatedAt() != null ? seller.getCreatedAt().toLocalDateTime() : null,
+                seller.getUpdatedAt() != null ? seller.getUpdatedAt().toLocalDateTime() : null
         );
     }
 }

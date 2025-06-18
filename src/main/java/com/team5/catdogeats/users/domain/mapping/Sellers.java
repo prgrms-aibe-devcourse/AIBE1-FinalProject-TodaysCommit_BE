@@ -3,6 +3,7 @@ package com.team5.catdogeats.users.domain.mapping;
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.DayOfWeek;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -46,10 +47,10 @@ public class Sellers extends BaseEntity {
     private String tags;
 
     @Column(name = "operating_start_time")
-    private ZonedDateTime operatingStartTime;
+    private LocalTime operatingStartTime;
 
     @Column(name = "operating_end_time")
-    private ZonedDateTime operatingEndTime;
+    private LocalTime operatingEndTime;
 
     @Column(name = "closed_days", length = 20)
     private String closedDays;
@@ -84,17 +85,16 @@ public class Sellers extends BaseEntity {
         this.tags = tags;
     }
 
-    public void updateOperatingStartTime(ZonedDateTime  operatingStartTime) {
+    public void updateOperatingStartTime(LocalTime operatingStartTime) {
         this.operatingStartTime = operatingStartTime;
     }
 
-    public void updateOperatingEndTime(ZonedDateTime  operatingEndTime) {
+    public void updateOperatingEndTime(LocalTime operatingEndTime) {
         this.operatingEndTime = operatingEndTime;
     }
 
     public void updateClosedDays(String closedDays) {
         this.closedDays = closedDays;
     }
-
 }
 

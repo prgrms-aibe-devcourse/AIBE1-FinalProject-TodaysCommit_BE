@@ -1,3 +1,4 @@
+// 1. 수정된 SellerInfoServiceImplTest.java
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
@@ -20,7 +21,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -98,8 +98,8 @@ class SellerInfoServiceImplTest {
                 .settlementBank("신한은행")
                 .settlementAccount("110-123-456789")
                 .tags("수제간식")
-                .operatingStartTime(ZonedDateTime.now().with(LocalTime.of(9, 0)))
-                .operatingEndTime(ZonedDateTime.now().with(LocalTime.of(18, 0)))
+                .operatingStartTime(LocalTime.of(9, 0))
+                .operatingEndTime(LocalTime.of(18, 0))
                 .closedDays("월요일,화요일")
                 .build();
 
@@ -118,8 +118,8 @@ class SellerInfoServiceImplTest {
                 "신한은행",                             // settlementBank
                 "110-123-456789",                      // settlementAcc
                 "수제간식",                             // tags
-                ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                ZonedDateTime.now().with(LocalTime.of(18, 0)),                // operatingEndTime
+                LocalTime.of(9, 0),                    // operatingStartTime
+                LocalTime.of(18, 0),                   // operatingEndTime
                 "월요일,화요일"                              // closedDays
         );
     }
@@ -148,8 +148,8 @@ class SellerInfoServiceImplTest {
             assertThat(result.settlementBank()).isEqualTo("신한은행");
             assertThat(result.settlementAcc()).isEqualTo("110-123-456789");
             assertThat(result.tags()).isEqualTo("수제간식");
-            assertThat(result.operatingStartTime().toLocalTime()).isEqualTo(LocalTime.of(9, 0));
-            assertThat(result.operatingEndTime().toLocalTime()).isEqualTo(LocalTime.of(18, 0));
+            assertThat(result.operatingStartTime()).isEqualTo(LocalTime.of(9, 0));
+            assertThat(result.operatingEndTime()).isEqualTo(LocalTime.of(18, 0));
             assertThat(result.closedDays()).isEqualTo("월요일,화요일");
 
             // verify
@@ -360,9 +360,9 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(20, 0)), // 20:00 (시작)
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)), // 09:00 (종료)
-                    "MON,TUE"
+                    LocalTime.of(20, 0),  // 20:00 (시작)
+                    LocalTime.of(9, 0),   // 09:00 (종료) - 잘못된 시간
+                    "월요일,화요일"
             );
 
             given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
@@ -388,7 +388,7 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),   // 시작시간만 있음
+                    LocalTime.of(9, 0),   // 시작시간만 있음
                     null,                 // 종료시간 없음
                     "MON,TUE"
             );
@@ -498,8 +498,8 @@ class SellerInfoServiceImplTest {
                     "",                                    // 빈 문자열
                     "",                                    // 빈 문자열
                     "",                                    // 빈 문자열
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),// 유효한 시간
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),// 유효한 시간
+                    LocalTime.of(9, 0),                    // 유효한 시간
+                    LocalTime.of(18, 0),                   // 유효한 시간
                     ""                                     // 빈 문자열
             );
 
@@ -519,8 +519,6 @@ class SellerInfoServiceImplTest {
         }
     }
 
-
-
     // 테스트 유틸리티 메서드 추가 (Record 생성 편의 메서드)
     private SellerInfoRequest createTestRequest(String vendorName, String businessNumber) {
         return new SellerInfoRequest(
@@ -530,8 +528,8 @@ class SellerInfoServiceImplTest {
                 "신한은행",
                 "110-123-456789",
                 "수제간식",
-                ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                LocalTime.of(9, 0),
+                LocalTime.of(18, 0),
                 "MON,TUE"
         );
     }
