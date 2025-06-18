@@ -120,12 +120,55 @@ public class OrderServiceImpl implements OrderService {
                 throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다.");
             }
 
-            // TODO: 실제 재고 확인 로직 추가 필요
+            // 재고 검증 (Mock)
+            if (item.getQuantity() > mockProduct.getStock()) {
+                throw new IllegalArgumentException("재고가 부족합니다. 상품: " + mockProduct.getName());
+            }
 
-            orderItemInfos.add(OrderItemInfo.of(mockProduct, item.getQuantity()));
+            orderItemInfos.add(OrderItemInfo.builder()
+                    .productId(item.getProductId())
+                    .productName(mockProduct.getName())
+                    .unitPrice(mockProduct.getPrice())
+                    .quantity(item.getQuantity())
+                    .totalPrice(mockProduct.getPrice() * item.getQuantity())
+                    .build());
         }
 
         return orderItemInfos;
+    }
+
+    /**
+     * Mock 상품 정보 생성 (임시)
+     * TODO: Products 도메인 완성 후 제거
+     */
+    private MockProduct createMockProduct(String productId) {
+        // 상품 ID에 따른 임시 Mock 데이터
+        return switch (productId) {
+            case "product-1" -> MockProduct.builder()
+                    .id(productId)
+                    .name("프리미엄 강아지 사료")
+                    .price(25000L)
+                    .stock(100)
+                    .build();
+            case "product-2" -> MockProduct.builder()
+                    .id(productId)
+                    .name("고양이 간식")
+                    .price(15000L)
+                    .stock(50)
+                    .build();
+            case "product-3" -> MockProduct.builder()
+                    .id(productId)
+                    .name("반려동물 장난감")
+                    .price(8000L)
+                    .stock(200)
+                    .build();
+            default -> MockProduct.builder()
+                    .id(productId)
+                    .name("일반 반려동물 용품")
+                    .price(10000L)
+                    .stock(30)
+                    .build();
+        };
     }
 
     /**
@@ -133,7 +176,7 @@ public class OrderServiceImpl implements OrderService {
      */
     private Long calculateTotalPrice(List<OrderItemInfo> orderItemInfos) {
         return orderItemInfos.stream()
-                .mapToLong(info -> info.getMockProduct().getPrice() * info.getQuantity())  // Mock 상품 사용
+                .mapToLong(OrderItemInfo::getTotalPrice)
                 .sum();
     }
 
@@ -141,13 +184,10 @@ public class OrderServiceImpl implements OrderService {
      * 주문 엔티티 생성 및 저장
      */
     private Orders createAndSaveOrder(Users user, Long totalPrice) {
-        // 주문 번호 생성 (현재 시간 기반)
-        Long orderNumber = System.currentTimeMillis();
-
         Orders order = Orders.builder()
+                .orderNumber(generateOrderNumber())
                 .user(user)
-                .orderNumber(orderNumber)
-                .orderStatus(OrderStatus.PAYMENT_COMPLETED) // 초기 상태 (실제로는 결제 완료 후 변경)
+                .orderStatus(OrderStatus.PAYMENT_PENDING) // 결제 대기 상태로 시작
                 .totalPrice(totalPrice)
                 .build();
 
@@ -155,8 +195,15 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
+     * 주문 번호 생성 (타임스탬프 기반)
+     * TODO: 더 견고한 주문번호 생성 로직으로 개선 가능
+     */
+    private Long generateOrderNumber() {
+        return System.currentTimeMillis() % 10000000000L; // 10자리 숫자로 제한
+    }
+
+    /**
      * 주문 아이템들 생성 및 저장
-     * TODO: Products 도메인 완성 후 실제 Products 엔티티 사용
      */
     private List<OrderItems> createAndSaveOrderItems(Orders order, List<OrderItemInfo> orderItemInfos) {
         List<OrderItems> orderItems = new ArrayList<>();
@@ -164,19 +211,18 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItemInfo info : orderItemInfos) {
             OrderItems orderItem = OrderItems.builder()
                     .orders(order)
-                    // .products(info.getProduct())  // TODO: Products 도메인 완성 후 활성화
-                    .products(null)  // 임시로 null (실제로는 Products 엔티티 필요)
+                    // TODO: 실제 Products 엔티티 연결 (Products 도메인 완성 후)
+                    // .products(productRepository.findById(UUID.fromString(info.getProductId())).orElse(null))
                     .quantity(info.getQuantity())
-                    .price(info.getMockProduct().getPrice()) // Mock 상품 가격 사용
+                    .price(info.getUnitPrice())
                     .build();
 
             orderItems.add(orderItem);
         }
 
-        // TODO: OrderItems Repository를 통한 저장 (현재는 예시)
+        // 별도의 OrderItemRepository가 필요하다면 생성, 현재는 Orders를 통해 저장
         // return orderItemRepository.saveAll(orderItems);
-        log.warn("⚠️  OrderItems 저장은 실제 OrderItemRepository 구현 후 활성화 예정");
-        return orderItems; // 임시 반환
+        return orderItems; // 임시로 반환
     }
 
     /**
@@ -185,19 +231,29 @@ public class OrderServiceImpl implements OrderService {
     private OrderCreateResponse.TossPaymentInfo createTossPaymentInfo(
             Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo, Long totalPrice) {
 
-        // 토스 페이먼츠용 고유 주문 ID 생성 (UUID)
-        String tossOrderId = UUID.randomUUID().toString();
+        // 주문명 생성 (첫 번째 상품명 + 외 N건)
+        String orderName = generateOrderName(order);
 
         return OrderCreateResponse.TossPaymentInfo.builder()
-                .tossOrderId(tossOrderId)
-                .orderName(paymentInfo.getOrderName())
+                .tossOrderId(order.getId().toString())
+                .orderName(orderName)
                 .amount(totalPrice)
                 .customerName(paymentInfo.getCustomerName())
                 .customerEmail(paymentInfo.getCustomerEmail())
-                .successUrl(paymentInfo.getSuccessUrl() != null ? paymentInfo.getSuccessUrl() : defaultSuccessUrl)
-                .failUrl(paymentInfo.getFailUrl() != null ? paymentInfo.getFailUrl() : defaultFailUrl)
+                .successUrl(paymentInfo.getSuccessUrl() != null ?
+                        paymentInfo.getSuccessUrl() : defaultSuccessUrl)
+                .failUrl(paymentInfo.getFailUrl() != null ?
+                        paymentInfo.getFailUrl() : defaultFailUrl)
                 .clientKey(tossClientKey)
                 .build();
+    }
+
+    /**
+     * 주문명 생성 (토스 페이먼츠용)
+     */
+    private String generateOrderName(Orders order) {
+        // TODO: 실제 상품명으로 생성 (현재는 Mock)
+        return "반려동물 용품 외 1건"; // 임시
     }
 
     /**
@@ -214,9 +270,9 @@ public class OrderServiceImpl implements OrderService {
 
             // TODO: 실제 Products 엔티티 정보 사용 (Products 도메인 완성 후)
             orderItemResponses.add(OrderCreateResponse.OrderItemResponse.builder()
-                    .orderItemId(item.getId() != null ? item.getId().toString() : "temp-" + i) // 임시 ID
-                    .productId("mock-product-" + i) // 임시 상품 ID
-                    .productName("임시 상품 " + (i + 1)) // 임시 상품명
+                    .orderItemId(item.getId() != null ? item.getId().toString() : "temp-" + i)
+                    .productId("temp-product-" + i) // 임시
+                    .productName("임시 상품명 " + (i + 1)) // 임시
                     .quantity(item.getQuantity())
                     .unitPrice(item.getPrice())
                     .totalPrice(item.getPrice() * item.getQuantity())
@@ -228,63 +284,34 @@ public class OrderServiceImpl implements OrderService {
                 .orderNumber(order.getOrderNumber())
                 .orderStatus(order.getOrderStatus())
                 .totalPrice(order.getTotalPrice())
-                .createdAt(ZonedDateTime.now()) // TODO: 실제 엔티티의 createdAt 사용
+                .createdAt(order.getCreatedAt())
                 .orderItems(orderItemResponses)
                 .tossPaymentInfo(tossPaymentInfo)
                 .build();
     }
 
     /**
-     * 임시 Mock 상품 생성 (Products 도메인 완성 전까지 사용)
-     * TODO: Products 도메인 완성 후 제거
+     * 주문 아이템 정보를 담는 내부 DTO
      */
-    private MockProduct createMockProduct(String productId) {
-        // 상품 ID에 따라 다른 Mock 데이터 생성
-        String productName = "임시 상품 " + productId.substring(0, 8);
-        Long price = 10000L + (productId.hashCode() % 50000); // 10,000원 ~ 60,000원 랜덤
-
-        return new MockProduct(productId, productName, price);
-    }
-
-    /**
-     * 임시 Mock 상품 클래스 (Products 엔티티 대체용)
-     * TODO: Products 도메인 완성 후 제거
-     */
-    private static class MockProduct {
-        private final String id;
-        private final String name;
-        private final Long price;
-
-        public MockProduct(String id, String name, Long price) {
-            this.id = id;
-            this.name = name;
-            this.price = price;
-        }
-
-        public String getId() { return id; }
-        public String getName() { return name; }
-        public Long getPrice() { return price; }
-    }
-
-    /**
-     * 주문 아이템 정보를 담는 내부 클래스 (수정됨)
-     */
+    @lombok.Builder
+    @lombok.Getter
     private static class OrderItemInfo {
-        // private final Products product;  // TODO: Products 도메인 완성 후 활성화
-        private final MockProduct mockProduct;  // 임시 Mock 상품 사용
-        private final Integer quantity;
+        private String productId;
+        private String productName;
+        private Long unitPrice;
+        private Integer quantity;
+        private Long totalPrice;
+    }
 
-        private OrderItemInfo(MockProduct mockProduct, Integer quantity) {
-            this.mockProduct = mockProduct;
-            this.quantity = quantity;
-        }
-
-        public static OrderItemInfo of(MockProduct mockProduct, Integer quantity) {
-            return new OrderItemInfo(mockProduct, quantity);
-        }
-
-        // public Products getProduct() { return product; }  // TODO: 나중에 활성화
-        public MockProduct getMockProduct() { return mockProduct; }
-        public Integer getQuantity() { return quantity; }
+    /**
+     * Mock 상품 정보 (임시)
+     */
+    @lombok.Builder
+    @lombok.Getter
+    private static class MockProduct {
+        private String id;
+        private String name;
+        private Long price;
+        private Integer stock;
     }
 }
