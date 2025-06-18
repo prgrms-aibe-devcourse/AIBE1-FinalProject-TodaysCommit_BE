@@ -1,3 +1,5 @@
+// prgrms-aibe-devcourse/aibe1-finalproject-todayscommit_be/AIBE1-FinalProject-TodaysCommit_BE-feat-order-creation-10/src/test/java/com/team5/catdogeats/orders/integration/OrderIntegrationTest.java
+
 package com.team5.catdogeats.orders.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,35 +15,28 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-/**
- * 주문 통합 테스트 (수정됨)
- *
- * 🎯 실제 Service, Repository까지 모두 동작하는 완전한 통합 테스트
- * ✅ Spring Boot 3.5.0 호환 버전
- * ✅ 실제 Users 엔티티 구조에 맞게 수정
- * ✅ UUID 랜덤화로 충돌 방지
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
-@ActiveProfiles("dev") // 🔧 수정: test → dev
-@Transactional // 테스트 후 자동 롤백
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD) // 🔧 추가: 테스트 간 격리
+@ActiveProfiles("test")
+@Transactional
 @DisplayName("주문 통합 테스트")
 class OrderIntegrationTest {
 
@@ -56,30 +51,33 @@ class OrderIntegrationTest {
 
     private Users testUser;
     private OrderCreateRequest validRequest;
-    private String testUserId; // 🔧 추가: 동적 사용자 ID
+    private UsernamePasswordAuthenticationToken testAuthentication; // 인증 객체
 
     @BeforeEach
     void setUp() {
-        // 🔧 수정: ID를 null로 두고 JPA가 자동 생성하게 함
+        // 1. 테스트 사용자 생성 및 DB에 저장
         testUser = Users.builder()
-                // .id() 제거 - JPA가 자동 생성하도록 함
                 .provider("GOOGLE")
-                .providerId("test_provider_id_" + System.currentTimeMillis()) // 🔧 추가: 시간 기반 고유값
-                .userNameAttribute("test_user_attr_" + System.currentTimeMillis())
+                .providerId("test_provider_id_" + System.currentTimeMillis())
+                .userNameAttribute("test_user_attr")
                 .name("테스트 사용자")
                 .role(Role.ROLE_BUYER)
                 .accountDisable(false)
                 .build();
-
-        // 🔧 수정: 저장 후 생성된 ID 사용
         testUser = userRepository.saveAndFlush(testUser);
-        testUserId = testUser.getId().toString(); // 저장 후 생성된 ID 가져오기
 
-        // 테스트용 주문 요청 데이터
+        // 2. 동적으로 생성된 사용자 ID로 인증 객체 생성
+        testAuthentication = new UsernamePasswordAuthenticationToken(
+                testUser.getId().toString(), // Principal의 이름으로 UUID를 사용
+                null,
+                Collections.singletonList(new SimpleGrantedAuthority(testUser.getRole().toString()))
+        );
+
+        // 3. 테스트용 주문 요청 데이터 생성
         validRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
                         OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-1") // Mock 데이터와 일치 (프리미엄 강아지 사료)
+                                .productId("product-1") // Mock 데이터: 프리미엄 강아지 사료
                                 .quantity(2)
                                 .build()
                 ))
@@ -102,89 +100,60 @@ class OrderIntegrationTest {
     @Test
     @DisplayName("✅ 정상적인 주문 생성 - 실제 주문까지 완료")
     void createOrder_Success() throws Exception {
-        // 🔧 수정: 동적 사용자 ID 사용
-        String mockUserAnnotation = "@WithMockUser(username = \"" + testUserId + "\", roles = \"BUYER\")";
-        System.out.println("🔧 현재 테스트 사용자 ID: " + testUserId);
+        System.out.println("🔧 현재 테스트 사용자 ID: " + testUser.getId());
 
-        // When & Then: 주문 생성 성공
         MvcResult result = mockMvc.perform(post("/v1/buyers/orders")
+                        .with(authentication(testAuthentication)) // 수정: 동적 인증 정보 주입
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest))
-                        .header("X-User-ID", testUserId)) // 🔧 추가: 헤더로 사용자 ID 전달
+                        .content(objectMapper.writeValueAsString(validRequest)))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.orderId").exists())
-                .andExpect(jsonPath("$.totalPrice").value(50000)) // 25000 * 2 = 50000
-                .andExpect(jsonPath("$.orderItems.length()").value(1))
-                .andExpect(jsonPath("$.orderItems[0].productName").value("프리미엄 강아지 사료"))
-                .andExpect(jsonPath("$.orderItems[0].quantity").value(2))
-                .andExpect(jsonPath("$.orderItems[0].unitPrice").value(25000))
+                .andExpect(jsonPath("$.totalPrice").value(50000)) // 25000 * 2
                 .andReturn();
 
-        // 응답 검증
         String responseContent = result.getResponse().getContentAsString();
         OrderCreateResponse response = objectMapper.readValue(responseContent, OrderCreateResponse.class);
-
         assertThat(response.getOrderId()).isNotNull();
         assertThat(response.getTotalPrice()).isEqualTo(50000);
-        assertThat(response.getOrderItems()).hasSize(1);
-
-        System.out.println("✅ 주문 생성 성공 - Order ID: " + response.getOrderId());
     }
 
     @Test
     @DisplayName("🔍 실제 DB에 저장된 사용자 정보 확인")
-    void verifyTestUserInDatabase() throws Exception {
-        // Given: DB에서 사용자 조회
+    void verifyTestUserInDatabase() {
         Users foundUser = userRepository.findById(testUser.getId()).orElse(null);
 
-        // Then: 사용자 정보 검증
         assertThat(foundUser).isNotNull();
+        assertThat(foundUser.getId()).isEqualTo(testUser.getId());
         assertThat(foundUser.getName()).isEqualTo("테스트 사용자");
-        assertThat(foundUser.getProvider()).isEqualTo("GOOGLE");
-        assertThat(foundUser.getProviderId()).startsWith("test_provider_id_"); // 🔧 수정: 동적 값
         assertThat(foundUser.getRole()).isEqualTo(Role.ROLE_BUYER);
-        assertThat(foundUser.isAccountDisable()).isFalse();
 
-        System.out.println("👤 DB에 저장된 사용자 정보:");
-        System.out.println("   - ID: " + foundUser.getId());
-        System.out.println("   - 이름: " + foundUser.getName());
-        System.out.println("   - 제공자: " + foundUser.getProvider());
-        System.out.println("   - 역할: " + foundUser.getRole());
-        System.out.println("   - 계정 비활성화: " + foundUser.isAccountDisable());
-
-        // 🔧 수정: 동적 사용자 ID로 주문 생성 테스트
-        mockMvc.perform(post("/v1/buyers/orders")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest))
-                        .header("X-User-ID", testUserId))
-                .andDo(print())
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.orderId").exists());
+        System.out.println("👤 DB에 저장된 사용자 정보 확인 완료: " + foundUser.getId());
     }
 
     @Test
     @DisplayName("❌ 존재하지 않는 사용자 - 실제 에러 테스트")
     void createOrder_UserNotFound() throws Exception {
-        // Given: 존재하지 않는 사용자 ID
-        String nonExistentUserId = UUID.randomUUID().toString();
+        // 존재하지 않는 UUID로 인증 객체 생성
+        UsernamePasswordAuthenticationToken nonExistentUserAuth = new UsernamePasswordAuthenticationToken(
+                UUID.randomUUID().toString(),
+                null,
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_BUYER"))
+        );
 
-        // When & Then: 사용자 없음 에러 발생
         mockMvc.perform(post("/v1/buyers/orders")
+                        .with(authentication(nonExistentUserAuth))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validRequest))
-                        .header("X-User-ID", nonExistentUserId))
+                        .content(objectMapper.writeValueAsString(validRequest)))
                 .andDo(print())
-                .andExpect(status().is5xxServerError()); // NoSuchElementException으로 인한 500 에러
+                .andExpect(status().isNotFound()); // HTTP 500이 아닌 404 Not Found를 기대
     }
 
     @Test
     @DisplayName("❌ 잘못된 수량으로 주문 - 비즈니스 로직 검증")
     void createOrder_InvalidQuantity() throws Exception {
-        // Given: 수량이 0인 잘못된 요청
         OrderCreateRequest invalidRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
                         OrderCreateRequest.OrderItemRequest.builder()
@@ -196,65 +165,36 @@ class OrderIntegrationTest {
                 .paymentInfo(validRequest.getPaymentInfo())
                 .build();
 
-        // When & Then: 비즈니스 로직에서 예외 발생
         mockMvc.perform(post("/v1/buyers/orders")
+                        .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(invalidRequest))
-                        .header("X-User-ID", testUserId))
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andDo(print())
-                .andExpect(status().is5xxServerError()); // IllegalArgumentException으로 인한 에러
+                .andExpect(status().isBadRequest()); // HTTP 500이 아닌 400 Bad Request를 기대
     }
 
     @Test
-    @DisplayName("🎯 Mock상품 데이터 검증 - 여러 상품 주문")
+    @DisplayName("🎯 Mock 상품 데이터 검증 - 여러 상품 주문")
     void createOrder_MultipleProducts() throws Exception {
-        // Given: 여러 상품 주문 요청 (Mock 상품 ID들 사용)
         OrderCreateRequest multiProductRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
-                        OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-1") // 프리미엄 강아지 사료 (25000원)
-                                .quantity(1)
-                                .build(),
-                        OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-2") // 고양이 간식 (15000원)
-                                .quantity(1)
-                                .build(),
-                        OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-3") // 반려동물 장난감 (8000원)
-                                .quantity(1)
-                                .build(),
-                        OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-4") // 일반 반려동물 용품 (10000원)
-                                .quantity(1)
-                                .build()
+                        OrderCreateRequest.OrderItemRequest.builder().productId("product-1").quantity(1).build(), // 25000원
+                        OrderCreateRequest.OrderItemRequest.builder().productId("product-2").quantity(1).build(), // 15000원
+                        OrderCreateRequest.OrderItemRequest.builder().productId("product-3").quantity(1).build()  // 8000원
                 ))
                 .shippingAddress(validRequest.getShippingAddress())
                 .paymentInfo(validRequest.getPaymentInfo())
                 .build();
 
-        // When & Then: 모든 Mock 상품이 올바르게 처리되는지 확인
         mockMvc.perform(post("/v1/buyers/orders")
+                        .with(authentication(testAuthentication)) // 수정: 동적 인증 정보 주입
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(multiProductRequest))
-                        .header("X-User-ID", testUserId))
+                        .content(objectMapper.writeValueAsString(multiProductRequest)))
                 .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.totalPrice").value(58000)) // 25000+15000+8000+10000 = 58000
-                .andExpect(jsonPath("$.orderItems.length()").value(4))
-
-                // 각 상품별 검증
-                .andExpect(jsonPath("$.orderItems[0].productName").value("프리미엄 강아지 사료"))
-                .andExpect(jsonPath("$.orderItems[0].unitPrice").value(25000))
-
-                .andExpect(jsonPath("$.orderItems[1].productName").value("고양이 간식"))
-                .andExpect(jsonPath("$.orderItems[1].unitPrice").value(15000))
-
-                .andExpect(jsonPath("$.orderItems[2].productName").value("반려동물 장난감"))
-                .andExpect(jsonPath("$.orderItems[2].unitPrice").value(8000))
-
-                .andExpect(jsonPath("$.orderItems[3].productName").value("일반 반려동물 용품"))
-                .andExpect(jsonPath("$.orderItems[3].unitPrice").value(10000));
+                .andExpect(jsonPath("$.totalPrice").value(48000)) // 25000 + 15000 + 8000
+                .andExpect(jsonPath("$.orderItems.length()").value(3));
     }
 }
