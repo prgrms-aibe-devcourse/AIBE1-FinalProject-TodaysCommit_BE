@@ -137,7 +137,7 @@ public class SellerInfoController {
         // UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
         // 현재: 하드코딩된 사용자 ID 사용 (개발용)
-        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173741");
+        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
         log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
 
         try {
@@ -335,7 +335,7 @@ public class SellerInfoController {
         // UUID userId = jwtTokenProvider.getUserIdFromToken(token);
 
         // 현재: 하드코딩된 사용자 ID 사용 (개발용)
-        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173741");
+        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
         log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
                 tempUserId, request.getVendorName());
 
