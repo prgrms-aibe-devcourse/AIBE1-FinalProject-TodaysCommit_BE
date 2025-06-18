@@ -1,6 +1,6 @@
 package com.team5.catdogeats.users.controller;
 
-import com.team5.catdogeats.users.dto.ApiResponse;
+import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.users.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
