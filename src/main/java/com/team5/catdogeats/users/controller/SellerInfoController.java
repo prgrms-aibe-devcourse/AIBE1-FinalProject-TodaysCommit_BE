@@ -1,8 +1,8 @@
 package com.team5.catdogeats.users.controller;
 
 import com.team5.catdogeats.global.dto.ApiResponse;
-import com.team5.catdogeats.users.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
 import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
 import com.team5.catdogeats.users.exception.UserNotFoundException;

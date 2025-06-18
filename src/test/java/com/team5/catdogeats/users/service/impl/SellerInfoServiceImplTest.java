@@ -4,8 +4,8 @@ package com.team5.catdogeats.users.service.impl;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import com.team5.catdogeats.users.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
 import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
 import com.team5.catdogeats.users.exception.UserNotFoundException;
@@ -563,8 +563,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     "토요일,일요일"
             );
 
@@ -592,8 +592,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     "월요일"
             );
 
@@ -621,8 +621,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     null  // 휴무일 없음
             );
 
@@ -650,8 +650,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     ""  // 빈 문자열
             );
 
@@ -679,8 +679,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     "월요일,화요일,수요일,목요일"  // 4일 휴무
             );
 
@@ -708,8 +708,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     "잘못된요일,화요일"  // 유효하지 않은 요일명
             );
 
@@ -736,8 +736,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     "월요일,잘못된요일,수요일"  // 중간에 잘못된 요일
             );
 
@@ -760,8 +760,8 @@ class SellerInfoServiceImplTest {
                     "신한은행",
                     "110-123-456789",
                     "수제간식",
-                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
-                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
                     "월요일, 화요일, 수요일"  // 공백 포함
             );
 

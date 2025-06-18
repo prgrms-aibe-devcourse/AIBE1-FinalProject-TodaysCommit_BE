@@ -1,7 +1,6 @@
-package com.team5.catdogeats.users.dto;
+package com.team5.catdogeats.users.domain.dto;
 
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
