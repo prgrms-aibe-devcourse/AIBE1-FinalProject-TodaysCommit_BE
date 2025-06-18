@@ -94,7 +94,7 @@ class SellerInfoServiceImplTest {
                 .vendorProfileImage("https://example.com/logo.jpg")
                 .businessNumber("123-45-67890")
                 .settlementBank("신한은행")
-                .settlementAcc("110-123-456789")
+                .settlementAccount("110-123-456789")
                 .tags("수제간식")
                 .build();
 

@@ -63,7 +63,7 @@ class SellersRepositoryTest {
                 .vendorProfileImage("https://example.com/profile1.jpg")
                 .businessNumber("123-45-67890")
                 .settlementBank("신한은행")
-                .settlementAcc("110-123-456789")
+                .settlementAccount("110-123-456789")
                 .tags("수제간식,강아지")
                 .build();
 
@@ -73,7 +73,7 @@ class SellersRepositoryTest {
                 .vendorProfileImage("https://example.com/profile2.jpg")
                 .businessNumber("987-65-43210")
                 .settlementBank("국민은행")
-                .settlementAcc("220-987-654321")
+                .settlementAccount("220-987-654321")
                 .tags("수제간식,고양이")
                 .build();
 
@@ -239,7 +239,7 @@ class SellersRepositoryTest {
                     .vendorProfileImage("https://example.com/new.jpg")
                     .businessNumber("555-55-55555")
                     .settlementBank("우리은행")
-                    .settlementAcc("333-555-777999")
+                    .settlementAccount("333-555-777999")
                     .tags("새상품")
                     .build();
 

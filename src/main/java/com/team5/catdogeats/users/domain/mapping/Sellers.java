@@ -37,7 +37,7 @@ public class Sellers extends BaseEntity {
     private String settlementBank;
 
     @Column(name = "settlement_acc", length = 30)
-    private String settlementAcc;
+    private String settlementAccount;
 
     @Column(name = "tags")
     private String tags;
@@ -74,7 +74,7 @@ public class Sellers extends BaseEntity {
     }
 
     public void updateSettlementAcc(String settlementAcc) {
-        this.settlementAcc = settlementAcc;
+        this.settlementAccount = settlementAcc;
     }
 
     public void updateTags(String tags) {

@@ -40,7 +40,7 @@ public class SellerInfoResponse {
                 .vendorProfileImage(seller.getVendorProfileImage())
                 .businessNumber(seller.getBusinessNumber())
                 .settlementBank(seller.getSettlementBank())
-                .settlementAcc(seller.getSettlementAcc())
+                .settlementAcc(seller.getSettlementAccount())
                 .tags(seller.getTags())
                 .operatingStartTime(seller.getOperatingStartTime())
                 .operatingEndTime(seller.getOperatingEndTime())

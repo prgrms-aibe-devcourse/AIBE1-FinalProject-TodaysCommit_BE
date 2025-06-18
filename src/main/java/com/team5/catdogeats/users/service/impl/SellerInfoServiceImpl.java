@@ -180,7 +180,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
                 .vendorProfileImage(request.getVendorProfileImage())
                 .businessNumber(request.getBusinessNumber())
                 .settlementBank(request.getSettlementBank())
-                .settlementAcc(request.getSettlementAcc())
+                .settlementAccount(request.getSettlementAcc())
                 .tags(request.getTags())
                 .operatingStartTime(request.getOperatingStartTime())
                 .operatingEndTime(request.getOperatingEndTime())
