@@ -5,14 +5,17 @@ import com.team5.catdogeats.global.exception.TokenErrorException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
 
 @Slf4j
+@Component
 @RequiredArgsConstructor
 public class JwtUtils {
     private final JwtConfig jwtConfig;
-
 
     public Claims parseToken(String token) {
         try {
@@ -40,6 +43,19 @@ public class JwtUtils {
             log.error("JWT claims string is empty: {}", e.getMessage());
         }
         return false;
+    }
+
+    public String extractToken(HttpServletRequest request) {
+
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equals("jwt_token")) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
     }
 }
 
