@@ -1,3 +1,4 @@
+// 1. 수정된 SellerInfoServiceImplTest.java
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
@@ -19,6 +20,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -96,6 +98,9 @@ class SellerInfoServiceImplTest {
                 .settlementBank("신한은행")
                 .settlementAccount("110-123-456789")
                 .tags("수제간식")
+                .operatingStartTime(LocalTime.of(9, 0))
+                .operatingEndTime(LocalTime.of(18, 0))
+                .closedDays("MON,TUE")
                 .build();
 
         // 다른 판매자 정보
@@ -106,14 +111,17 @@ class SellerInfoServiceImplTest {
                 .businessNumber("123-45-67890") // 같은 사업자번호
                 .build();
 
-        // 요청 데이터
-        testRequest = new SellerInfoRequest();
-        testRequest.setVendorName("펫푸드 공방");
-        testRequest.setVendorProfileImage("https://example.com/logo.jpg");
-        testRequest.setBusinessNumber("123-45-67890");
-        testRequest.setSettlementBank("신한은행");
-        testRequest.setSettlementAcc("110-123-456789");
-        testRequest.setTags("수제간식");
+        testRequest = new SellerInfoRequest(
+                "펫푸드 공방",                          // vendorName
+                "https://example.com/logo.jpg",        // vendorProfileImage
+                "123-45-67890",                        // businessNumber
+                "신한은행",                             // settlementBank
+                "110-123-456789",                      // settlementAcc
+                "수제간식",                             // tags
+                LocalTime.of(9, 0),                    // operatingStartTime
+                LocalTime.of(18, 0),                   // operatingEndTime
+                "MON,TUE"                              // closedDays
+        );
     }
 
     @Nested
@@ -132,13 +140,17 @@ class SellerInfoServiceImplTest {
 
             // then
             assertThat(result).isNotNull();
-            assertThat(result.getVendorName()).isEqualTo("펫푸드 공방");
-            assertThat(result.getBusinessNumber()).isEqualTo("123-45-67890");
-            assertThat(result.getUserId()).isEqualTo(testUserId.toString());
-            assertThat(result.getVendorProfileImage()).isEqualTo("https://example.com/logo.jpg");
-            assertThat(result.getSettlementBank()).isEqualTo("신한은행");
-            assertThat(result.getSettlementAcc()).isEqualTo("110-123-456789");
-            assertThat(result.getTags()).isEqualTo("수제간식");
+            // Record의 getter 메서드 사용 (vendorName() 방식)
+            assertThat(result.vendorName()).isEqualTo("펫푸드 공방");
+            assertThat(result.businessNumber()).isEqualTo("123-45-67890");
+            assertThat(result.userId()).isEqualTo(testUserId.toString());
+            assertThat(result.vendorProfileImage()).isEqualTo("https://example.com/logo.jpg");
+            assertThat(result.settlementBank()).isEqualTo("신한은행");
+            assertThat(result.settlementAcc()).isEqualTo("110-123-456789");
+            assertThat(result.tags()).isEqualTo("수제간식");
+            assertThat(result.operatingStartTime()).isEqualTo(LocalTime.of(9, 0));
+            assertThat(result.operatingEndTime()).isEqualTo(LocalTime.of(18, 0));
+            assertThat(result.closedDays()).isEqualTo("MON,TUE");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -214,8 +226,9 @@ class SellerInfoServiceImplTest {
 
             // then
             assertThat(result).isNotNull();
-            assertThat(result.getVendorName()).isEqualTo("펫푸드 공방");
-            assertThat(result.getBusinessNumber()).isEqualTo("123-45-67890");
+
+            assertThat(result.vendorName()).isEqualTo("펫푸드 공방");
+            assertThat(result.businessNumber()).isEqualTo("123-45-67890");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -229,7 +242,17 @@ class SellerInfoServiceImplTest {
         void upsertSellerInfo_UpdateExisting_Success() {
             // given
             String newVendorName = "수정된 공방명";
-            testRequest.setVendorName(newVendorName);
+            SellerInfoRequest updateRequest = new SellerInfoRequest(
+                    newVendorName,
+                    testRequest.vendorProfileImage(),
+                    testRequest.businessNumber(),
+                    testRequest.settlementBank(),
+                    testRequest.settlementAcc(),
+                    testRequest.tags(),
+                    testRequest.operatingStartTime(),
+                    testRequest.operatingEndTime(),
+                    testRequest.closedDays()
+            );
 
             given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(testSeller));
@@ -237,7 +260,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, testRequest);
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, updateRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -325,6 +348,62 @@ class SellerInfoServiceImplTest {
             verify(sellersRepository, never()).findByUserId(any());
             verify(sellersRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("실패 - 운영시간 유효성 검증 실패 (시작시간 > 종료시간)")
+        void upsertSellerInfo_InvalidOperatingHours() {
+            // given
+            SellerInfoRequest invalidRequest = new SellerInfoRequest(
+                    "펫푸드 공방",
+                    "https://example.com/logo.jpg",
+                    "987-65-43210", // 다른 사업자번호
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    LocalTime.of(20, 0),  // 20:00 (시작)
+                    LocalTime.of(9, 0),   // 09:00 (종료) - 잘못된 시간
+                    "MON,TUE"
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+
+            // when & then
+            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, invalidRequest))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
+
+            // verify
+            verify(userRepository).findById(testUserId);
+            verify(sellersRepository, never()).findByBusinessNumber(any());
+        }
+
+        @Test
+        @DisplayName("실패 - 운영시간 부분 입력 (시작시간만 있음)")
+        void upsertSellerInfo_PartialOperatingHours() {
+            // given
+            SellerInfoRequest partialRequest = new SellerInfoRequest(
+                    "펫푸드 공방",
+                    "https://example.com/logo.jpg",
+                    "987-65-43210",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    LocalTime.of(9, 0),   // 시작시간만 있음
+                    null,                 // 종료시간 없음
+                    "MON,TUE"
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+
+            // when & then
+            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, partialRequest))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("운영 시작 시간과 종료 시간은 모두 입력하거나 모두 입력하지 않아야 합니다.");
+
+            // verify
+            verify(userRepository).findById(testUserId);
+            verify(sellersRepository, never()).findByBusinessNumber(any());
+        }
     }
 
     @Nested
@@ -380,14 +459,18 @@ class SellerInfoServiceImplTest {
         @Test
         @DisplayName("성공 - 선택 필드가 null인 요청")
         void upsertSellerInfo_OptionalFieldsNull_Success() {
-            // given
-            SellerInfoRequest requestWithNulls = new SellerInfoRequest();
-            requestWithNulls.setVendorName("펫푸드 공방");
-            requestWithNulls.setVendorProfileImage("https://example.com/logo.jpg");
-            requestWithNulls.setBusinessNumber("987-65-43210"); // 다른 사업자번호
-            requestWithNulls.setSettlementBank(null); // null
-            requestWithNulls.setSettlementAcc(null); // null
-            requestWithNulls.setTags(null); // null
+            // given - Record 생성자로 null 값들 포함
+            SellerInfoRequest requestWithNulls = new SellerInfoRequest(
+                    "펫푸드 방",                          // 필수
+                    "https://example.com/logo.jpg",        // 필수
+                    "987-65-43210",                        // 필수 (다른 사업자번호)
+                    null,                                  // settlementBank (선택)
+                    null,                                  // settlementAcc (선택)
+                    null,                                  // tags (선택)
+                    null,                                  // operatingStartTime (선택)
+                    null,                                  // operatingEndTime (선택)
+                    null                                   // closedDays (선택)
+            );
 
             given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("987-65-43210")).willReturn(Optional.empty());
@@ -408,13 +491,17 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 빈 문자열 필드 처리")
         void upsertSellerInfo_EmptyStringFields_Success() {
             // given
-            SellerInfoRequest requestWithEmptyStrings = new SellerInfoRequest();
-            requestWithEmptyStrings.setVendorName("펫푸드 공방");
-            requestWithEmptyStrings.setVendorProfileImage("https://example.com/logo.jpg");
-            requestWithEmptyStrings.setBusinessNumber("987-65-43210");
-            requestWithEmptyStrings.setSettlementBank(""); // 빈 문자열
-            requestWithEmptyStrings.setSettlementAcc(""); // 빈 문자열
-            requestWithEmptyStrings.setTags(""); // 빈 문자열
+            SellerInfoRequest requestWithEmptyStrings = new SellerInfoRequest(
+                    "펫푸드 공방",                          // 필수
+                    "https://example.com/logo.jpg",        // 필수
+                    "987-65-43210",                        // 필수
+                    "",                                    // 빈 문자열
+                    "",                                    // 빈 문자열
+                    "",                                    // 빈 문자열
+                    LocalTime.of(9, 0),                    // 유효한 시간
+                    LocalTime.of(18, 0),                   // 유효한 시간
+                    ""                                     // 빈 문자열
+            );
 
             given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("987-65-43210")).willReturn(Optional.empty());
@@ -430,5 +517,34 @@ class SellerInfoServiceImplTest {
             // verify
             verify(sellersRepository).save(any(Sellers.class));
         }
+    }
+
+    // 테스트 유틸리티 메서드 추가 (Record 생성 편의 메서드)
+    private SellerInfoRequest createTestRequest(String vendorName, String businessNumber) {
+        return new SellerInfoRequest(
+                vendorName,
+                "https://example.com/logo.jpg",
+                businessNumber,
+                "신한은행",
+                "110-123-456789",
+                "수제간식",
+                LocalTime.of(9, 0),
+                LocalTime.of(18, 0),
+                "MON,TUE"
+        );
+    }
+
+    private SellerInfoRequest createMinimalRequest(String vendorName, String profileImage, String businessNumber) {
+        return new SellerInfoRequest(
+                vendorName,
+                profileImage,
+                businessNumber,
+                null,  // settlementBank
+                null,  // settlementAcc
+                null,  // tags
+                null,  // operatingStartTime
+                null,  // operatingEndTime
+                null   // closedDays
+        );
     }
 }

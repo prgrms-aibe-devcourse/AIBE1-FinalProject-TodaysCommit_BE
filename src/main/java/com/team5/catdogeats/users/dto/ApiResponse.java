@@ -5,49 +5,40 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class ApiResponse<T> {
-
-    private boolean success;
-    private String message;
-    private T data;
-    private LocalDateTime timestamp;
-    private String path;
-    private List<FieldError> errors;
-
-    // 성공 응답 생성
+public record ApiResponse<T>(
+        boolean success,
+        String message,
+        T data,
+        LocalDateTime timestamp,
+        String path,
+        List<FieldError> errors
+) {
+    // 정적 팩토리 메서드들은 그대로 유지
     public static <T> ApiResponse<T> success(String message, T data) {
-        return ApiResponse.<T>builder()
-                .success(true)
-                .message(message)
-                .data(data)
-                .timestamp(LocalDateTime.now())
-                .build();
+        return new ApiResponse<>(
+                true,
+                message,
+                data,
+                LocalDateTime.now(),
+                null,
+                null
+        );
     }
 
-    // 실패 응답 생성
     public static <T> ApiResponse<T> error(String message, String path, List<FieldError> errors) {
-        return ApiResponse.<T>builder()
-                .success(false)
-                .message(message)
-                .data(null)
-                .timestamp(LocalDateTime.now())
-                .path(path)
-                .errors(errors)
-                .build();
+        return new ApiResponse<>(
+                false,
+                message,
+                null,
+                LocalDateTime.now(),
+                path,
+                errors
+        );
     }
 
-    @Getter
-    @Setter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class FieldError {
-        private String field;
-        private String message;
-    }
+    // FieldError도 Record로 변환
+    public record FieldError(
+            String field,
+            String message
+    ) {}
 }

@@ -337,15 +337,15 @@ public class SellerInfoController {
         // 현재: 하드코딩된 사용자 ID 사용 (개발용)
         UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
         log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
-                tempUserId, request.getVendorName());
+                tempUserId, request.vendorName());
 
         // 유효성 검증 오류 처리
         if (bindingResult.hasErrors()) {
             List<ApiResponse.FieldError> fieldErrors = bindingResult.getFieldErrors().stream()
-                    .map(error -> ApiResponse.FieldError.builder()
-                            .field(error.getField())
-                            .message(error.getDefaultMessage())
-                            .build())
+                    .map(error -> new ApiResponse.FieldError(
+                            error.getField(),
+                            error.getDefaultMessage()
+                    ))
                     .collect(Collectors.toList());
 
             return ResponseEntity.badRequest()
@@ -371,7 +371,7 @@ public class SellerInfoController {
 
         } catch (BusinessNumberDuplicateException e) {
             log.error("사업자 등록번호 중복 - userId: {}, businessNumber: {}",
-                    tempUserId, request.getBusinessNumber(), e);
+                    tempUserId, request.businessNumber(), e);
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error(e.getMessage(), httpRequest.getRequestURI(), null));
 

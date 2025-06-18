@@ -41,7 +41,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     @Override
     @Transactional
     public SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request) {
-        log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.getVendorName());
+        log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.vendorName());
 
         // 사용자 존재 여부 및 판매자 권한 확인
         Users user = validateSellerUser(userId);
@@ -71,7 +71,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      */
     private SellerInfoResponse upsertSellerInfoInternal(Users user, UUID userId, SellerInfoRequest request) {
         // 사업자 등록번호 중복 체크
-        validateBusinessNumberDuplication(userId, request.getBusinessNumber());
+        validateBusinessNumberDuplication(userId, request.businessNumber());
 
         // 기존 판매자 정보 조회
         Optional<Sellers> existingSellerOpt = sellersRepository.findByUserId(userId);
@@ -139,35 +139,35 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      * 운영시간 유효성 검증
      */
     private void validateOperatingHours(SellerInfoRequest request) {
-        if (request.getOperatingStartTime() != null && request.getOperatingEndTime() != null) {
-            if (request.getOperatingStartTime().isAfter(request.getOperatingEndTime())) {
+        if (request.operatingStartTime() != null && request.operatingEndTime() != null) {
+            if (request.operatingStartTime().isAfter(request.operatingEndTime())) {
                 throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
             }
         }
 
         // 시작 시간만 있고 종료 시간이 없는 경우 또는 그 반대인 경우 검증
-        if ((request.getOperatingStartTime() != null && request.getOperatingEndTime() == null) ||
-                (request.getOperatingStartTime() == null && request.getOperatingEndTime() != null)) {
+        if ((request.operatingStartTime() != null && request.operatingEndTime() == null) ||
+                (request.operatingStartTime() == null && request.operatingEndTime() != null)) {
             throw new IllegalArgumentException("운영 시작 시간과 종료 시간은 모두 입력하거나 모두 입력하지 않아야 합니다.");
         }
 
         log.info("운영시간 유효성 검증 완료 - start: {}, end: {}",
-                request.getOperatingStartTime(), request.getOperatingEndTime());
+                request.operatingStartTime(), request.operatingEndTime());
     }
 
     /**
      * 기존 판매자 정보 업데이트
      */
     private void updateSellerInfo(Sellers seller, SellerInfoRequest request) {
-        seller.updateVendorName(request.getVendorName());
-        seller.updateVendorProfileImage(request.getVendorProfileImage());
-        seller.updateBusinessNumber(request.getBusinessNumber());
-        seller.updateSettlementBank(request.getSettlementBank());
-        seller.updateSettlementAcc(request.getSettlementAcc());
-        seller.updateTags(request.getTags());
-        seller.updateOperatingStartTime(request.getOperatingStartTime());
-        seller.updateOperatingEndTime(request.getOperatingEndTime());
-        seller.updateClosedDays(request.getClosedDays());
+        seller.updateVendorName(request.vendorName());
+        seller.updateVendorProfileImage(request.vendorProfileImage());
+        seller.updateBusinessNumber(request.businessNumber());
+        seller.updateSettlementBank(request.settlementBank());
+        seller.updateSettlementAcc(request.settlementAcc());
+        seller.updateTags(request.tags());
+        seller.updateOperatingStartTime(request.operatingStartTime());
+        seller.updateOperatingEndTime(request.operatingEndTime());
+        seller.updateClosedDays(request.closedDays());
     }
 
     /**
@@ -176,15 +176,15 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private Sellers createNewSeller(Users user, SellerInfoRequest request) {
         return Sellers.builder()
                 .user(user)
-                .vendorName(request.getVendorName())
-                .vendorProfileImage(request.getVendorProfileImage())
-                .businessNumber(request.getBusinessNumber())
-                .settlementBank(request.getSettlementBank())
-                .settlementAccount(request.getSettlementAcc())
-                .tags(request.getTags())
-                .operatingStartTime(request.getOperatingStartTime())
-                .operatingEndTime(request.getOperatingEndTime())
-                .closedDays(request.getClosedDays())
+                .vendorName(request.vendorName())
+                .vendorProfileImage(request.vendorProfileImage())
+                .businessNumber(request.businessNumber())
+                .settlementBank(request.settlementBank())
+                .settlementAccount(request.settlementAcc())
+                .tags(request.tags())
+                .operatingStartTime(request.operatingStartTime())
+                .operatingEndTime(request.operatingEndTime())
+                .closedDays(request.closedDays())
                 .build();
     }
 }
