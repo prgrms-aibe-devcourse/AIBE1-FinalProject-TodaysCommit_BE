@@ -10,7 +10,7 @@ import org.springframework.security.web.AuthenticationEntryPoint;
 
 import java.io.IOException;
 
-public class OAuth2AuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class OAuth2AuthenticationEntryPointHandler implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authException) throws IOException {

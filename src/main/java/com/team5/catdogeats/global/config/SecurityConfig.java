@@ -2,7 +2,7 @@ package com.team5.catdogeats.global.config;
 
 import com.team5.catdogeats.auth.filter.JwtAuthenticationFilter;
 import com.team5.catdogeats.auth.filter.PreventDuplicateLoginFilter;
-import com.team5.catdogeats.auth.handler.OAuth2AuthenticationEntryPoint;
+import com.team5.catdogeats.auth.handler.OAuth2AuthenticationEntryPointHandler;
 import com.team5.catdogeats.auth.handler.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,7 +100,7 @@ public class SecurityConfig {
                     .httpBasic(AbstractHttpConfigurer::disable)
                     .formLogin(AbstractHttpConfigurer::disable)
                     .exceptionHandling(exception ->
-                            exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPoint()))
+                            exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
                     .logout(logout -> logout
                             .logoutUrl("/logout")
 //                            .logoutSuccessHandler(customLogoutSuccessHandler)
