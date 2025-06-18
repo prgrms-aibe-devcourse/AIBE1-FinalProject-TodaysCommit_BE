@@ -188,11 +188,15 @@ CREATE TABLE orders (
                         id BIGINT PRIMARY KEY,
                         user_id VARCHAR(36) NOT NULL,
                         order_status ENUM(
+                            'PAYMENT_PENDING',
                             'PAYMENT_COMPLETED',
                             'PREPARING',
                             'READY_FOR_SHIPMENT',
                             'IN_DELIVERY',
-                            'DELIVERED'
+                            'DELIVERED',
+                            'CANCELLED',
+                            'REFUND_PROCESSING',
+                            'REFUNDED'
                             ) ,
                         total_price BIGINT NOT NULL,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
