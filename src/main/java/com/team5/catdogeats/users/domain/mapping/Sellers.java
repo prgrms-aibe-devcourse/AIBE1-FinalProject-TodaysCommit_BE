@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Entity
@@ -43,10 +44,10 @@ public class Sellers extends BaseEntity {
     private String tags;
 
     @Column(name = "operating_start_time")
-    private LocalTime operatingStartTime;
+    private ZonedDateTime operatingStartTime;
 
     @Column(name = "operating_end_time")
-    private LocalTime operatingEndTime;
+    private ZonedDateTime operatingEndTime;
 
     @Column(name = "closed_days", length = 20)
     private String closedDays;
@@ -81,11 +82,11 @@ public class Sellers extends BaseEntity {
         this.tags = tags;
     }
 
-    public void updateOperatingStartTime(LocalTime operatingStartTime) {
+    public void updateOperatingStartTime(ZonedDateTime  operatingStartTime) {
         this.operatingStartTime = operatingStartTime;
     }
 
-    public void updateOperatingEndTime(LocalTime operatingEndTime) {
+    public void updateOperatingEndTime(ZonedDateTime  operatingEndTime) {
         this.operatingEndTime = operatingEndTime;
     }
 

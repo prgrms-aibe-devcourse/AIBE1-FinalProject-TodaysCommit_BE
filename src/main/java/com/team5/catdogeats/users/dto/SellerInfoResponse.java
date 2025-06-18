@@ -3,8 +3,8 @@ package com.team5.catdogeats.users.dto;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import lombok.*;
 
-import java.time.LocalDateTime;
-import java.time.LocalTime;
+
+import java.time.ZonedDateTime;
 
 public record SellerInfoResponse(
         String userId,
@@ -14,13 +14,12 @@ public record SellerInfoResponse(
         String settlementBank,
         String settlementAcc,
         String tags,
-        LocalTime operatingStartTime,
-        LocalTime operatingEndTime,
+        ZonedDateTime operatingStartTime,
+        ZonedDateTime operatingEndTime,
         String closedDays,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        ZonedDateTime createdAt,
+        ZonedDateTime updatedAt
 ) {
-    // 정적 팩토리 메서드는 그대로 유지 가능
     public static SellerInfoResponse from(Sellers seller) {
         if (seller == null) {
             return null;
@@ -37,8 +36,9 @@ public record SellerInfoResponse(
                 seller.getOperatingStartTime(),
                 seller.getOperatingEndTime(),
                 seller.getClosedDays(),
-                seller.getCreatedAt() != null ? seller.getCreatedAt().toLocalDateTime() : null,
-                seller.getUpdatedAt() != null ? seller.getUpdatedAt().toLocalDateTime() : null
+                seller.getCreatedAt(),
+                seller.getUpdatedAt()
+
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.team5.catdogeats.global.dto;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -11,7 +12,7 @@ public record ApiResponse<T>(
         boolean success,
         String message,
         T data,
-        LocalDateTime timestamp,
+        ZonedDateTime timestamp,
         String path,
         List<FieldError> errors
 ) {
@@ -23,7 +24,7 @@ public record ApiResponse<T>(
                 true,
                 message,
                 data,
-                LocalDateTime.now(),
+                ZonedDateTime.now(),
                 null,
                 null
         );
@@ -37,7 +38,7 @@ public record ApiResponse<T>(
                 false,
                 message,
                 null,
-                LocalDateTime.now(),
+                ZonedDateTime.now(),
                 path,
                 errors
         );
