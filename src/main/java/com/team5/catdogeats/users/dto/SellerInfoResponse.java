@@ -38,7 +38,6 @@ public record SellerInfoResponse(
                 seller.getClosedDays(),
                 seller.getCreatedAt(),
                 seller.getUpdatedAt()
-
         );
     }
 }

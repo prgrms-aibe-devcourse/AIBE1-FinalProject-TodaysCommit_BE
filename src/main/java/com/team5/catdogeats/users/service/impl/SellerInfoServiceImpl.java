@@ -1,6 +1,7 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.domain.enums.DayOfWeek;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.dto.SellerInfoRequest;
@@ -16,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,6 +50,8 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
         // 운영시간 유효성 검증
         validateOperatingHours(request);
+
+        validateClosedDays(request.closedDays());
 
         return upsertSellerInfoInternal(user, userId, request);
     }
@@ -155,6 +159,26 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("운영시간 유효성 검증 완료 - start: {}, end: {}",
                 request.operatingStartTime(), request.operatingEndTime());
     }
+
+    /**
+     * 휴무일 유효성 검증
+     */
+    private void validateClosedDays(String closedDays) {
+        if (closedDays == null || closedDays.trim().isEmpty()) {
+            log.info("휴무일이 설정되지 않음 (null 또는 빈 값)");
+            return; // null이나 빈 값은 허용
+        }
+
+        try {
+            // DayOfWeek.parseFromString()을 사용해서 유효성 검증
+            List<DayOfWeek> days = DayOfWeek.parseFromString(closedDays);
+            log.info("휴무일 유효성 검증 완료 - closedDays: {}, parsed: {}", closedDays, days);
+        } catch (IllegalArgumentException e) {
+            log.warn("유효하지 않은 휴무일 입력 - closedDays: {}, error: {}", closedDays, e.getMessage());
+            throw new IllegalArgumentException("유효하지 않은 요일이 포함되어 있습니다: " + closedDays, e);
+        }
+    }
+
 
     /**
      * 기존 판매자 정보 업데이트

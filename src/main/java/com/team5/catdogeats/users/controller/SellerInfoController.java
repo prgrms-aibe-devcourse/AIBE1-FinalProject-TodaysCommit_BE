@@ -202,7 +202,7 @@ public class SellerInfoController {
                   "tags": "수제간식,강아지",
                   "operatingStartTime": "09:00:00",
                   "operatingEndTime": "18:00:00",
-                  "closedDays": "MON,TUE"
+                  "closedDays": "월요일,화요일"
                   
                 }
                 """
@@ -231,7 +231,7 @@ public class SellerInfoController {
                         "tags": "수제간식,강아지",
                         "operatingStartTime": "09:00:00",
                         "operatingEndTime": "18:00:00",
-                        "closedDays": "MON,TUE
+                        "closedDays": "월요일,화요일",
                         "createdAt": "2024-01-15T10:30:00",
                         "updatedAt": "2024-01-20T14:20:00"
                       },

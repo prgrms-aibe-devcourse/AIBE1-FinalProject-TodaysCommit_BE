@@ -1,4 +1,3 @@
-// 1. 수정된 SellerInfoServiceImplTest.java
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
@@ -101,7 +100,7 @@ class SellerInfoServiceImplTest {
                 .tags("수제간식")
                 .operatingStartTime(ZonedDateTime.now().with(LocalTime.of(9, 0)))
                 .operatingEndTime(ZonedDateTime.now().with(LocalTime.of(18, 0)))
-                .closedDays("MON,TUE")
+                .closedDays("월요일,화요일")
                 .build();
 
         // 다른 판매자 정보
@@ -121,7 +120,7 @@ class SellerInfoServiceImplTest {
                 "수제간식",                             // tags
                 ZonedDateTime.now().with(LocalTime.of(9, 0)),
                 ZonedDateTime.now().with(LocalTime.of(18, 0)),                // operatingEndTime
-                "MON,TUE"                              // closedDays
+                "월요일,화요일"                              // closedDays
         );
     }
 
@@ -151,7 +150,7 @@ class SellerInfoServiceImplTest {
             assertThat(result.tags()).isEqualTo("수제간식");
             assertThat(result.operatingStartTime().toLocalTime()).isEqualTo(LocalTime.of(9, 0));
             assertThat(result.operatingEndTime().toLocalTime()).isEqualTo(LocalTime.of(18, 0));
-            assertThat(result.closedDays()).isEqualTo("MON,TUE");
+            assertThat(result.closedDays()).isEqualTo("월요일,화요일");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -520,6 +519,8 @@ class SellerInfoServiceImplTest {
         }
     }
 
+
+
     // 테스트 유틸리티 메서드 추가 (Record 생성 편의 메서드)
     private SellerInfoRequest createTestRequest(String vendorName, String businessNumber) {
         return new SellerInfoRequest(
@@ -548,4 +549,236 @@ class SellerInfoServiceImplTest {
                 null   // closedDays
         );
     }
+
+    @Nested
+    @DisplayName("휴무일 처리 테스트")
+    class ClosedDaysTests {
+
+        @Test
+        @DisplayName("성공 - 다양한 휴무일 패턴 처리")
+        void upsertSellerInfo_VariousClosedDaysPatterns() {
+            // given - 주말 휴무
+            SellerInfoRequest weekendRequest = new SellerInfoRequest(
+                    "주말휴무 펫샵",
+                    "https://example.com/logo.jpg",
+                    "111-11-11111",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    "토요일,일요일"
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByBusinessNumber("111-11-11111")).willReturn(Optional.empty());
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, weekendRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 단일 휴무일 처리")
+        void upsertSellerInfo_SingleClosedDay() {
+            // given
+            SellerInfoRequest singleDayRequest = new SellerInfoRequest(
+                    "월요일만 휴무",
+                    "https://example.com/logo.jpg",
+                    "222-22-22222",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    "월요일"
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByBusinessNumber("222-22-22222")).willReturn(Optional.empty());
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, singleDayRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 휴무일 없음 (null)")
+        void upsertSellerInfo_NoClosedDays_Null() {
+            // given
+            SellerInfoRequest noClosedDaysRequest = new SellerInfoRequest(
+                    "무휴 펫샵",
+                    "https://example.com/logo.jpg",
+                    "333-33-33333",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    null  // 휴무일 없음
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByBusinessNumber("333-33-33333")).willReturn(Optional.empty());
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, noClosedDaysRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 휴무일 없음 (빈 문자열)")
+        void upsertSellerInfo_NoClosedDays_EmptyString() {
+            // given
+            SellerInfoRequest emptyClosedDaysRequest = new SellerInfoRequest(
+                    "무휴 펫샵2",
+                    "https://example.com/logo.jpg",
+                    "444-44-44444",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    ""  // 빈 문자열
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByBusinessNumber("444-44-44444")).willReturn(Optional.empty());
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, emptyClosedDaysRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+
+        @Test
+        @DisplayName("성공 - 많은 휴무일 처리")
+        void upsertSellerInfo_ManyClosedDays() {
+            // given
+            SellerInfoRequest manyClosedDaysRequest = new SellerInfoRequest(
+                    "주 3일만 운영",
+                    "https://example.com/logo.jpg",
+                    "555-55-55555",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    "월요일,화요일,수요일,목요일"  // 4일 휴무
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByBusinessNumber("555-55-55555")).willReturn(Optional.empty());
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, manyClosedDaysRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+
+        @Test
+        @DisplayName("실패 - 잘못된 요일명")
+        void validateClosedDays_InvalidDayName_ThrowsException() {
+            // given
+            SellerInfoRequest invalidRequest = new SellerInfoRequest(
+                    "잘못된 요일",
+                    "https://example.com/logo.jpg",
+                    "333-33-33333",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    "잘못된요일,화요일"  // 유효하지 않은 요일명
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+
+            // when & then
+            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, invalidRequest))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("유효하지 않은 요일이 포함되어 있습니다: 잘못된요일,화요일");
+
+            // verify - 유효성 검증 실패로 인해 DB 작업이 수행되지 않음
+            verify(sellersRepository, never()).findByBusinessNumber(any());
+            verify(sellersRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("실패 - 부분적으로 잘못된 요일명")
+        void validateClosedDays_PartiallyInvalid_ThrowsException() {
+            // given
+            SellerInfoRequest partiallyInvalidRequest = new SellerInfoRequest(
+                    "부분 잘못",
+                    "https://example.com/logo.jpg",
+                    "444-44-44444",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    "월요일,잘못된요일,수요일"  // 중간에 잘못된 요일
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+
+            // when & then
+            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, partiallyInvalidRequest))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("유효하지 않은 요일이 포함되어 있습니다");
+        }
+
+        @Test
+        @DisplayName("성공 - 공백이 포함된 휴무일 처리")
+        void upsertSellerInfo_ClosedDaysWithSpaces() {
+            // given
+            SellerInfoRequest spacedDaysRequest = new SellerInfoRequest(
+                    "공백 포함 요일",
+                    "https://example.com/logo.jpg",
+                    "777-77-77777",
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    ZonedDateTime.now().with(LocalTime.of(9, 0)),
+                    ZonedDateTime.now().with(LocalTime.of(18, 0)),
+                    "월요일, 화요일, 수요일"  // 공백 포함
+            );
+
+            given(userRepository.findById(testUserId)).willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByBusinessNumber("777-77-77777")).willReturn(Optional.empty());
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(testUserId, spacedDaysRequest);
+
+            // then
+            assertThat(result).isNotNull();
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+    }
+
 }

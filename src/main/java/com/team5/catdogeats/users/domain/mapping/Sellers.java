@@ -2,11 +2,13 @@ package com.team5.catdogeats.users.domain.mapping;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.domain.enums.DayOfWeek;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -93,5 +95,6 @@ public class Sellers extends BaseEntity {
     public void updateClosedDays(String closedDays) {
         this.closedDays = closedDays;
     }
+
 }
 
