@@ -10,7 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebMvc;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -29,13 +29,14 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 /**
- * 주문 통합 테스트
+ * 주문 통합 테스트 (수정됨)
  *
  * 🎯 실제 Service, Repository까지 모두 동작하는 완전한 통합 테스트
- * 🔧 기존 코드를 전혀 수정하지 않고도 완벽하게 테스트 가능!
+ * ✅ Spring Boot 3.5.0 호환 버전
+ * ✅ 실제 Users 엔티티 구조에 맞게 수정
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
-@AutoConfigureWebMvc
+@AutoConfigureMockMvc // 🔧 수정: @AutoConfigureWebMvc → @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Transactional // 테스트 후 자동 롤백
 @DisplayName("주문 통합 테스트")
@@ -55,14 +56,14 @@ class OrderIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 실제 테스트용 사용자 생성 (DB에 저장)
+        // 🔧 실제 Users 엔티티 구조에 맞게 수정
         testUser = Users.builder()
                 .id(UUID.fromString("550e8400-e29b-41d4-a716-446655440000"))
-                .email("test@catdogeats.com")
+                .provider("GOOGLE") // email 대신 provider 사용
+                .providerId("test_provider_id_123") // providerId 추가
+                .userNameAttribute("test_user_attr") // userNameAttribute 추가
                 .name("테스트 사용자")
-                .provider("GOOGLE")
-                .providerId("test_provider_id")
-                .role(Role.BUYER)
+                .role(Role.ROLE_BUYER) // 🔧 수정: BUYER → ROLE_BUYER
                 .accountDisable(false)
                 .build();
 
@@ -73,11 +74,11 @@ class OrderIntegrationTest {
         validRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
                         OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-1") // Mock 데이터와 일치
+                                .productId("product-1") // Mock 데이터와 일치 (프리미엄 강아지 사료)
                                 .quantity(1)
                                 .build(),
                         OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-2") // Mock 데이터와 일치
+                                .productId("product-2") // Mock 데이터와 일치 (고양이 간식)
                                 .quantity(2)
                                 .build()
                 ))
@@ -163,6 +164,7 @@ class OrderIntegrationTest {
         System.out.println("🔢 주문 번호: " + response.getOrderNumber());
         System.out.println("💰 총 금액: " + response.getTotalPrice() + "원");
         System.out.println("📋 주문 상품 수: " + response.getOrderItems().size() + "개");
+        System.out.println("👤 테스트 사용자: " + testUser.getName() + " (" + testUser.getProvider() + ")");
     }
 
     @Test
@@ -253,5 +255,37 @@ class OrderIntegrationTest {
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andDo(print())
                 .andExpect(status().is5xxServerError()); // IllegalArgumentException으로 인한 에러
+    }
+
+    @Test
+    @DisplayName("🔍 실제 DB에 저장된 사용자 정보 확인")
+    @WithMockUser(username = "550e8400-e29b-41d4-a716-446655440000", roles = "BUYER")
+    void verifyTestUserInDatabase() throws Exception {
+        // Given: DB에서 사용자 조회
+        Users foundUser = userRepository.findById(testUser.getId()).orElse(null);
+
+        // Then: 사용자 정보 검증
+        assertThat(foundUser).isNotNull();
+        assertThat(foundUser.getName()).isEqualTo("테스트 사용자");
+        assertThat(foundUser.getProvider()).isEqualTo("GOOGLE");
+        assertThat(foundUser.getProviderId()).isEqualTo("test_provider_id_123");
+        assertThat(foundUser.getRole()).isEqualTo(Role.ROLE_BUYER);
+        assertThat(foundUser.isAccountDisable()).isFalse();
+
+        System.out.println("👤 DB에 저장된 사용자 정보:");
+        System.out.println("   - ID: " + foundUser.getId());
+        System.out.println("   - 이름: " + foundUser.getName());
+        System.out.println("   - 제공자: " + foundUser.getProvider());
+        System.out.println("   - 역할: " + foundUser.getRole());
+        System.out.println("   - 계정 비활성화: " + foundUser.isAccountDisable());
+
+        // 실제 주문 생성도 테스트
+        mockMvc.perform(post("/v1/buyers/orders")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(validRequest)))
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.orderId").exists());
     }
 }
