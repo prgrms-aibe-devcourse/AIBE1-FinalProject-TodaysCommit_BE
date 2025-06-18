@@ -24,6 +24,7 @@ public class Buyers extends BaseEntity {
     private Users user;
 
     @Column(name = "name_masking_status")
+    @Builder.Default
     private boolean nameMaskingStatus = true;
 
 }
