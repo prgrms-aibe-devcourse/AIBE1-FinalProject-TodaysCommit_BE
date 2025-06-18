@@ -324,7 +324,7 @@ public class SellerInfoController {
                     )
             )
     })
-    @PutMapping("/info")
+    @PatchMapping("/info")
     public ResponseEntity<ApiResponse<SellerInfoResponse>> upsertSellerInfo(
             @Valid @RequestBody SellerInfoRequest request,
             BindingResult bindingResult,
