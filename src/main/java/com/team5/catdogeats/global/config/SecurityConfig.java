@@ -2,6 +2,7 @@ package com.team5.catdogeats.global.config;
 
 import com.team5.catdogeats.auth.filter.JwtAuthenticationFilter;
 import com.team5.catdogeats.auth.filter.PreventDuplicateLoginFilter;
+import com.team5.catdogeats.auth.handler.CustomLogoutSuccessHandler;
 import com.team5.catdogeats.auth.handler.OAuth2AuthenticationEntryPointHandler;
 import com.team5.catdogeats.auth.handler.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,7 @@ public class SecurityConfig {
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final PreventDuplicateLoginFilter preventDuplicateLoginFilter;
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
 
     @Bean
     @Order(value = 1)
@@ -103,9 +105,9 @@ public class SecurityConfig {
                             exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
                     .logout(logout -> logout
                             .logoutUrl("/logout")
-//                            .logoutSuccessHandler(customLogoutSuccessHandler)
-//                            .invalidateHttpSession(true)
-//                            .deleteCookies("JSESSIONID", "jwt_token")
+                            .logoutSuccessHandler(customLogoutSuccessHandler)
+                            .invalidateHttpSession(true)
+                            .deleteCookies("token")
                             .permitAll()
                     )
                     .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

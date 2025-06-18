@@ -10,12 +10,12 @@ import org.springframework.stereotype.Component;
 public class CookieUtils {
     private final CookieProperties cookieProperties;
 
-    public ResponseCookie createCookie(String name, String value) {
+    public ResponseCookie createCookie(String name, long maxAge, String value) {
         return ResponseCookie.from(name, value)
                 .sameSite(cookieProperties.getSameSite())
                 .secure(cookieProperties.isSecure())
                 .httpOnly(cookieProperties.isHttpOnly())
-                .maxAge(cookieProperties.getMaxAge())
+                .maxAge(maxAge)
                 .domain(cookieProperties.getDomain())
                 .path(cookieProperties.getPath())
                 .build();
