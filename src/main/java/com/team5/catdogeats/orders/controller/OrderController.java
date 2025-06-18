@@ -86,36 +86,85 @@ public class OrderController {
             throw new IllegalStateException("인증되지 않은 사용자입니다.");
         }
 
-        // TODO: 실제 사용자 ID 추출 로직 구현
-        // 현재는 예시로 principal에서 가져오는 것으로 가정
-        // 실제로는 JWT의 subject나 UserDetails의 username 등을 사용
-        String userId = authentication.getName();
+        // 인증된 사용자의 principal에서 사용자 ID 추출
+        Object principal = authentication.getPrincipal();
 
-        if (userId == null || userId.isEmpty()) {
-            throw new IllegalStateException("사용자 ID를 추출할 수 없습니다.");
+        if (principal == null) {
+            throw new IllegalStateException("사용자 정보를 찾을 수 없습니다.");
+        }
+
+        // 실제 OAuth2 로그인의 경우, CustomOAuth2User나 UserPrincipal에서 ID 추출
+        // 현재는 임시로 principal의 toString()을 사용하거나 테스트용 ID 반환
+
+        // TODO: 실제 OAuth2 사용자 정보 구조에 맞게 수정 필요
+        if (principal instanceof String) {
+            return (String) principal;
+        }
+
+        // OAuth2User 인터페이스를 구현한 사용자 정보에서 ID 추출하는 경우
+        if (principal.toString().equals("anonymousUser")) {
+            // 개발/테스트 환경에서 임시 사용자 ID 반환
+            log.warn("익명 사용자 접근 - 테스트용 사용자 ID 반환");
+            return "test-user-id-123"; // 개발용 임시 ID
+        }
+
+        // 사용자 정보에서 실제 사용자 ID 추출
+        // 실제 구현에서는 CustomOAuth2User.getId() 등을 사용
+        String userId = extractUserIdFromPrincipal(principal);
+
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new IllegalStateException("유효하지 않은 사용자 ID입니다.");
         }
 
         return userId;
     }
 
-    // TODO: 향후 추가될 주문 관련 엔드포인트들
-    /*
-    @GetMapping
-    public ResponseEntity<PageResponse<OrderListResponse>> getOrderList(
-            @RequestParam(defaultValue = "0") int page) {
-        // 주문 목록 조회 로직
+    /**
+     * Principal 객체에서 사용자 ID를 추출합니다.
+     *
+     * 실제 OAuth2 구현에 따라 수정이 필요한 메서드입니다.
+     *
+     * @param principal 인증된 사용자 정보
+     * @return 사용자 ID
+     */
+    private String extractUserIdFromPrincipal(Object principal) {
+        // TODO: 실제 OAuth2 구현에 맞게 수정
+
+        // 예시 1: CustomOAuth2User를 사용하는 경우
+        // if (principal instanceof CustomOAuth2User customUser) {
+        //     return customUser.getId();
+        // }
+
+        // 예시 2: OAuth2User를 직접 사용하는 경우
+        // if (principal instanceof OAuth2User oAuth2User) {
+        //     return (String) oAuth2User.getAttribute("id");
+        // }
+
+        // 예시 3: JWT 토큰에서 추출하는 경우
+        // if (principal instanceof JwtUser jwtUser) {
+        //     return jwtUser.getUserId();
+        // }
+
+        // 현재는 principal의 문자열 표현을 반환 (개발/테스트용)
+        String principalStr = principal.toString();
+
+        // 테스트용: 특정 패턴의 사용자 ID 추출
+        if (principalStr.contains("userId=")) {
+            // "userId=uuid-123" 형태에서 ID 추출
+            return principalStr.split("userId=")[1].split(",")[0];
+        }
+
+        // 기본값: principal 문자열 자체를 ID로 사용 (개발용)
+        return principalStr;
     }
 
-    @GetMapping("/{order-number}")
-    public ResponseEntity<OrderDetailResponse> getOrderDetail(
-            @PathVariable("order-number") Long orderNumber) {
-        // 주문 상세 조회 로직
-    }
+    // TODO: 향후 추가될 주문 관련 API 메서드들
+    // @GetMapping
+    // public ResponseEntity<PageResponse<OrderListResponse>> getOrderList(...)
 
-    @DeleteMapping
-    public ResponseEntity<Void> deleteOrder(
-            @RequestParam("orderNumber") Long orderNumber) {
-        // 주문 내역 삭제 로직
-    }
-    */
+    // @GetMapping("/{order-number}")
+    // public ResponseEntity<OrderDetailResponse> getOrderDetail(...)
+
+    // @DeleteMapping
+    // public ResponseEntity<Void> deleteOrder(...)
 }
