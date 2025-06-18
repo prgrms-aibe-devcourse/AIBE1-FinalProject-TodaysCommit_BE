@@ -2,12 +2,15 @@ package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.assistant.userInfoAssistant.OAuth2UserInfoFactory;
 import com.team5.catdogeats.auth.assistant.userInfoAssistant.Oauth2UserInfo;
+import com.team5.catdogeats.auth.service.JwtService;
+import com.team5.catdogeats.auth.util.CookieUtils;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.OAuthDTO;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.service.UserDuplicateService;
 import com.team5.catdogeats.users.util.OAuthDTOFactory;
 import com.team5.catdogeats.users.util.UserFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,6 +21,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.http.ResponseCookie;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -30,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
+@Slf4j
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("CustomOAuth2UserServiceImpl 테스트")
@@ -43,6 +49,11 @@ class CustomOAuth2UserServiceImplTest {
     private UserFactory userFactory;
     @Mock
     private DefaultOAuth2UserService defaultOAuth2UserService;
+    @Mock
+    private JwtService jwtService;
+
+    @Mock
+    private CookieUtils cookieUtils;
 
     @InjectMocks
     private CustomOAuth2UserServiceImpl customService;
@@ -65,8 +76,11 @@ class CustomOAuth2UserServiceImplTest {
         when(oAuthDTOFactory.create(userRequest, oAuth2User)).thenReturn(dto);
         when(userFactory.createFromOAuth(dto)).thenReturn(users);
         when(users.getRole()).thenReturn(Role.ROLE_TEMP); // 예시 역할
+        when(jwtService.createAccessToken(any(Authentication.class))).thenReturn("mocked-token");
+        ResponseCookie mockCookie = ResponseCookie.from("AUTH-TOKEN", "mocked-token").build();
+        when(cookieUtils.createCookie("AUTH-TOKEN", 3600L, "mocked-token"))
+                .thenReturn(ResponseCookie.from("AUTH-TOKEN","mocked-token").build());
     }
-
     @Nested
     @DisplayName("Google Provider 테스트")
     class GoogleTests {
@@ -106,6 +120,28 @@ class CustomOAuth2UserServiceImplTest {
             assertThatThrownBy(() -> customService.loadUser(userRequest))
                     .isInstanceOf(OAuth2AuthenticationException.class);
         }
+
+        @Test
+        @DisplayName("토큰 발급")
+        void create_token(){
+            OAuth2User result = customService.loadUser(userRequest);
+            Authentication authentication = mock(Authentication.class);
+            String token = jwtService.createAccessToken(authentication);
+            assertThat(token).isNotNull();
+            log.info("생성된 토큰 {}", token);
+            verify(jwtService).createAccessToken(authentication);
+        }
+
+        @Test
+        @DisplayName("쿠키가 정상적으로 생성되는지 검증")
+        void create_cookie_success() {
+            OAuth2User result = customService.loadUser(userRequest);
+
+            // 쿠키 생성 메서드가 호출되었는지 확인
+            ResponseCookie cookie = cookieUtils.createCookie("AUTH-TOKEN", 3600L, "mocked-token");
+            assertThat(cookie).isNotNull();
+            verify(cookieUtils).createCookie("AUTH-TOKEN", 3600L, "mocked-token");
+        }
     }
 
     @Nested
@@ -142,7 +178,6 @@ class CustomOAuth2UserServiceImplTest {
 
             verify(userDuplicateService).isDuplicate(users);
         }
-
     }
 
     @Nested

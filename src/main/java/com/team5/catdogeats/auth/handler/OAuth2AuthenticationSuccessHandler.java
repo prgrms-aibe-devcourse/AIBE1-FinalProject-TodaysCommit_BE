@@ -1,6 +1,6 @@
 package com.team5.catdogeats.auth.handler;
 
-import com.team5.catdogeats.auth.service.impl.JwtServiceImpl;
+import com.team5.catdogeats.auth.service.JwtService;
 import com.team5.catdogeats.auth.util.CookieUtils;
 import com.team5.catdogeats.global.config.CookieProperties;
 import jakarta.servlet.ServletException;
@@ -21,14 +21,14 @@ import java.io.IOException;
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final CookieUtils cookieUtils;
-    private final JwtServiceImpl jwtServiceImpl;
+    private final JwtService jwtService;
     private final CookieProperties cookieProperties;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws ServletException, IOException {
 
-        String token = jwtServiceImpl.createAccessToken(authentication);
+        String token = jwtService.createAccessToken(authentication);
 
         ResponseCookie cookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), token);
             response.setContentType("application/json");
