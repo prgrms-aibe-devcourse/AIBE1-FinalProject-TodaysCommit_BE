@@ -30,7 +30,7 @@ public class Users extends BaseEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 10, nullable = false)
+    @Column(length = 11, nullable = false)
     private Role role;
 
     @Column(nullable = false)
