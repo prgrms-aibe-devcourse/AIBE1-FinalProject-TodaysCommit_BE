@@ -14,7 +14,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = {"com.team5.catdogeats.users.repository", "com.team5.catdogeats.pets.repository"},
+        basePackages = "com.team5.catdogeats.users.repository",
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "jpaTransactionManager"
 )
