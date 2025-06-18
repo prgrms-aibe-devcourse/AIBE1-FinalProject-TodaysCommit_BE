@@ -1,5 +1,6 @@
 package com.team5.catdogeats.addresses.domain;
 
+import com.team5.catdogeats.addresses.domain.enums.AddressType;
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
@@ -50,7 +51,41 @@ public class Addresses extends BaseEntity {
     @Column(name = "phone_number", length = 30, nullable = false)
     private String phoneNumber;
 
+    // 추가 필드
+    @Enumerated(EnumType.STRING)
+    @Column(name = "address_type", length = 20, nullable = false)
+    private AddressType addressType;
+
+    @Column(name = "is_default", nullable = false)
+    private boolean isDefault = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_addresses_user_id"))
     private Users user;
+
+    // 비즈니스 로직 메서드
+    public void updateAddress(String title, String city, String district, String neighborhood,
+                              String streetAddress, String postalCode, String detailAddress, String phoneNumber) {
+        this.title = title;
+        this.city = city;
+        this.district = district;
+        this.neighborhood = neighborhood;
+        this.streetAddress = streetAddress;
+        this.postalCode = postalCode;
+        this.detailAddress = detailAddress;
+        this.phoneNumber = phoneNumber;
+    }
+
+    public void setAsDefault() {
+        this.isDefault = true;
+    }
+
+    public void removeDefault() {
+        this.isDefault = false;
+    }
+
+    // 주소 소유자 확인
+    public boolean isOwnedBy(UUID userId) {
+        return this.user.getId().equals(userId);
+    }
 }
