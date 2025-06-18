@@ -60,23 +60,20 @@ class OrderIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 🔧 수정: UUID를 랜덤하게 생성하여 충돌 방지
-        UUID randomUserId = UUID.randomUUID();
-        testUserId = randomUserId.toString();
-
-        // 🔧 실제 Users 엔티티 구조에 맞게 수정
+        // 🔧 수정: ID를 null로 두고 JPA가 자동 생성하게 함
         testUser = Users.builder()
-                .id(randomUserId) // 🔧 수정: 랜덤 UUID 사용
+                // .id() 제거 - JPA가 자동 생성하도록 함
                 .provider("GOOGLE")
                 .providerId("test_provider_id_" + System.currentTimeMillis()) // 🔧 추가: 시간 기반 고유값
-                .userNameAttribute("test_user_attr_" + randomUserId.toString().substring(0, 8))
+                .userNameAttribute("test_user_attr_" + System.currentTimeMillis())
                 .name("테스트 사용자")
                 .role(Role.ROLE_BUYER)
                 .accountDisable(false)
                 .build();
 
-        // 🔧 수정: saveAndFlush 사용으로 즉시 DB 반영
-        userRepository.saveAndFlush(testUser);
+        // 🔧 수정: 저장 후 생성된 ID 사용
+        testUser = userRepository.saveAndFlush(testUser);
+        testUserId = testUser.getId().toString(); // 저장 후 생성된 ID 가져오기
 
         // 테스트용 주문 요청 데이터
         validRequest = OrderCreateRequest.builder()
