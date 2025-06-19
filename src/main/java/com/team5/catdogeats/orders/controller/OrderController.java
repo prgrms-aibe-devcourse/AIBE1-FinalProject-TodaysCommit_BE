@@ -10,10 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.NoSuchElementException;
 
@@ -32,28 +29,17 @@ public class OrderController {
     private final OrderService orderService;
 
     /**
-     * 주문 생성 (구매자) - 1단계: 재고 차감 포함
-     * <p>
-     * API: POST /v1/buyers/orders
-     * <p>
-     * 처리 과정:
-     * 1. 상품 검증 및 재고 확인
-     * 2. 재고 차감 (동시성 제어)
-     * 3. 주문 생성 (PENDING 상태)
-     * 4. 토스 페이먼츠 정보 응답
-     *
-     * 주문 완료 후 사용자는 응답받은 토스 정보로 결제창에 접속합니다.
-     * 실제 결제 완료는 2단계 "주문 결제 성공(callback)"에서 처리됩니다.
-     *
+     * 주문 생성 (구매자)
      * @param request 주문 생성 요청 정보
+     * @param userId (테스트용) Swagger UI에서 사용자 ID를 직접 입력받기 위한 파라미터
      * @return 생성된 주문 정보 (토스 페이먼츠 연동 정보 포함)
      */
     @PostMapping
     public ResponseEntity<?> createOrder(
-            @Valid @RequestBody OrderCreateRequest request) {
+            @Valid @RequestBody OrderCreateRequest request,
+            @RequestParam("userId") String userId) { // ⭐️ @RequestParam은 이 위치에 있어야 합니다.
 
         try {
-            String userId = getCurrentUserId();
             log.info("주문 생성 요청: userId={}, 상품 개수={}", userId, request.getOrderItems().size());
 
             OrderCreateResponse response = orderService.createOrder(userId, request);
@@ -75,23 +61,5 @@ public class OrderController {
             log.error("주문 생성 중 내부 오류 발생", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("주문 생성 중 서버 오류가 발생했습니다.");
         }
-    }
-
-    /**
-     * 현재 인증된 사용자의 ID를 추출합니다.
-     * <p>
-     * Spring Security의 Authentication에서 사용자 정보를 가져옵니다.
-     * 실제 프로젝트에서는 JWT 토큰이나 세션에서 사용자 ID를 추출하는
-     * 로직으로 대체될 수 있습니다.
-     */
-    private String getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw new IllegalStateException("인증되지 않은 사용자입니다.");
-        }
-
-        // 실제 환경에서는 JWT에서 사용자 ID 추출 또는 UserDetails에서 가져오기
-        return authentication.getName(); // 임시로 name 사용
     }
 }
