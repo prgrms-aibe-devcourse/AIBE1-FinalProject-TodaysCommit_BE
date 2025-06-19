@@ -39,6 +39,7 @@ public class Notifications extends BaseEntity {
     private String message;
 
     @Column(name = "is_read", nullable = false)
+    @Builder.Default
     private boolean isRead = false;
 
     @Column(name = "read_at")

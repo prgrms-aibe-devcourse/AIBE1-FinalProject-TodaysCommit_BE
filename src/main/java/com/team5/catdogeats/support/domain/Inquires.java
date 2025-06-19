@@ -47,5 +47,6 @@ public class Inquires extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private InquiryStatus inquiryStatus = InquiryStatus.PENDING;
 }

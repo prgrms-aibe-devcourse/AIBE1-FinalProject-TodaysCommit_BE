@@ -43,6 +43,7 @@ public class OrderIssueItems extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
+    @Builder.Default
     private IssueStatus issueStatus = IssueStatus.REQUESTED;
 
     @Column(name = "issue_reason")
@@ -52,12 +53,15 @@ public class OrderIssueItems extends BaseEntity {
     private String refundMethod;
 
     @Column(name = "refund_amount", nullable = false)
+    @Builder.Default
     private Long refundAmount = 0L;
 
     @Column(name = "delivery_fee", nullable = false)
+    @Builder.Default
     private Long deliveryFee = 0L;
 
     @Column(name = "return_fee", nullable = false)
+    @Builder.Default
     private Long returnFee = 0L;
 
 }
