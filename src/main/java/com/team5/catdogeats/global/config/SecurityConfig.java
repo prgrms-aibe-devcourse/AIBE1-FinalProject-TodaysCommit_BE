@@ -103,7 +103,7 @@ public class SecurityConfig {
                     .exceptionHandling(exception ->
                             exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
                     .logout(logout -> logout
-                            .logoutUrl("/logout")
+                            .logoutUrl("/v1/auth/logout")
                             .logoutSuccessHandler(customLogoutSuccessHandler)
                             .invalidateHttpSession(true)
                             .deleteCookies("token")
