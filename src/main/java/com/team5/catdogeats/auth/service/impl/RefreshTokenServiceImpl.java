@@ -36,7 +36,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     @Transactional
     public String createRefreshToken(Authentication authentication) {
         UserPrincipal principal = getUserPrincipal(authentication);
-
+        log.debug("로그가 나가는지 테스트입니다");
         Users user = userRepository.findByProviderAndProviderId(principal.provider(), principal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("User not found"));
 
@@ -44,7 +44,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
 
         verification(user);
         RefreshTokens token = refreshTokenRepository.save(newToken);
-        log.info("Created refresh token: {}", token);
+        log.debug("Created refresh token: {}", token.getId());
         return newToken.toString();
     }
 
@@ -52,7 +52,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         List<RefreshTokens> tokens = refreshTokenRepository
                 .findByUserIdAndUsedIsFalse(user.getId());
 
-
+        log.debug("토큰 리스트가 나오는지 검증 로그 Tokens: {}", tokens);
         ZonedDateTime now = ZonedDateTime.now();
 
         List<RefreshTokens> validTokens = tokens.stream()
@@ -62,6 +62,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         if (tokens.size() >= MAX_TOKENS_PER_USER) {
             for (int i = 0; i < tokens.size() - (MAX_TOKENS_PER_USER - 1); i++) {
                 refreshTokenRepository.deleteById(tokens.get(i).getId());
+                log.debug("Deleted refresh token: {}", tokens.get(i));
             }
         }
     }
@@ -78,6 +79,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .userId(user.getId())
                 .used(false)
                 .expiresAt(expiresAt.toInstant())
+                .createdAt(now.toInstant())
                 .build();
     }
 

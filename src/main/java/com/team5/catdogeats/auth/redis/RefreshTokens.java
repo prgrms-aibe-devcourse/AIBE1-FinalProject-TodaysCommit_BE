@@ -3,6 +3,7 @@ package com.team5.catdogeats.auth.redis;
 import jakarta.persistence.Id;
 import lombok.*;
 import org.springframework.data.redis.core.RedisHash;
+import org.springframework.data.redis.core.index.Indexed;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -22,8 +23,11 @@ public class RefreshTokens implements Serializable {
 
     private String provider;
     private String providerId;
+
+    @Indexed
     private UUID userId;
 
+    @Indexed
     private boolean used;
     private Instant expiresAt;
     private Instant createdAt; // 토큰 생성 시간 (정렬용)
