@@ -1,4 +1,4 @@
-package com.team5.catdogeats.users.dto;
+package com.team5.catdogeats.users.domain.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
