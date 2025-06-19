@@ -1,12 +1,14 @@
-// prgrms-aibe-devcourse/aibe1-finalproject-todayscommit_be/AIBE1-FinalProject-TodaysCommit_BE-feat-order-creation-10/src/test/java/com/team5/catdogeats/orders/integration/OrderIntegrationTest.java
-
 package com.team5.catdogeats.orders.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
 import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
+import com.team5.catdogeats.products.domain.Products;
+import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
+import com.team5.catdogeats.users.domain.mapping.Sellers;
+import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,7 +33,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
@@ -42,20 +45,25 @@ class OrderIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private ObjectMapper objectMapper;
-
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private SellersRepository sellersRepository;
+    @Autowired
+    private ProductRepository productRepository;
 
     private Users testUser;
     private OrderCreateRequest validRequest;
-    private UsernamePasswordAuthenticationToken testAuthentication; // 인증 객체
+    private UsernamePasswordAuthenticationToken testAuthentication;
+    private Products product1, product2, product3;
 
     @BeforeEach
     void setUp() {
-        // 1. 테스트 사용자 생성 및 DB에 저장
+        Users sellerUser = userRepository.save(Users.builder().provider("DUMMY").providerId("seller-id").userNameAttribute("dummy").name("판매자").role(Role.ROLE_SELLER).accountDisable(false).build());
+        Sellers seller = sellersRepository.save(Sellers.builder().user(sellerUser).vendorName("테스트 상점").businessNumber("123-45-67890").build());
+
         testUser = Users.builder()
                 .provider("GOOGLE")
                 .providerId("test_provider_id_" + System.currentTimeMillis())
@@ -66,18 +74,20 @@ class OrderIntegrationTest {
                 .build();
         testUser = userRepository.saveAndFlush(testUser);
 
-        // 2. 동적으로 생성된 사용자 ID로 인증 객체 생성
+        product1 = productRepository.save(Products.builder().seller(seller).title("프리미엄 강아지 사료").contents("상품 상세 내용 1").productNumber(1001L).price(25000L).quantity(100).build());
+        product2 = productRepository.save(Products.builder().seller(seller).title("유기농 고양이 사료").contents("상품 상세 내용 2").productNumber(1002L).price(15000L).quantity(50).build());
+        product3 = productRepository.save(Products.builder().seller(seller).title("수제 강아지 간식").contents("상품 상세 내용 3").productNumber(1003L).price(8000L).quantity(30).build());
+
         testAuthentication = new UsernamePasswordAuthenticationToken(
-                testUser.getId().toString(), // Principal의 이름으로 UUID를 사용
+                testUser.getId().toString(),
                 null,
                 Collections.singletonList(new SimpleGrantedAuthority(testUser.getRole().toString()))
         );
 
-        // 3. 테스트용 주문 요청 데이터 생성
         validRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
                         OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-1") // Mock 데이터: 프리미엄 강아지 사료
+                                .productId(product1.getId().toString())
                                 .quantity(2)
                                 .build()
                 ))
@@ -102,17 +112,20 @@ class OrderIntegrationTest {
     void createOrder_Success() throws Exception {
         System.out.println("🔧 현재 테스트 사용자 ID: " + testUser.getId());
 
+        // ⭐️ andReturn()을 가장 마지막에 호출하여 MvcResult를 얻도록 수정
         MvcResult result = mockMvc.perform(post("/v1/buyers/orders")
-                        .with(authentication(testAuthentication)) // 수정: 동적 인증 정보 주입
+                        .param("userId", testUser.getId().toString())
+                        .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest)))
                 .andDo(print())
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.orderId").exists())
-                .andExpect(jsonPath("$.totalPrice").value(50000)) // 25000 * 2
-                .andReturn();
+                .andExpect(jsonPath("$.totalPrice").value(50000))
+                .andReturn(); // ⭐️ .andReturn()을 체인의 마지막으로 이동
 
+        // ⭐️ 응답 본문을 직접 꺼내서 객체로 변환 후 검증
         String responseContent = result.getResponse().getContentAsString();
         OrderCreateResponse response = objectMapper.readValue(responseContent, OrderCreateResponse.class);
         assertThat(response.getOrderId()).isNotNull();
@@ -135,20 +148,21 @@ class OrderIntegrationTest {
     @Test
     @DisplayName("❌ 존재하지 않는 사용자 - 실제 에러 테스트")
     void createOrder_UserNotFound() throws Exception {
-        // 존재하지 않는 UUID로 인증 객체 생성
+        String nonExistentUserId = UUID.randomUUID().toString();
         UsernamePasswordAuthenticationToken nonExistentUserAuth = new UsernamePasswordAuthenticationToken(
-                UUID.randomUUID().toString(),
+                nonExistentUserId,
                 null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_BUYER"))
         );
 
         mockMvc.perform(post("/v1/buyers/orders")
+                        .param("userId", nonExistentUserId)
                         .with(authentication(nonExistentUserAuth))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest)))
                 .andDo(print())
-                .andExpect(status().isNotFound()); // HTTP 500이 아닌 404 Not Found를 기대
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -157,8 +171,8 @@ class OrderIntegrationTest {
         OrderCreateRequest invalidRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
                         OrderCreateRequest.OrderItemRequest.builder()
-                                .productId("product-1")
-                                .quantity(0) // 잘못된 수량
+                                .productId(product1.getId().toString())
+                                .quantity(0)
                                 .build()
                 ))
                 .shippingAddress(validRequest.getShippingAddress())
@@ -166,12 +180,13 @@ class OrderIntegrationTest {
                 .build();
 
         mockMvc.perform(post("/v1/buyers/orders")
+                        .param("userId", testUser.getId().toString())
                         .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andDo(print())
-                .andExpect(status().isBadRequest()); // HTTP 500이 아닌 400 Bad Request를 기대
+                .andExpect(status().isBadRequest());
     }
 
     @Test
@@ -179,22 +194,23 @@ class OrderIntegrationTest {
     void createOrder_MultipleProducts() throws Exception {
         OrderCreateRequest multiProductRequest = OrderCreateRequest.builder()
                 .orderItems(List.of(
-                        OrderCreateRequest.OrderItemRequest.builder().productId("product-1").quantity(1).build(), // 25000원
-                        OrderCreateRequest.OrderItemRequest.builder().productId("product-2").quantity(1).build(), // 15000원
-                        OrderCreateRequest.OrderItemRequest.builder().productId("product-3").quantity(1).build()  // 8000원
+                        OrderCreateRequest.OrderItemRequest.builder().productId(product1.getId().toString()).quantity(1).build(),
+                        OrderCreateRequest.OrderItemRequest.builder().productId(product2.getId().toString()).quantity(1).build(),
+                        OrderCreateRequest.OrderItemRequest.builder().productId(product3.getId().toString()).quantity(1).build()
                 ))
                 .shippingAddress(validRequest.getShippingAddress())
                 .paymentInfo(validRequest.getPaymentInfo())
                 .build();
 
         mockMvc.perform(post("/v1/buyers/orders")
-                        .with(authentication(testAuthentication)) // 수정: 동적 인증 정보 주입
+                        .param("userId", testUser.getId().toString())
+                        .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(multiProductRequest)))
                 .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.totalPrice").value(48000)) // 25000 + 15000 + 8000
+                .andExpect(jsonPath("$.totalPrice").value(48000))
                 .andExpect(jsonPath("$.orderItems.length()").value(3));
     }
 }
