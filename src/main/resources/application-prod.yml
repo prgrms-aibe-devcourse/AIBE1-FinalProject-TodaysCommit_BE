@@ -84,10 +84,10 @@ mybatis:
 
 jwt:
   secret: ${JWT_SECRET_KEY}
-  expiration: 3600000
+  expiration: 1800000
 
   cookie:
-    secure: false
+    secure: true
     same-site: Strict
     http-only: true
     max-age: 3600

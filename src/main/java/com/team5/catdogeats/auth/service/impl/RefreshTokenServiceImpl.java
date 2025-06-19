@@ -34,7 +34,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     
     @Override
     @Transactional
-    public String createRefreshToken(Authentication authentication) {
+    public UUID createRefreshToken(Authentication authentication) {
         UserPrincipal principal = getUserPrincipal(authentication);
         log.debug("로그가 나가는지 테스트입니다");
         Users user = userRepository.findByProviderAndProviderId(principal.provider(), principal.providerId())
@@ -45,7 +45,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         verification(user);
         RefreshTokens token = refreshTokenRepository.save(newToken);
         log.debug("Created refresh token: {}", token.getId());
-        return token.toString();
+        return token.getId();
     }
 
     private void verification(Users user) {

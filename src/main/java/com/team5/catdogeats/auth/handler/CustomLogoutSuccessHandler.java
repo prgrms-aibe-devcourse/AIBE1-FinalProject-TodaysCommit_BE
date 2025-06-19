@@ -31,10 +31,12 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
 //        }
 
             ResponseCookie cookie = cookieUtils.createCookie("token", 0, null);
+            ResponseCookie refreshIdCookie = cookieUtils.createCookie("refreshTokenId", 0, null);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.setStatus(HttpServletResponse.SC_OK);
-            response.setHeader("Set-Cookie", cookie.toString());
+            response.addHeader("Set-Cookie", cookie.toString());
+            response.addHeader("Set-Cookie", refreshIdCookie.toString());
             response.sendRedirect("/");
         } catch (TokenErrorException e) {
             log.error("Error during logout: {}", e.getMessage());

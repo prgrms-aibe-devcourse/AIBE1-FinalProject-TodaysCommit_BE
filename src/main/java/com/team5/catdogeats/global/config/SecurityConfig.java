@@ -67,8 +67,6 @@ public class SecurityConfig {
         try {
             http
                     .csrf(AbstractHttpConfigurer::disable)
-                    .csrf(csrf -> csrf
-                            .ignoringRequestMatchers("/swagger-ui/**", "/v3/api-docs/**"))
                     .sessionManagement(session
                             -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(authorize
@@ -82,6 +80,7 @@ public class SecurityConfig {
                             .requestMatchers("/login/oauth2/code/google/**").permitAll()
                             .requestMatchers("/login/oauth2/code/naver/**").permitAll()
                             .requestMatchers("/login/oauth2/code/kakao/**").permitAll()
+                            .requestMatchers("/v1/auth/refresh").permitAll()
                             .requestMatchers("/v1/notices").permitAll()
                             .requestMatchers("/v1/faqs").permitAll()
                             .requestMatchers("/v1/buyers/products/list").permitAll()

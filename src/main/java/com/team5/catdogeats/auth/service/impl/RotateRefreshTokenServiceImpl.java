@@ -60,7 +60,7 @@ public class RotateRefreshTokenServiceImpl implements RotateRefreshTokenService 
 
         Authentication authentication = jwtService.getAuthentication(principal);
         String newAccessToken = jwtService.createAccessToken(authentication);
-        String newRefreshToken = refreshTokenService.createRefreshToken(authentication);
+        UUID newRefreshToken = refreshTokenService.createRefreshToken(authentication);
 
         return new RotateTokenDTO(newAccessToken, newRefreshToken, "Cookie", 60 * 60 * 24);
     }

@@ -63,7 +63,7 @@ class RefreshTokenServiceImplTest {
         ArgumentCaptor<RefreshTokens> captor = ArgumentCaptor.forClass(RefreshTokens.class);
         when(refreshTokenRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        String result = refreshTokenService.createRefreshToken(authentication);
+        UUID result = refreshTokenService.createRefreshToken(authentication);
 
         RefreshTokens saved = captor.getValue();
         assertNotNull(result);
