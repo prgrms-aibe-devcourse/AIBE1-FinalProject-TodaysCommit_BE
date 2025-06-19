@@ -7,6 +7,8 @@ import com.team5.catdogeats.auth.service.RotateRefreshTokenService;
 import com.team5.catdogeats.auth.util.CookieUtils;
 import com.team5.catdogeats.auth.util.JwtUtils;
 import com.team5.catdogeats.global.config.CookieProperties;
+import com.team5.catdogeats.global.dto.ApiResponse;
+import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.users.domain.dto.ModifyRoleRequestDTO;
 import com.team5.catdogeats.users.service.ModifyUserRoleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -41,12 +44,12 @@ public class AuthController {
                                                 @CookieValue(value = "token", required = false) String token) {
         try {
             if (refreshTokenId == null || token == null) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
             }
 
 
             if (!jwtUtils.isTokenExpired(token)) {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("엑세스 토큰이 만료되지 않았습니다.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(ResponseCode.INVALID_TOKEN));
             }
 
             UUID id = UUID.fromString(refreshTokenId);
@@ -57,16 +60,16 @@ public class AuthController {
             return ResponseEntity.ok()
                     .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
                     .header(HttpHeaders.SET_COOKIE, refreshIdCookie.toString())
-                    .body(dto);
+                    .body(ApiResponse.success(ResponseCode.SUCCESS, dto));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
     }
 
     @PostMapping("/role")
-    public ResponseEntity<?> modifyRole(@RequestBody @Valid @AuthenticationPrincipal UserPrincipal userPrincipal, ModifyRoleRequestDTO roleRequestDTO) {
+    public ResponseEntity<ApiResponse<String>> modifyRole(@RequestBody @Valid @AuthenticationPrincipal UserPrincipal userPrincipal, ModifyRoleRequestDTO roleRequestDTO) {
         if (userPrincipal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
         }
 
         try {
@@ -74,20 +77,23 @@ public class AuthController {
             String token = jwtService.createAccessToken(authentication);
             ResponseCookie accessCookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), token);
 
-            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, accessCookie.toString()).body(token);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("잘못된 접근입니다.");
+            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, accessCookie.toString()).body(ApiResponse.success(ResponseCode.SUCCESS, token));
+        } catch (NoSuchElementException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND));
+        }
+        catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
     }
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         if (userPrincipal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
         }
 
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS));
     }
 }
