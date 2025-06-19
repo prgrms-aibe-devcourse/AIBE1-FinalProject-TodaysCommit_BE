@@ -40,4 +40,9 @@ public class Users extends BaseEntity {
     public void updateRole(Role role) {
         this.role = role;
     }
+
+    public void disableAccount() {
+        this.accountDisable = true;
+    }
+
 }
