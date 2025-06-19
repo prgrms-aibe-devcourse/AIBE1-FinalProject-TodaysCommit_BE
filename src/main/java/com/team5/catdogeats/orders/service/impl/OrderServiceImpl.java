@@ -214,8 +214,8 @@ public class OrderServiceImpl implements OrderService {
 
         // TODO: OrderItemRepository가 있다면 saveAll로 저장
         // return orderItemRepository.saveAll(orderItems);
-        // ⭐️ 현재는 Orders와 cascade로 저장되므로 이 부분을 수정할 필요는 없습니다.
-        // ⭐️ 만약 명시적 저장을 원하신다면 OrderItemRepository를 추가하고 주석을 해제하면 됩니다.
+        // 현재는 Orders와 cascade로 저장되므로 이 부분을 수정할 필요는 없다.
+        // 만약 명시적 저장을 원하신다면 OrderItemRepository를 추가하고 주석을 해제
         return orderItems; // 현재는 Orders와 cascade로 저장됨
     }
 
