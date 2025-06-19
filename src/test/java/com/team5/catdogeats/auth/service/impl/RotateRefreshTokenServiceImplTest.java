@@ -65,7 +65,9 @@ class RotateRefreshTokenServiceImplTest {
         Authentication authentication = mock(Authentication.class);
         when(jwtService.getAuthentication(any(UserPrincipal.class))).thenReturn(authentication);
         when(jwtService.createAccessToken(authentication)).thenReturn("new-access-token");
-        when(refreshTokenService.createRefreshToken(authentication)).thenReturn("new-refresh-token");
+
+        UUID newRefreshTokenId = UUID.randomUUID();
+        when(refreshTokenService.createRefreshToken(authentication)).thenReturn(newRefreshTokenId);
 
         // when
         RotateTokenDTO result = rotateService.RotateRefreshToken(tokenId);
@@ -73,8 +75,9 @@ class RotateRefreshTokenServiceImplTest {
         // then
         assertNotNull(result);
         assertEquals("new-access-token", result.newAccessToken());
-        assertEquals("new-refresh-token", result.newRefreshToken());
+        assertEquals(newRefreshTokenId, result.newRefreshToken()); // UUID 비교
     }
+
 
     @Test
     void rotateRefreshToken_ShouldThrowExpiredTokenException_WhenTokenIsExpired() {
