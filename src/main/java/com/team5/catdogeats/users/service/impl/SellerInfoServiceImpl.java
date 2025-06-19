@@ -6,14 +6,14 @@ import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
-import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
-import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
-import com.team5.catdogeats.users.exception.UserNotFoundException;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.SellerInfoService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,12 +98,14 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      * 판매자 사용자 검증 (존재 여부 + 판매자 권한)
      */
     private Users validateSellerUser(UUID userId) {
+
         Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
+                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+
 
         if (user.getRole() != Role.ROLE_SELLER) {
             log.warn("판매자 권한이 없는 사용자의 접근 시도 - userId: {}, role: {}", userId, user.getRole());
-            throw new SellerAccessDeniedException("판매자 권한이 필요합니다.");
+            throw new AccessDeniedException("판매자 권한이 필요합니다");
         }
 
         log.info("판매자 권한 확인 완료 - userId: {}", userId);
@@ -132,7 +134,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
             if (existingUserId != null && !existingUserId.equals(userId)) {
                 log.warn("사업자 등록번호 중복 - businessNumber: {}, 요청자: {}, 기존사용자: {}",
                         businessNumber, userId, existingUserId);
-                throw new BusinessNumberDuplicateException("이미 등록된 사업자 등록번호입니다.");
+                throw new DataIntegrityViolationException("이미 등록된 사업자 등록번호입니다: " + businessNumber);
             }
         }
     }
@@ -143,7 +145,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private void validateOperatingHours(SellerInfoRequest request) {
         if (request.operatingStartTime() != null && request.operatingEndTime() != null) {
             if (request.operatingStartTime().isAfter(request.operatingEndTime())) {
-                throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
+                throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다");
             }
         }
 

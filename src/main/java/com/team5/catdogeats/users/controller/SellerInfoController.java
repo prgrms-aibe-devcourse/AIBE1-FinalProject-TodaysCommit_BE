@@ -4,10 +4,6 @@ import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
-import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
-import com.team5.catdogeats.users.exception.InvalidOperatingHoursException;
-import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
-import com.team5.catdogeats.users.exception.UserNotFoundException;
 import com.team5.catdogeats.users.service.SellerInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,34 +45,17 @@ public class SellerInfoController {
         UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
         log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
 
-        try {
-            SellerInfoResponse response = sellerInfoService.getSellerInfo(tempUserId);
+        SellerInfoResponse response = sellerInfoService.getSellerInfo(tempUserId);
 
-            if (response == null) {
-                return ResponseEntity.ok(
-                        ApiResponse.success(ResponseCode.SELLER_INFO_NOT_FOUND)
-                );
-            }
-
+        if (response == null) {
             return ResponseEntity.ok(
-                    ApiResponse.success(ResponseCode.SELLER_INFO_SUCCESS, response)
+                    ApiResponse.success(ResponseCode.SELLER_INFO_NOT_FOUND)
             );
-
-        } catch (UserNotFoundException e) {
-            log.error("사용자를 찾을 수 없음 - userId: {}", tempUserId, e);
-            return ResponseEntity.status(ResponseCode.USER_NOT_FOUND.getStatus())
-                    .body(ApiResponse.error(ResponseCode.USER_NOT_FOUND));
-
-        } catch (SellerAccessDeniedException e) {
-            log.error("판매자 권한 없음 - userId: {}", tempUserId, e);
-            return ResponseEntity.status(ResponseCode.SELLER_ACCESS_DENIED.getStatus())
-                    .body(ApiResponse.error(ResponseCode.SELLER_ACCESS_DENIED));
-
-        } catch (Exception e) {
-            log.error("판매자 정보 조회 중 오류 발생 - userId: {}", tempUserId, e);
-            return ResponseEntity.status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
+
+        return ResponseEntity.ok(
+                ApiResponse.success(ResponseCode.SELLER_INFO_SUCCESS, response)
+        );
     }
 
     /**
@@ -113,44 +92,12 @@ public class SellerInfoController {
                     .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, errorMessage));
         }
 
-        try {
-            SellerInfoResponse response = sellerInfoService.upsertSellerInfo(tempUserId, request);
+        SellerInfoResponse response = sellerInfoService.upsertSellerInfo(tempUserId, request);
 
-            return ResponseEntity.ok(
-                    ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
-            );
+        return ResponseEntity.ok(
+                ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
+        );
 
-        } catch (UserNotFoundException e) {
-            log.error("사용자를 찾을 수 없음 - userId: {}", tempUserId, e);
-            return ResponseEntity.status(ResponseCode.USER_NOT_FOUND.getStatus())
-                    .body(ApiResponse.error(ResponseCode.USER_NOT_FOUND));
-
-        } catch (SellerAccessDeniedException e) {
-            log.error("판매자 권한 없음 - userId: {}", tempUserId, e);
-            return ResponseEntity.status(ResponseCode.SELLER_ACCESS_DENIED.getStatus())
-                    .body(ApiResponse.error(ResponseCode.SELLER_ACCESS_DENIED));
-
-        } catch (BusinessNumberDuplicateException e) {
-            log.error("사업자 등록번호 중복 - userId: {}, businessNumber: {}",
-                    tempUserId, request.businessNumber(), e);
-            return ResponseEntity.status(ResponseCode.BUSINESS_NUMBER_DUPLICATE.getStatus())
-                    .body(ApiResponse.error(ResponseCode.BUSINESS_NUMBER_DUPLICATE));
-
-        } catch (InvalidOperatingHoursException e) {
-            log.error("운영시간 유효성 검증 실패 - userId: {}, error: {}", tempUserId, e.getMessage(), e);
-            return ResponseEntity.status(ResponseCode.INVALID_OPERATING_HOURS.getStatus())
-                    .body(ApiResponse.error(ResponseCode.INVALID_OPERATING_HOURS, e.getMessage()));
-
-        } catch (IllegalArgumentException e) {
-            log.error("입력값 유효성 검증 실패 - userId: {}, error: {}", tempUserId, e.getMessage(), e);
-            return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
-
-        } catch (Exception e) {
-            log.error("판매자 정보 저장 중 오류 발생 - userId: {}", tempUserId, e);
-            return ResponseEntity.status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
-        }
     }
 
     // TODO: JWT 구현 후 실제 토큰 추출 로직 추가 예정

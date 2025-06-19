@@ -6,11 +6,9 @@ import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
-import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
-import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
-import com.team5.catdogeats.users.exception.UserNotFoundException;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.time.LocalTime;
 import java.util.Optional;
@@ -183,8 +183,8 @@ class SellerInfoServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.getSellerInfo(testUserId))
-                    .isInstanceOf(UserNotFoundException.class)
-                    .hasMessage("존재하지 않는 사용자입니다.");
+                    .isInstanceOf(EntityNotFoundException.class)
+                    .hasMessageContaining("사용자를 찾을 수 없습니다");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -199,8 +199,8 @@ class SellerInfoServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.getSellerInfo(testUserId))
-                    .isInstanceOf(SellerAccessDeniedException.class)
-                    .hasMessage("판매자 권한이 필요합니다.");
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("판매자 권한이 필요합니다");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -303,8 +303,8 @@ class SellerInfoServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
-                    .isInstanceOf(BusinessNumberDuplicateException.class)
-                    .hasMessage("이미 등록된 사업자 등록번호입니다.");
+                    .isInstanceOf(DataIntegrityViolationException.class)
+                    .hasMessageContaining("이미 등록된 사업자 등록번호입니다");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -321,8 +321,8 @@ class SellerInfoServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
-                    .isInstanceOf(UserNotFoundException.class)
-                    .hasMessage("존재하지 않는 사용자입니다.");
+                    .isInstanceOf(EntityNotFoundException.class)
+                    .hasMessageContaining("사용자를 찾을 수 없습니다");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -339,8 +339,8 @@ class SellerInfoServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
-                    .isInstanceOf(SellerAccessDeniedException.class)
-                    .hasMessage("판매자 권한이 필요합니다.");
+                    .isInstanceOf(AccessDeniedException.class)
+                    .hasMessageContaining("판매자 권한이 필요합니다");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -370,7 +370,7 @@ class SellerInfoServiceImplTest {
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, invalidRequest))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
+                    .hasMessageContaining("운영 시작 시간은 종료 시간보다 빠를 수 없습니다");
 
             // verify
             verify(userRepository).findById(testUserId);
@@ -425,8 +425,8 @@ class SellerInfoServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
-                    .isInstanceOf(BusinessNumberDuplicateException.class)
-                    .hasMessage("이미 등록된 사업자 등록번호입니다.");
+                    .isInstanceOf(DataIntegrityViolationException.class)
+                    .hasMessageContaining("이미 등록된 사업자 등록번호입니다");
         }
 
         @Test
