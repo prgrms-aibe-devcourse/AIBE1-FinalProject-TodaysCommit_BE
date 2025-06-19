@@ -1,7 +1,10 @@
 package com.team5.catdogeats.users.repository;
 
+import com.team5.catdogeats.users.domain.dto.SellerDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -21,4 +24,27 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
     Optional<Sellers> findByBusinessNumber(String businessNumber);
 
 
+
+    @Query("""
+        SELECT new com.team5.catdogeats.users.domain.dto.SellerDTO(
+            s.user.id,
+            s.vendorName,
+            s.vendorProfileImage,
+            s.businessNumber,
+            s.settlementBank,
+            s.settlementAccount,
+            s.tags,
+            s.operatingStartTime,
+            s.operatingEndTime,
+            s.closedDays
+        )
+        FROM Sellers s
+        JOIN s.user u
+        WHERE u.provider = :provider
+        AND u.providerId = :providerId
+    """)
+    Optional<SellerDTO> findSellerDtoByProviderAndProviderId(
+            @Param("provider") String provider,
+            @Param("providerId") String providerId
+    );
 }
