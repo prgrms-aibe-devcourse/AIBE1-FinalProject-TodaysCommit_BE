@@ -1,5 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
+import com.team5.catdogeats.global.config.TossPaymentsConfig;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
 import com.team5.catdogeats.orders.domain.mapping.OrderItems;
@@ -7,25 +8,31 @@ import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
 import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.orders.repository.OrderRepository;
 import com.team5.catdogeats.orders.service.OrderService;
+import com.team5.catdogeats.products.domain.Products;
+import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
 /**
- * 주문 관리 서비스 구현체
+ * 주문 관리 서비스 구현체 (1단계: 재고 차감 포함)
  *
- * 주문 생성 및 관리를 위한 핵심 비즈니스 로직을 처리합니다.
+ * 1단계 "주문(구매자)" 기능:
+ * - 상품 존재 확인 및 재고 검증
+ * - 재고 차감 (동시성 제어)
+ * - 주문 엔티티 생성 (PENDING 상태)
+ * - 토스 페이먼츠 정보 응답
  *
- * TODO: Products 도메인 완성 후 실제 상품 검증 로직 추가 예정
+ * 모든 작업이 하나의 트랜잭션에서 수행되어 재고 차감 실패 시 주문도 롤백됩니다.
  */
 @Slf4j
 @Service
@@ -35,21 +42,11 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
-    // TODO: Products 도메인 완성 후 추가 예정
-    // private final ProductRepository productRepository;
-
-    // 토스 페이먼츠 설정값들 (application-dev.yml에서 주입)
-    @Value("${toss.payments.client-key}")
-    private String tossClientKey;
-
-    @Value("${toss.payments.success-url}")
-    private String defaultSuccessUrl;
-
-    @Value("${toss.payments.fail-url}")
-    private String defaultFailUrl;
+    private final ProductRepository productRepository;
+    private final TossPaymentsConfig.TossPaymentsProperties tossPaymentsProperties;
 
     /**
-     * 주문을 생성합니다.
+     * 주문을 생성합니다. (1단계: 재고 차감 포함)
      *
      * @param userId 주문을 생성하는 사용자 ID
      * @param request 주문 생성 요청 정보
@@ -64,26 +61,28 @@ public class OrderServiceImpl implements OrderService {
         Users user = findUserById(userId);
 
         // 2. 주문 상품들 검증 및 정보 수집
-        List<OrderItemInfo> orderItemInfos = validateAndCollectOrderItems(request.getOrderItems());
+        List<OrderItemInfo> orderItemInfos = validateOrderItems(request.getOrderItems());
 
-        // 3. 총 주문 금액 계산
+        // 3. 재고 차감 (중요: 주문 생성 전에 수행)
+        performStockDeduction(orderItemInfos);
+
+        // 4. 총 주문 금액 계산
         Long totalPrice = calculateTotalPrice(orderItemInfos);
 
-        // 4. 주문 엔티티 생성 및 저장
+        // 5. 주문 엔티티 생성 및 저장
         Orders order = createAndSaveOrder(user, totalPrice);
 
-        // 5. 주문 아이템들 생성 및 저장
+        // 6. 주문 아이템들 생성 및 저장
         List<OrderItems> savedOrderItems = createAndSaveOrderItems(order, orderItemInfos);
 
-        // 6. 토스 페이먼츠 정보 생성
+        // 7. 토스 페이먼츠 정보 생성
         OrderCreateResponse.TossPaymentInfo tossPaymentInfo = createTossPaymentInfo(
-                order, request.getPaymentInfo(), totalPrice
-        );
+                order, request.getPaymentInfo(), totalPrice);
 
-        // 7. 응답 DTO 생성
+        // 8. 응답 DTO 생성
         OrderCreateResponse response = buildOrderCreateResponse(order, savedOrderItems, tossPaymentInfo);
 
-        log.info("주문 생성 완료: orderId={}, orderNumber={}, totalPrice={}",
+        log.info("주문 생성 완료 (재고 차감 완료): orderId={}, orderNumber={}, totalPrice={}",
                 order.getId(), order.getOrderNumber(), totalPrice);
 
         return response;
@@ -98,76 +97,69 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품들 검증 및 정보 수집
-     * TODO: Products 도메인 완성 후 실제 상품 검증 로직으로 교체
+     * 주문 상품들 검증 (존재 확인 + 재고 확인)
      */
-    private List<OrderItemInfo> validateAndCollectOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
+    private List<OrderItemInfo> validateOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
         for (OrderCreateRequest.OrderItemRequest item : orderItems) {
-            // TODO: 실제 상품 검증 로직 (Products 도메인 완성 후 활성화)
-            /*
+            // 실제 상품 조회
             Products product = productRepository.findById(UUID.fromString(item.getProductId()))
-                .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + item.getProductId()));
-            */
-
-            // 임시 Mock 상품 정보 (개발 완료 전까지 사용)
-            MockProduct mockProduct = createMockProduct(item.getProductId());
+                    .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + item.getProductId()));
 
             // 기본 수량 검증
             if (item.getQuantity() <= 0) {
                 throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다.");
             }
 
-            // 재고 검증 (Mock)
-            if (item.getQuantity() > mockProduct.getStock()) {
-                throw new IllegalArgumentException("재고가 부족합니다. 상품: " + mockProduct.getName());
+            // 재고 확인 (차감 전 검증)
+            if (item.getQuantity() > product.getQuantity()) {
+                throw new IllegalArgumentException(
+                        String.format("재고가 부족합니다. 상품: %s, 요청 수량: %d, 재고: %d",
+                                product.getTitle(), item.getQuantity(), product.getQuantity()));
             }
 
-            orderItemInfos.add(OrderItemInfo.builder()
-                    .productId(item.getProductId())
-                    .productName(mockProduct.getName())
-                    .unitPrice(mockProduct.getPrice())
+            // 주문 상품 정보 생성
+            OrderItemInfo orderItemInfo = OrderItemInfo.builder()
+                    .productId(product.getId().toString())
+                    .productName(product.getTitle())
+                    .unitPrice(product.getPrice())
                     .quantity(item.getQuantity())
-                    .totalPrice(mockProduct.getPrice() * item.getQuantity())
-                    .build());
+                    .totalPrice(product.getPrice() * item.getQuantity())
+                    .build();
+
+            orderItemInfos.add(orderItemInfo);
         }
 
         return orderItemInfos;
     }
 
     /**
-     * Mock 상품 정보 생성 (임시)
-     * TODO: Products 도메인 완성 후 제거
+     * 재고 차감 수행 (원자적 처리)
+     *
+     * 동시성 제어를 위해 데이터베이스 레벨에서 원자적으로 처리합니다.
      */
-    private MockProduct createMockProduct(String productId) {
-        // 상품 ID에 따른 임시 Mock 데이터
-        return switch (productId) {
-            case "product-1" -> MockProduct.builder()
-                    .id(productId)
-                    .name("프리미엄 강아지 사료")
-                    .price(25000L)
-                    .stock(100)
-                    .build();
-            case "product-2" -> MockProduct.builder()
-                    .id(productId)
-                    .name("고양이 간식")
-                    .price(15000L)
-                    .stock(50)
-                    .build();
-            case "product-3" -> MockProduct.builder()
-                    .id(productId)
-                    .name("반려동물 장난감")
-                    .price(8000L)
-                    .stock(200)
-                    .build();
-            default -> MockProduct.builder()
-                    .id(productId)
-                    .name("일반 반려동물 용품")
-                    .price(10000L)
-                    .stock(30)
-                    .build();
-        };
+    private void performStockDeduction(List<OrderItemInfo> orderItemInfos) {
+        log.info("재고 차감 시작: 상품 개수={}", orderItemInfos.size());
+
+        for (OrderItemInfo itemInfo : orderItemInfos) {
+            UUID productId = UUID.fromString(itemInfo.getProductId());
+            Integer quantity = itemInfo.getQuantity();
+
+            // 원자적 재고 차감
+            int updatedRows = productRepository.decreaseQuantity(productId, quantity);
+
+            if (updatedRows == 0) {
+                // 재고 차감 실패: 동시성 충돌 또는 재고 부족
+                throw new IllegalStateException(
+                        String.format("재고 차감 실패 (동시성 충돌 또는 재고 부족): 상품=%s, 요청수량=%d",
+                                itemInfo.getProductName(), quantity));
+            }
+
+            log.info("재고 차감 성공: 상품={}, 차감수량={}", itemInfo.getProductName(), quantity);
+        }
+
+        log.info("전체 재고 차감 완료");
     }
 
     /**
@@ -184,21 +176,13 @@ public class OrderServiceImpl implements OrderService {
      */
     private Orders createAndSaveOrder(Users user, Long totalPrice) {
         Orders order = Orders.builder()
-                .orderNumber(generateOrderNumber())
                 .user(user)
-                .orderStatus(OrderStatus.PAYMENT_PENDING) // 결제 대기 상태로 시작
+                .orderStatus(OrderStatus.PAYMENT_PENDING) // 결제 대기 상태 (재고는 이미 차감됨)
                 .totalPrice(totalPrice)
+                // createdAt은 BaseEntity의 @PrePersist에서 자동 설정
                 .build();
 
         return orderRepository.save(order);
-    }
-
-    /**
-     * 주문 번호 생성 (타임스탬프 기반)
-     * TODO: 더 견고한 주문번호 생성 로직으로 개선 가능
-     */
-    private Long generateOrderNumber() {
-        return System.currentTimeMillis() % 10000000000L; // 10자리 숫자로 제한
     }
 
     /**
@@ -208,10 +192,12 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItems> orderItems = new ArrayList<>();
 
         for (OrderItemInfo info : orderItemInfos) {
+            Products product = productRepository.findById(UUID.fromString(info.getProductId()))
+                    .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + info.getProductId()));
+
             OrderItems orderItem = OrderItems.builder()
                     .orders(order)
-                    // TODO: 실제 Products 엔티티 연결 (Products 도메인 완성 후)
-                    // .products(productRepository.findById(UUID.fromString(info.getProductId())).orElse(null))
+                    .products(product)
                     .quantity(info.getQuantity())
                     .price(info.getUnitPrice())
                     .build();
@@ -219,9 +205,9 @@ public class OrderServiceImpl implements OrderService {
             orderItems.add(orderItem);
         }
 
-        // 별도의 OrderItemRepository가 필요하다면 생성, 현재는 Orders를 통해 저장
+        // TODO: OrderItemRepository가 있다면 saveAll로 저장
         // return orderItemRepository.saveAll(orderItems);
-        return orderItems; // 임시로 반환
+        return orderItems; // 현재는 Orders와 cascade로 저장됨
     }
 
     /**
@@ -230,7 +216,6 @@ public class OrderServiceImpl implements OrderService {
     private OrderCreateResponse.TossPaymentInfo createTossPaymentInfo(
             Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo, Long totalPrice) {
 
-        // 주문명 생성 (첫 번째 상품명 + 외 N건)
         String orderName = generateOrderName(order);
 
         return OrderCreateResponse.TossPaymentInfo.builder()
@@ -240,10 +225,10 @@ public class OrderServiceImpl implements OrderService {
                 .customerName(paymentInfo.getCustomerName())
                 .customerEmail(paymentInfo.getCustomerEmail())
                 .successUrl(paymentInfo.getSuccessUrl() != null ?
-                        paymentInfo.getSuccessUrl() : defaultSuccessUrl)
+                        paymentInfo.getSuccessUrl() : tossPaymentsProperties.getSuccessUrl())
                 .failUrl(paymentInfo.getFailUrl() != null ?
-                        paymentInfo.getFailUrl() : defaultFailUrl)
-                .clientKey(tossClientKey)
+                        paymentInfo.getFailUrl() : tossPaymentsProperties.getFailUrl())
+                .clientKey(tossPaymentsProperties.getClientKey())
                 .build();
     }
 
@@ -251,8 +236,9 @@ public class OrderServiceImpl implements OrderService {
      * 주문명 생성 (토스 페이먼츠용)
      */
     private String generateOrderName(Orders order) {
-        // TODO: 실제 상품명으로 생성 (현재는 Mock)
-        return "반려동물 용품 외 1건"; // 임시
+        return String.format("%s%d번 주문",
+                tossPaymentsProperties.getOrder().getPrefix(),
+                order.getOrderNumber());
     }
 
     /**
@@ -261,17 +247,13 @@ public class OrderServiceImpl implements OrderService {
     private OrderCreateResponse buildOrderCreateResponse(
             Orders order, List<OrderItems> orderItems, OrderCreateResponse.TossPaymentInfo tossPaymentInfo) {
 
-        // 주문 아이템 응답 목록 생성 (임시 Mock 데이터 사용)
         List<OrderCreateResponse.OrderItemResponse> orderItemResponses = new ArrayList<>();
 
-        for (int i = 0; i < orderItems.size(); i++) {
-            OrderItems item = orderItems.get(i);
-
-            // TODO: 실제 Products 엔티티 정보 사용 (Products 도메인 완성 후)
+        for (OrderItems item : orderItems) {
             orderItemResponses.add(OrderCreateResponse.OrderItemResponse.builder()
-                    .orderItemId(item.getId() != null ? item.getId().toString() : "temp-" + i)
-                    .productId("temp-product-" + i) // 임시
-                    .productName("임시 상품명 " + (i + 1)) // 임시
+                    .orderItemId(item.getId() != null ? item.getId().toString() : "temp-" + System.nanoTime())
+                    .productId(item.getProducts().getId().toString())
+                    .productName(item.getProducts().getTitle())
                     .quantity(item.getQuantity())
                     .unitPrice(item.getPrice())
                     .totalPrice(item.getPrice() * item.getQuantity())
@@ -290,7 +272,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 아이템 정보를 담는 내부 DTO
+     * 주문 상품 정보를 담는 내부 DTO
      */
     @lombok.Builder
     @lombok.Getter
@@ -300,17 +282,5 @@ public class OrderServiceImpl implements OrderService {
         private Long unitPrice;
         private Integer quantity;
         private Long totalPrice;
-    }
-
-    /**
-     * Mock 상품 정보 (임시)
-     */
-    @lombok.Builder
-    @lombok.Getter
-    private static class MockProduct {
-        private String id;
-        private String name;
-        private Long price;
-        private Integer stock;
     }
 }
