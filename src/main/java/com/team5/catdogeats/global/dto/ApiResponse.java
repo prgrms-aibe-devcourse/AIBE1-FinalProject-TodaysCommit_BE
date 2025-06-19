@@ -1,6 +1,9 @@
 package com.team5.catdogeats.global.dto;
 
-import java.time.LocalDateTime;
+import com.team5.catdogeats.global.enums.ResponseCode;
+import org.springframework.validation.FieldError;
+
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -11,19 +14,35 @@ public record ApiResponse<T>(
         boolean success,
         String message,
         T data,
-        LocalDateTime timestamp,
+        ZonedDateTime timestamp,
         String path,
         List<FieldError> errors
 ) {
+    // === ResponseCode 기반 새로운 팩토리 메서드들 ===
+
     /**
      * 성공 응답 생성
      */
-    public static <T> ApiResponse<T> success(String message, T data) {
+    public static <T> ApiResponse<T> success(ResponseCode responseCode, T data) {
         return new ApiResponse<>(
                 true,
-                message,
+                responseCode.getMessage(),
                 data,
-                LocalDateTime.now(),
+                ZonedDateTime.now(),
+                null,
+                null
+        );
+    }
+
+    /**
+     * 성공 응답 생성 (데이터 없음)
+     */
+    public static <T> ApiResponse<T> success(ResponseCode responseCode) {
+        return new ApiResponse<>(
+                true,
+                responseCode.getMessage(),
+                null,
+                ZonedDateTime.now(),
                 null,
                 null
         );
@@ -32,29 +51,43 @@ public record ApiResponse<T>(
     /**
      * 실패 응답 생성
      */
-    public static <T> ApiResponse<T> error(String message, String path, List<FieldError> errors) {
+    public static <T> ApiResponse<T> error(ResponseCode responseCode) {
         return new ApiResponse<>(
                 false,
-                message,
+                responseCode.getMessage(),
                 null,
-                LocalDateTime.now(),
+                ZonedDateTime.now(),
+                null,
+                null
+        );
+    }
+
+    /**
+     * 실패 응답 생성 (커스텀 메시지)
+     */
+    public static <T> ApiResponse<T> error(ResponseCode responseCode, String customMessage) {
+        return new ApiResponse<>(
+                false,
+                customMessage,
+                null,
+                ZonedDateTime.now(),
+                null,
+                null
+        );
+    }
+
+    /**
+     * 실패 응답 생성 (path)
+     */
+    public static <T> ApiResponse<T> error(ResponseCode responseCode, String path, List<FieldError> errors) {
+        return new ApiResponse<>(
+                false,
+                responseCode.getMessage(),
+                null,
+                ZonedDateTime.now(),
                 path,
                 errors
         );
     }
 
-    /**
-     * 단순 에러 응답 생성 (필드 에러 없이)
-     */
-    public static <T> ApiResponse<T> error(String message, String path) {
-        return error(message, path, null);
-    }
-
-    /**
-     * 필드 에러 정보
-     */
-    public record FieldError(
-            String field,
-            String message
-    ) {}
 }
