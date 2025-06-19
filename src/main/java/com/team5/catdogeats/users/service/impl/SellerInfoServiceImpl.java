@@ -40,8 +40,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return getSellerInfoInternal(userId);
     }
 
-    @Override
-    @Transactional
     public SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request) {
         log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.vendorName());
 
@@ -50,10 +48,9 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
         // 운영시간 유효성 검증
         validateOperatingHours(request);
-
         validateClosedDays(request.closedDays());
 
-        return upsertSellerInfoInternal(user, userId, request);
+        return upsertSellerInfoInternal(user, request);
     }
 
     /**
@@ -73,7 +70,8 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 판매자 정보 등록/수정 로직
      */
-    private SellerInfoResponse upsertSellerInfoInternal(Users user, UUID userId, SellerInfoRequest request) {
+    private SellerInfoResponse upsertSellerInfoInternal(Users user, SellerInfoRequest request) {
+        UUID userId = user.getId();
         // 사업자 등록번호 중복 체크
         validateBusinessNumberDuplication(userId, request.businessNumber());
 
