@@ -308,8 +308,12 @@ public class OrderServiceImpl implements OrderService {
      * (yyyyMMddHHmmss + 6자리 랜덤 숫자)
      */
     private Long generateOrderNumber() {
-        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
-        int randomNum = ThreadLocalRandom.current().nextInt(100000, 1000000);
+        // ⭐️ yyyy -> yy 로 변경하여 길이를 줄임
+        String timestamp = new SimpleDateFormat("yyMMddHHmmss").format(new Date());
+        // ⭐️ 6자리 -> 4자리 랜덤 숫자로 변경
+        int randomNum = ThreadLocalRandom.current().nextInt(1000, 10000);
+
+        // timestamp(12자리) + randomNum(4자리) = 16자리 숫자 (Long 범위 내)
         return Long.parseLong(timestamp + randomNum);
     }
 }
