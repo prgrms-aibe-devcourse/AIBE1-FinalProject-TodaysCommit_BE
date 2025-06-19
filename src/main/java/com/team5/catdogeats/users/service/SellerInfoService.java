@@ -1,7 +1,7 @@
 package com.team5.catdogeats.users.service;
 
-import com.team5.catdogeats.users.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 
 import java.util.UUID;
 
