@@ -33,22 +33,27 @@ public class RefreshTokenController {
     @Operation(summary = "토큰 갱신", description = "리프레시 토큰을 사용하여 액세스 토큰과 리프레시 토큰을 갱신합니다.")
     public ResponseEntity<?> rotateRefreshToken(@CookieValue(value = "refreshTokenId", required = false) String refreshTokenId,
                                                 @CookieValue(value = "token", required = false) String token) {
-        if (refreshTokenId == null || token == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+        try {
+            if (refreshTokenId == null || token == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("인증되지 않은 사용자입니다.");
+            }
+
+
+            if (!jwtUtils.isTokenExpired(token)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("엑세스 토큰이 만료되지 않았습니다.");
+            }
+
+            UUID id = UUID.fromString(refreshTokenId);
+            RotateTokenDTO dto = rotateRefreshTokenService.RotateRefreshToken(id);
+            ResponseCookie accessCookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), dto.newAccessToken());
+            ResponseCookie refreshIdCookie = cookieUtils.createCookie("refreshTokenId", cookieProperties.getMaxAge(), dto.newRefreshToken().toString());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .header(HttpHeaders.SET_COOKIE, refreshIdCookie.toString())
+                    .body(dto);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-
-        if (!jwtUtils.isTokenExpired(token)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("엑세스 토큰이 만료되지 않았습니다.");
-        }
-
-        UUID id = UUID.fromString(refreshTokenId);
-        RotateTokenDTO dto = rotateRefreshTokenService.RotateRefreshToken(id);
-        ResponseCookie accessCookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), dto.newAccessToken());
-        ResponseCookie refreshIdCookie = cookieUtils.createCookie("refreshTokenId", cookieProperties.getMaxAge(), dto.newRefreshToken().toString());
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
-                .header(HttpHeaders.SET_COOKIE, refreshIdCookie.toString())
-                .body(dto);
     }
 }
