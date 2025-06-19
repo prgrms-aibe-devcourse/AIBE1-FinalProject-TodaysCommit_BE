@@ -6,6 +6,10 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.ModifyRoleRequestDTO;
 import com.team5.catdogeats.users.domain.enums.Role;
+import com.team5.catdogeats.users.domain.mapping.Buyers;
+import com.team5.catdogeats.users.domain.mapping.Sellers;
+import com.team5.catdogeats.users.repository.BuyerRepository;
+import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.ModifyUserRoleService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +32,8 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class ModifyUserRoleServiceImpl  implements ModifyUserRoleService {
     private final UserRepository userRepository;
+    private final SellersRepository sellersRepository;
+    private final BuyerRepository buyerRepository;
     private final OAuth2ProviderStrategyFactory strategyFactory;
 
     @Override
@@ -42,6 +48,21 @@ public class ModifyUserRoleServiceImpl  implements ModifyUserRoleService {
 
         user.updateRole(role.role());
         userRepository.save(user);
+
+
+        if (role.role() == Role.ROLE_SELLER) {
+            Sellers seller = Sellers.builder()
+                    .user(user)
+                    .build();
+            sellersRepository.save(seller);
+        }
+
+        if (role.role() == Role.ROLE_BUYER) {
+            Buyers buyer = Buyers.builder()
+                    .user(user)
+                    .build();
+            buyerRepository.save(buyer);
+        }
 
         Authentication currentAuth = SecurityContextHolder.getContext().getAuthentication();
         Authentication newAuth = modifyAuthentication(currentAuth, userPrincipal, role, user);

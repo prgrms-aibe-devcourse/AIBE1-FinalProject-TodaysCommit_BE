@@ -71,7 +71,7 @@ public class JwtUtils {
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
-                if (cookie.getName().equals("jwt_token")) {
+                if (cookie.getName().equals("token")) {
                     return cookie.getValue();
                 }
             }

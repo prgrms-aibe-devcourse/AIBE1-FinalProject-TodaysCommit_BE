@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toList());
 
-            UserPrincipal userPrincipal = new UserPrincipal(providerId, provider);
+            UserPrincipal userPrincipal = new UserPrincipal(provider, providerId);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userPrincipal, token, grantedAuthorities);

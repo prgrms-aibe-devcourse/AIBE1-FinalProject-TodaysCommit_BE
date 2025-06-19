@@ -90,6 +90,7 @@ public class SecurityConfig {
                             .requestMatchers("/v1/users/**").hasAnyRole("BUYER", "SELLER")
                             .requestMatchers("/v1/sellers/**").hasRole("SELLER")
                             .requestMatchers("/v1/buyers/**").hasRole("BUYER")
+                            .requestMatchers("/v1/auth/role").hasRole("TEMP")
                             .anyRequest().authenticated())
 
                     .oauth2Login(oauth2 -> oauth2

@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/auth")
@@ -67,7 +69,7 @@ public class AuthController {
     }
 
     @PostMapping("/role")
-    public ResponseEntity<ApiResponse<String>> modifyRole(@RequestBody @Valid @AuthenticationPrincipal UserPrincipal userPrincipal, ModifyRoleRequestDTO roleRequestDTO) {
+    public ResponseEntity<ApiResponse<String>> modifyRole(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody @Valid ModifyRoleRequestDTO roleRequestDTO) {
         if (userPrincipal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
         }
