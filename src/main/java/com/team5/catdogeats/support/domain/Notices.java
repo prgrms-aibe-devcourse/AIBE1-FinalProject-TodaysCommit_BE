@@ -15,7 +15,7 @@ import java.util.UUID;
 @Builder
 public class Notices extends BaseEntity {
     @Id
-    @Column(length = 36)
+    @Column(length = 36, columnDefinition = "varchar(36)")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 

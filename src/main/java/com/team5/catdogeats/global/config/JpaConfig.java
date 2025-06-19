@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = "com.team5.catdogeats.users.repository",
+        basePackages = {"com.team5.catdogeats.users.repository", "com.team5.catdogeats.support.domain.notice.repository", "com.team5.catdogeats.storage.domain.repository"},
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "jpaTransactionManager"
 )
