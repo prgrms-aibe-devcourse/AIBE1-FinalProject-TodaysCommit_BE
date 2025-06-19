@@ -68,5 +68,32 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false # OSIV 비활성화 (API 서버라면 false 추천)\
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 14972
+      password: ${REDIS_PASSWORD}
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
 mybatis:
   type-aliases-package: com.team5.catdogeats.mybatis
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: 3600000
+
+  cookie:
+    secure: false
+    same-site: Strict
+    http-only: true
+    max-age: 3600
+    domain: null
+    path: /
+
+logging:
+  level:
+    com.team5.catdogeats: debug
