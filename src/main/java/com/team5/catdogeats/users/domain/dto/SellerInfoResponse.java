@@ -1,7 +1,6 @@
-package com.team5.catdogeats.users.dto;
+package com.team5.catdogeats.users.domain.dto;
 
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import lombok.*;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -20,7 +19,6 @@ public record SellerInfoResponse(
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {
-    // 정적 팩토리 메서드는 그대로 유지 가능
     public static SellerInfoResponse from(Sellers seller) {
         if (seller == null) {
             return null;

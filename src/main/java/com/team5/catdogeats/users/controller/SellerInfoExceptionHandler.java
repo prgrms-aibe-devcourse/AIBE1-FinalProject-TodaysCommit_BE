@@ -1,6 +1,6 @@
 package com.team5.catdogeats.users.controller;
 
-import com.team5.catdogeats.users.dto.ApiResponse;
+import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
 import com.team5.catdogeats.users.exception.InvalidOperatingHoursException;
 import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
