@@ -160,7 +160,7 @@ public class AddressServiceImpl implements AddressService {
                 .orElse(null);
     }
 
-    // ==================== Private 헬퍼 메서드 ====================
+    // Private 헬퍼 메서드
 
     private Addresses findAddressById(UUID addressId) {
         return addressRepository.findById(addressId)

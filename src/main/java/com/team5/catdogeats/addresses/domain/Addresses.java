@@ -63,11 +63,9 @@ public class Addresses extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_addresses_user_id"))
     private Users user;
 
-    // ==================== 비즈니스 메서드 ====================
+    // 비즈니스 메서드
 
-    /**
-     * 주소 정보 업데이트
-     */
+    // 주소 정보 업데이트
     public void updateAddress(String title, String city, String district, String neighborhood,
                               String streetAddress, String postalCode, String detailAddress, String phoneNumber) {
         if (title != null && !title.trim().isEmpty()) {
@@ -96,38 +94,28 @@ public class Addresses extends BaseEntity {
         }
     }
 
-    /**
-     * 기본 주소로 설정
-     */
+    // 기본주소로 설정
     public void setAsDefault() {
         this.isDefault = true;
     }
 
-    /**
-     * 기본 주소 해제
-     */
+    // 기본주소 해제
     public void removeDefault() {
         this.isDefault = false;
     }
 
-    /**
-     * 해당 사용자의 주소인지 확인
-     */
+    // 해당 사용자의 주소인지 확인
     public boolean isOwnedBy(UUID userId) {
         return this.user != null && this.user.getId().equals(userId);
     }
 
-    /**
-     * 전체 주소 문자열 반환
-     */
+    // 전체 주소 문자열 반환
     public String getFullAddress() {
         return String.format("%s %s %s %s %s",
                 city, district, neighborhood, streetAddress, detailAddress);
     }
 
-    /**
-     * 우편번호 포함 전체 주소 문자열 반환
-     */
+    // 우편번호 포함 전체 주소 문자열 반환
     public String getFullAddressWithPostalCode() {
         return String.format("(%s) %s", postalCode, getFullAddress());
     }
