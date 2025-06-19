@@ -3,8 +3,8 @@
 package com.team5.catdogeats.orders.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.team5.catdogeats.orders.domain.dto.request.OrderCreateRequest;
-import com.team5.catdogeats.orders.domain.dto.response.OrderCreateResponse;
+import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
+import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.repository.UserRepository;

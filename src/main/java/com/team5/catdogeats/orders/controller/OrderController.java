@@ -1,7 +1,7 @@
 package com.team5.catdogeats.orders.controller;
 
-import com.team5.catdogeats.orders.domain.dto.request.OrderCreateRequest;
-import com.team5.catdogeats.orders.domain.dto.response.OrderCreateResponse;
+import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
+import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.orders.service.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

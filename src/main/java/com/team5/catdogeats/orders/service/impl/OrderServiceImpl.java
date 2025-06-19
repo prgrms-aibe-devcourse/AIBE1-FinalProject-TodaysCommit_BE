@@ -3,8 +3,8 @@ package com.team5.catdogeats.orders.service.impl;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
 import com.team5.catdogeats.orders.domain.mapping.OrderItems;
-import com.team5.catdogeats.orders.domain.dto.request.OrderCreateRequest;
-import com.team5.catdogeats.orders.domain.dto.response.OrderCreateResponse;
+import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
+import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.orders.repository.OrderRepository;
 import com.team5.catdogeats.orders.service.OrderService;
 import com.team5.catdogeats.users.domain.Users;
@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;

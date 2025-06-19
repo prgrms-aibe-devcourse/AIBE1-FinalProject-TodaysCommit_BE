@@ -1,7 +1,7 @@
 package com.team5.catdogeats.orders.service;
 
-import com.team5.catdogeats.orders.domain.dto.request.OrderCreateRequest;
-import com.team5.catdogeats.orders.domain.dto.response.OrderCreateResponse;
+import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
+import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 
 /**
  * 주문 관리 서비스 인터페이스
