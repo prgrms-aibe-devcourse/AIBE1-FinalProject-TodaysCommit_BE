@@ -1,6 +1,7 @@
 package com.team5.catdogeats.auth.handler;
 
 import com.team5.catdogeats.auth.service.JwtService;
+import com.team5.catdogeats.auth.service.RefreshTokenService;
 import com.team5.catdogeats.auth.util.CookieUtils;
 import com.team5.catdogeats.global.config.CookieProperties;
 import jakarta.servlet.ServletException;
@@ -23,18 +24,21 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private final CookieUtils cookieUtils;
     private final JwtService jwtService;
     private final CookieProperties cookieProperties;
+    private final RefreshTokenService refreshTokenService;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws ServletException, IOException {
 
         String token = jwtService.createAccessToken(authentication);
+        String refresh = refreshTokenService.createRefreshToken(authentication);
+        log.info("Created refresh token: {}", refresh);
 
         ResponseCookie cookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), token);
             response.setContentType("application/json");
             response.setCharacterEncoding("UTF-8");
             response.setStatus(HttpServletResponse.SC_OK);
-        response.setHeader("Set-Cookie", cookie.toString());
-        response.sendRedirect("/");
+            response.setHeader("Set-Cookie", cookie.toString());
+            response.sendRedirect("/");
     }
 }

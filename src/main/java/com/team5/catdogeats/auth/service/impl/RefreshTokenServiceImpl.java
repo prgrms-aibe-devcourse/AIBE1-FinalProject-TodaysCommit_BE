@@ -1,0 +1,93 @@
+package com.team5.catdogeats.auth.service.impl;
+
+import com.team5.catdogeats.auth.assistant.JwtAssistant.OAuth2ProviderStrategy;
+import com.team5.catdogeats.auth.assistant.JwtAssistant.OAuth2ProviderStrategyFactory;
+import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.auth.redis.RefreshTokens;
+import com.team5.catdogeats.auth.repository.RefreshTokensRedisRepository;
+import com.team5.catdogeats.auth.service.RefreshTokenService;
+import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.Comparator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RefreshTokenServiceImpl implements RefreshTokenService {
+    private final OAuth2ProviderStrategyFactory strategyFactory;
+    private final UserRepository userRepository;
+    private final RefreshTokensRedisRepository refreshTokenRepository;
+    private static final int MAX_TOKENS_PER_USER = 3;
+    
+    @Override
+    @Transactional
+    public String createRefreshToken(Authentication authentication) {
+        UserPrincipal principal = getUserPrincipal(authentication);
+
+        Users user = userRepository.findByProviderAndProviderId(principal.provider(), principal.providerId())
+                .orElseThrow(() -> new NoSuchElementException("User not found"));
+
+        RefreshTokens newToken = buildRefreshTokens(principal, user);
+
+        verification(user);
+        RefreshTokens token = refreshTokenRepository.save(newToken);
+        log.info("Created refresh token: {}", token);
+        return newToken.toString();
+    }
+
+    private void verification(Users user) {
+        List<RefreshTokens> tokens = refreshTokenRepository
+                .findByUserIdAndUsedIsFalse(user.getId());
+
+
+        ZonedDateTime now = ZonedDateTime.now();
+
+        List<RefreshTokens> validTokens = tokens.stream()
+                .filter(token -> token.getExpiresAt().isAfter(now.toInstant()))
+                .sorted(Comparator.comparing(RefreshTokens::getCreatedAt))
+                .toList();
+        if (tokens.size() >= MAX_TOKENS_PER_USER) {
+            for (int i = 0; i < tokens.size() - (MAX_TOKENS_PER_USER - 1); i++) {
+                refreshTokenRepository.deleteById(tokens.get(i).getId());
+            }
+        }
+    }
+
+    private RefreshTokens buildRefreshTokens(UserPrincipal principal, Users user) {
+        UUID id = UUID.randomUUID();
+        ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
+        ZonedDateTime expiresAt = now.plusDays(1);
+
+        return  RefreshTokens.builder()
+                .id(id)
+                .provider(principal.provider())
+                .providerId(principal.providerId())
+                .userId(user.getId())
+                .used(false)
+                .expiresAt(expiresAt.toInstant())
+                .build();
+    }
+
+    private UserPrincipal getUserPrincipal(Authentication authentication) {
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+        String registrationId = ((OAuth2AuthenticationToken) authentication).getAuthorizedClientRegistrationId();
+
+        OAuth2ProviderStrategy strategy = strategyFactory.getStrategy(registrationId);
+        String providerId = strategy.extractProviderId(oAuth2User);
+
+        return new UserPrincipal(registrationId, providerId);
+    }
+}
