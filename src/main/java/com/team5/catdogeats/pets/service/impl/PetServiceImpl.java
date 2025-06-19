@@ -53,7 +53,7 @@ public class PetServiceImpl implements PetService {
     @Override
     public void updatePet(PetUpdateRequestDto dto) {
         Pets pet = petRepository.findById(dto.petId())
-                .orElseThrow(() -> new CustomException("펫 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException("해당하는 펫의 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 
         pet.updateFromDto(dto);
     }
@@ -61,7 +61,7 @@ public class PetServiceImpl implements PetService {
     @Override
     public void deletePet(PetDeleteRequestDto dto) {
         Pets pet = petRepository.findById(dto.petId())
-                .orElseThrow(() -> new CustomException("펫 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException("해당하는 펫의 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
 
         petRepository.deleteById(dto.petId());
     }
