@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface RefreshTokensRedisRepository extends CrudRepository<RefreshTokens, UUID> {
     List<RefreshTokens> findByUserIdAndUsedIsFalse(UUID userId);
+    void deleteByUserId(UUID userId);
 }

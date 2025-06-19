@@ -45,7 +45,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
         verification(user);
         RefreshTokens token = refreshTokenRepository.save(newToken);
         log.debug("Created refresh token: {}", token.getId());
-        return newToken.toString();
+        return token.toString();
     }
 
     private void verification(Users user) {

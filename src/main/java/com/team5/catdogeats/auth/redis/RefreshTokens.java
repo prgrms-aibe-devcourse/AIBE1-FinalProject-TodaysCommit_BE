@@ -31,4 +31,8 @@ public class RefreshTokens implements Serializable {
     private boolean used;
     private Instant expiresAt;
     private Instant createdAt; // 토큰 생성 시간 (정렬용)
+
+    public void markUsed() {
+        this.used = true;
+    }
 }
