@@ -17,6 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// ⭐️ 임포트 추가
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.concurrent.ThreadLocalRandom;
+// ⭐️ 임포트 추가 끝
+
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -177,6 +183,7 @@ public class OrderServiceImpl implements OrderService {
     private Orders createAndSaveOrder(Users user, Long totalPrice) {
         Orders order = Orders.builder()
                 .user(user)
+                .orderNumber(generateOrderNumber()) // ⭐️ 주문 번호 생성 로직 호출
                 .orderStatus(OrderStatus.PAYMENT_PENDING) // 결제 대기 상태 (재고는 이미 차감됨)
                 .totalPrice(totalPrice)
                 // createdAt은 BaseEntity의 @PrePersist에서 자동 설정
@@ -207,6 +214,8 @@ public class OrderServiceImpl implements OrderService {
 
         // TODO: OrderItemRepository가 있다면 saveAll로 저장
         // return orderItemRepository.saveAll(orderItems);
+        // ⭐️ 현재는 Orders와 cascade로 저장되므로 이 부분을 수정할 필요는 없습니다.
+        // ⭐️ 만약 명시적 저장을 원하신다면 OrderItemRepository를 추가하고 주석을 해제하면 됩니다.
         return orderItems; // 현재는 Orders와 cascade로 저장됨
     }
 
@@ -236,8 +245,18 @@ public class OrderServiceImpl implements OrderService {
      * 주문명 생성 (토스 페이먼츠용)
      */
     private String generateOrderName(Orders order) {
+        // ⭐️ TossPaymentsProperties 또는 orderNumber가 null일 경우를 대비한 방어 코드
+        String prefix = "CATDOG"; // 기본 접두사
+        if (tossPaymentsProperties.getOrder() != null && tossPaymentsProperties.getOrder().getPrefix() != null) {
+            prefix = tossPaymentsProperties.getOrder().getPrefix();
+        }
+
+        if (order.getOrderNumber() == null) {
+            return String.format("%s-임시주문", prefix);
+        }
+
         return String.format("%s%d번 주문",
-                tossPaymentsProperties.getOrder().getPrefix(),
+                prefix,
                 order.getOrderNumber());
     }
 
@@ -282,5 +301,15 @@ public class OrderServiceImpl implements OrderService {
         private Long unitPrice;
         private Integer quantity;
         private Long totalPrice;
+    }
+
+    /**
+     * ⭐️ 고유한 주문 번호를 생성하는 메서드
+     * (yyyyMMddHHmmss + 6자리 랜덤 숫자)
+     */
+    private Long generateOrderNumber() {
+        String timestamp = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date());
+        int randomNum = ThreadLocalRandom.current().nextInt(100000, 1000000);
+        return Long.parseLong(timestamp + randomNum);
     }
 }
