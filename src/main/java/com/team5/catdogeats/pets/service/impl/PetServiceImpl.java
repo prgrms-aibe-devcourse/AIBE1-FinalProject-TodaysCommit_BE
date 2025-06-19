@@ -30,7 +30,7 @@ public class PetServiceImpl implements PetService {
 //      TODO: UUID userId = SecurityUtil.getCurrentUserId();
         UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         Buyers buyer = buyerRepository.findById(userId)
-                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다."));
 
         Pets pet = Pets.fromDto(dto, buyer);
         return petRepository.save(pet).getId();
@@ -41,7 +41,7 @@ public class PetServiceImpl implements PetService {
 //      TODO:  UUID userId = SecurityUtil.getCurrentUserId();
         UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
         Buyers buyer = buyerRepository.findById(userId)
-                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException("해당 유저가 존재하지 않습니다."));
 
         return petRepository.findByBuyer(buyer)
                 .stream()
@@ -53,7 +53,7 @@ public class PetServiceImpl implements PetService {
     @Override
     public void updatePet(PetUpdateRequestDto dto) {
         Pets pet = petRepository.findById(dto.petId())
-                .orElseThrow(() -> new CustomException("해당하는 펫의 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException("해당하는 펫의 정보가 존재하지 않습니다."));
 
         pet.updateFromDto(dto);
     }
@@ -61,7 +61,7 @@ public class PetServiceImpl implements PetService {
     @Override
     public void deletePet(PetDeleteRequestDto dto) {
         Pets pet = petRepository.findById(dto.petId())
-                .orElseThrow(() -> new CustomException("해당하는 펫의 정보가 존재하지 않습니다.", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new CustomException("해당하는 펫의 정보가 존재하지 않습니다."));
 
         petRepository.deleteById(dto.petId());
     }
