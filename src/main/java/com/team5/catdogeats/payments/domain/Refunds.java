@@ -12,8 +12,8 @@ import java.util.UUID;
 @Table(name = "refunds")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Refunds extends BaseEntity {
 

@@ -15,8 +15,8 @@ import java.util.UUID;
 @Table(name = "payments")
 @Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
 public class Payments extends BaseEntity {
 

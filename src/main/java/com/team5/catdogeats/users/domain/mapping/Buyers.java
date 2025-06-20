@@ -14,7 +14,6 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class Buyers extends BaseEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id", length = 36)
     private UUID userId;
 
