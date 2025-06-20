@@ -2,6 +2,7 @@ package com.team5.catdogeats.products.domain;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import jakarta.persistence.*;
@@ -38,6 +39,10 @@ public class Products extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(length = 10)
     private PetCategory petCategory;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private ProductCategory productCategory;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "stock_status", length = 15)
