@@ -1,7 +1,8 @@
 package com.team5.catdogeats.support.domain.notice.controller;
 
+import com.team5.catdogeats.global.dto.ApiResponse;
+import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.support.domain.notice.dto.*;
-import com.team5.catdogeats.support.domain.notice.exception.NoticeNotFoundException;
 import com.team5.catdogeats.support.domain.notice.service.NoticeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,13 +12,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.ZonedDateTime;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -43,7 +40,7 @@ public class NoticeController {
         log.info("공지사항 목록 조회 요청 - page: {}, size: {}, search: {}", page, size, search);
 
         NoticeListResponseDTO response = noticeService.getNotices(page, size, search);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
     // ========== 공지사항 상세 조회 (공통 기능) ==========
@@ -55,8 +52,18 @@ public class NoticeController {
     public ResponseEntity<ApiResponse<NoticeResponseDTO>> getNotice(@PathVariable UUID noticeId) {
         log.info("공지사항 상세 조회 요청 - ID: {}", noticeId);
 
-        NoticeResponseDTO response = noticeService.getNotice(noticeId);
-        return ResponseEntity.ok(ApiResponse.success(response));
+        try {
+            NoticeResponseDTO response = noticeService.getNotice(noticeId);
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
+        } catch (NoSuchElementException e) {
+            log.error("Notice not found: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND, e.getMessage()));
+        } catch (Exception e) {
+            log.error("Unexpected error: ", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
     }
 
     // ========== 파일 다운로드 (공통 기능) ==========
@@ -79,77 +86,6 @@ public class NoticeController {
         } catch (Exception e) {
             log.error("파일 다운로드 실패 - 파일 ID: {}", fileId);
             return ResponseEntity.notFound().build();
-        }
-    }
-
-    // ========== 예외 처리 ==========
-    @ExceptionHandler(NoticeNotFoundException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNoticeNotFoundException(NoticeNotFoundException ex) {
-        log.error("Notice not found: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(ApiResponse.error(ex.getMessage()));
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getAllErrors().forEach((error) -> {
-            String fieldName = ((FieldError) error).getField();
-            String errorMessage = error.getDefaultMessage();
-            errors.put(fieldName, errorMessage);
-        });
-
-        log.error("Validation error: {}", errors);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ApiResponse.<Map<String, String>>builder()
-                        .success(false)
-                        .message("입력값 검증 오류")
-                        .data(errors)
-                        .timestamp(ZonedDateTime.now().toString())
-                        .build());
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<Void>> handleGeneralException(Exception ex) {
-        log.error("Unexpected error: ", ex);
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(ApiResponse.error("서버 내부 오류가 발생했습니다."));
-    }
-
-    // ========== 공통 응답 DTO ==========
-    @lombok.Getter
-    @lombok.Builder
-    public static class ApiResponse<T> {
-        private boolean success;
-        private String message;
-        private T data;
-        private String timestamp;
-
-        public static <T> ApiResponse<T> success(T data) {
-            return ApiResponse.<T>builder()
-                    .success(true)
-                    .message("성공")
-                    .data(data)
-                    .timestamp(ZonedDateTime.now().toString())
-                    .build();
-        }
-
-        public static <T> ApiResponse<T> success(T data, String message) {
-            return ApiResponse.<T>builder()
-                    .success(true)
-                    .message(message)
-                    .data(data)
-                    .timestamp(ZonedDateTime.now().toString())
-                    .build();
-        }
-
-        public static <T> ApiResponse<T> error(String message) {
-            return ApiResponse.<T>builder()
-                    .success(false)
-                    .message(message)
-                    .data(null)
-                    .timestamp(ZonedDateTime.now().toString())
-                    .build();
         }
     }
 }

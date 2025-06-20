@@ -5,7 +5,6 @@ import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.*;
-import com.team5.catdogeats.support.domain.notice.exception.NoticeNotFoundException;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeRepository;
 import com.team5.catdogeats.support.domain.notice.service.NoticeService;
@@ -27,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Service
@@ -53,7 +53,7 @@ public class NoticeServiceImpl implements NoticeService {
             noticePage = noticeRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(search.trim(), pageable);
             log.info("공지사항 검색 조회 - 검색어: {}, 페이지: {}, 사이즈: {}", search, page, size);
         } else {
-            noticePage = noticeRepository.findAll(pageable);
+            noticePage = noticeRepository.findAllOrderByCreatedAtDesc(pageable);
             log.info("공지사항 전체 조회 - 페이지: {}, 사이즈: {}", page, size);
         }
 
@@ -65,13 +65,9 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     public NoticeResponseDTO getNotice(UUID noticeId) {
         Notices notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new NoticeNotFoundException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
+                .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
 
-//        // storage 도메인의 NoticeFiles 조회
-//        List<NoticeFiles> noticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
-
-        log.info("공지사항 상세 조회 - ID: {}, 제목: {}, 첨부파일 개수: {}", noticeId, notice.getTitle());
-
+        log.info("공지사항 상세 조회 - ID: {}, 제목: {}", noticeId, notice.getTitle());
         return NoticeResponseDTO.from(notice);
     }
 
@@ -94,19 +90,13 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public NoticeResponseDTO updateNotice(NoticeUpdateRequestDTO requestDTO) {
-        // 기존 공지사항 조회
         Notices notice = noticeRepository.findById(requestDTO.getId())
-                .orElseThrow(() -> new NoticeNotFoundException("공지사항을 찾을 수 없습니다. ID: " + requestDTO.getId()));
+                .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + requestDTO.getId()));
 
-        // 내용 수정
         notice.setTitle(requestDTO.getTitle());
         notice.setContent(requestDTO.getContent());
 
         Notices updatedNotice = noticeRepository.save(notice);
-
-//        // 첨부파일 포함해서 반환
-//        List<NoticeFiles> noticeFiles = noticeFilesRepository.findByNoticesId(updatedNotice.getId());
-
         log.info("공지사항 수정 완료 - ID: {}, 제목: {}", updatedNotice.getId(), updatedNotice.getTitle());
 
         return NoticeResponseDTO.from(updatedNotice);
@@ -117,12 +107,11 @@ public class NoticeServiceImpl implements NoticeService {
     @Transactional
     public void deleteNotice(UUID noticeId) {
         if (!noticeRepository.existsById(noticeId)) {
-            throw new NoticeNotFoundException("공지사항을 찾을 수 없습니다. ID: " + noticeId);
+            throw new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId);
         }
 
         noticeFilesRepository.deleteByNoticesId(noticeId);
         noticeRepository.deleteById(noticeId);
-
         log.info("공지사항 삭제 완료 - ID: {}", noticeId);
     }
 
@@ -130,9 +119,8 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @Transactional
     public NoticeResponseDTO uploadFile(UUID noticeId, MultipartFile file) {
-        // 공지사항 존재 확인
         Notices notice = noticeRepository.findById(noticeId)
-                .orElseThrow(() -> new NoticeNotFoundException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
+                .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
 
         try {
             // 1. 파일을 서버에 저장
