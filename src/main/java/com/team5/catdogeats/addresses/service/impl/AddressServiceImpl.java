@@ -177,10 +177,7 @@ public class AddressServiceImpl implements AddressService {
 
     // Private 헬퍼 메서드
 
-    /**
-     * UserPrincipal에서 Users 엔티티 조회
-     * 팀원과 동일한 패턴으로 provider, providerId 사용
-     */
+    // UserPrincipal에서 Users 엔티티 조회
     private Users findUserByPrincipal(UserPrincipal userPrincipal) {
         return userRepository.findByProviderAndProviderId(
                 userPrincipal.provider(),
