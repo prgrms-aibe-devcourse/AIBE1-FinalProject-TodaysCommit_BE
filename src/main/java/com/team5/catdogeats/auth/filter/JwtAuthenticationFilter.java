@@ -1,6 +1,7 @@
 package com.team5.catdogeats.auth.filter;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.auth.service.JwtService;
 import com.team5.catdogeats.auth.util.JwtUtils;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
@@ -19,7 +20,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String REFRESH_TOKEN_PATH = "/v1/auth/refresh";
     private final JwtUtils jwtUtils;
+    private final JwtService jwtService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -42,22 +43,34 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = jwtUtils.extractToken(request);
 
         if (StringUtils.hasText(token) && jwtUtils.validateToken(token)) {
-            Claims claims = jwtUtils.parseToken(token);
-            String providerId = claims.getSubject();
-            String authorities = (String) claims.get("authorities");
-            String provider = (String) claims.get("provider");
+            try {
+                Claims claims = jwtUtils.parseToken(token);
+                String providerId = claims.getSubject();
+                String provider = (String) claims.get("provider");
+                String authorities = (String) claims.get("authorities");
 
-            List<SimpleGrantedAuthority> grantedAuthorities = Arrays.stream(authorities.split(","))
-                    .map(SimpleGrantedAuthority::new)
-                    .collect(Collectors.toList());
+                List<SimpleGrantedAuthority> grantedAuthorities = Arrays.stream(authorities.split(","))
+                        .map(SimpleGrantedAuthority::new)
+                        .toList();
 
-            UserPrincipal userPrincipal = new UserPrincipal(provider, providerId);
+                // UserPrincipal 생성
+                UserPrincipal userPrincipal = new UserPrincipal(provider, providerId);
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userPrincipal, token, grantedAuthorities);
+//                Authentication authentication = jwtService.getAuthentication(userPrincipal);
 
-            //이 인증 객체를 시큐리티 컨텍스트에 등록하면, 이후 컨트롤러 등에서 @AuthenticationPrincipal을 통해 유저 정보를 가져올 수 있음.
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(userPrincipal, token, grantedAuthorities);
+
+                // SecurityContext에 Authentication 설정
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+
+                log.debug("Authentication set for providerId: {}, authorities: {}",
+                        providerId, authorities);
+
+            } catch (Exception e) {
+                log.error("Error setting authentication from token", e);
+                SecurityContextHolder.clearContext();
+            }
         }
 
         filterChain.doFilter(request, response);
