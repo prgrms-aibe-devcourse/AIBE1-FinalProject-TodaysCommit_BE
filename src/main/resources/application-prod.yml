@@ -78,6 +78,16 @@ spring:
           max-active: 8
           max-idle: 8
           min-idle: 0
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
 
 mybatis:
   type-aliases-package: com.team5.catdogeats.mybatis
