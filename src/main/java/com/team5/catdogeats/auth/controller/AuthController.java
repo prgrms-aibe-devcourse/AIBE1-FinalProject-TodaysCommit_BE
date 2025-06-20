@@ -69,23 +69,34 @@ public class AuthController {
     }
 
     @PostMapping("/role")
-    public ResponseEntity<ApiResponse<String>> modifyRole(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody @Valid ModifyRoleRequestDTO roleRequestDTO) {
+    public ResponseEntity<ApiResponse<String>> modifyRole(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                          @RequestBody @Valid ModifyRoleRequestDTO roleRequestDTO) {
         if (userPrincipal == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
         }
 
         try {
-            Authentication authentication = modifyUserRoleService.modifyUserRole(userPrincipal, roleRequestDTO);
-            String token = jwtService.createAccessToken(authentication);
-            ResponseCookie accessCookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), token);
+            // 역할 변경 및 새로운 Authentication 객체 반환
+            Authentication newAuthentication = modifyUserRoleService.modifyUserRole(userPrincipal, roleRequestDTO);
 
-            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, accessCookie.toString()).body(ApiResponse.success(ResponseCode.SUCCESS, token));
-        } catch (NoSuchElementException e){
+            // 업데이트된 Authentication으로 새 토큰 생성
+            String newToken = jwtService.createAccessToken(newAuthentication);
+
+            // 새 토큰으로 쿠키 생성
+            ResponseCookie accessCookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), newToken);
+
+            log.debug("New token created for user with updated role: {}", roleRequestDTO.role());
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, accessCookie.toString())
+                    .body(ApiResponse.success(ResponseCode.SUCCESS, "Role updated successfully"));
+
+        } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND));
-        }
-        catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
         } catch (Exception e) {
+            log.error("Error modifying user role", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
     }

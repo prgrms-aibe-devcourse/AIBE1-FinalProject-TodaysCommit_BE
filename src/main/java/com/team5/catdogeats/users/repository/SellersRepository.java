@@ -31,7 +31,7 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
 
     @Query("""
         SELECT new com.team5.catdogeats.users.domain.dto.SellerDTO(
-            s.user.id,
+            s.userId,
             s.vendorName,
             s.vendorProfileImage,
             s.businessNumber,
