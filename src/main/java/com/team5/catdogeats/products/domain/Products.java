@@ -54,4 +54,7 @@ public class Products extends BaseEntity {
 
     @Column(nullable = false)
     private Integer quantity;
+
+    @Column(name = "lead_time", nullable = false)
+    private Short leadTime;
 }
