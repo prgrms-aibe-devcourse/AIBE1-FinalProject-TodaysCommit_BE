@@ -40,7 +40,6 @@ class SellersRepositoryTest {
                 .userNameAttribute("email")
                 .name("테스트 판매자1")
                 .role(Role.ROLE_SELLER)
-                .accountDisable(false)
                 .build();
 
         testUser2 = Users.builder()
@@ -49,7 +48,6 @@ class SellersRepositoryTest {
                 .userNameAttribute("email")
                 .name("테스트 판매자2")
                 .role(Role.ROLE_SELLER)
-                .accountDisable(false)
                 .build();
 
         // Users 저장
@@ -228,7 +226,6 @@ class SellersRepositoryTest {
                     .userNameAttribute("email")
                     .name("새로운 판매자")
                     .role(Role.ROLE_SELLER)
-                    .accountDisable(false)
                     .build();
 
             newUser = entityManager.persistAndFlush(newUser);
@@ -402,7 +399,6 @@ class SellersRepositoryTest {
                     .userNameAttribute("email")
                     .name("중복 테스트 사용자")
                     .role(Role.ROLE_SELLER)
-                    .accountDisable(false)
                     .build();
 
             anotherUser = entityManager.persistAndFlush(anotherUser);

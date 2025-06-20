@@ -63,7 +63,6 @@ class SellerInfoServiceImplTest {
                 .userNameAttribute("test")
                 .name("테스트 판매자")
                 .role(Role.ROLE_SELLER)
-                .accountDisable(false)
                 .build();
 
         // 구매자 사용자 (권한 테스트용)
@@ -74,7 +73,6 @@ class SellerInfoServiceImplTest {
                 .userNameAttribute("test")
                 .name("테스트 구매자")
                 .role(Role.ROLE_BUYER)
-                .accountDisable(false)
                 .build();
 
         // 다른 판매자 사용자 (중복 테스트용)
@@ -85,7 +83,6 @@ class SellerInfoServiceImplTest {
                 .userNameAttribute("test")
                 .name("다른 판매자")
                 .role(Role.ROLE_SELLER)
-                .accountDisable(false)
                 .build();
 
         // 테스트 판매자 정보

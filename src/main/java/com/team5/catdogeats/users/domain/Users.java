@@ -33,7 +33,7 @@ public class Users extends BaseEntity {
     @Column(length = 11, nullable = false)
     private Role role;
 
-    @Column(nullable = false)
+    @Column(nullable = false, name = "account_disable")
     @Builder.Default
     private boolean accountDisable = false;
 
@@ -41,8 +41,5 @@ public class Users extends BaseEntity {
         this.role = role;
     }
 
-    public void disableAccount() {
-        this.accountDisable = true;
-    }
 
 }

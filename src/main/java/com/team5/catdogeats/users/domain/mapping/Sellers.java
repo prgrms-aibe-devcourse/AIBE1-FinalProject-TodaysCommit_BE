@@ -2,14 +2,11 @@ package com.team5.catdogeats.users.domain.mapping;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.domain.enums.DayOfWeek;
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -54,6 +51,14 @@ public class Sellers extends BaseEntity {
 
     @Column(name = "closed_days", length = 20)
     private String closedDays;
+
+    @Column(nullable = false, name = "is_deleted")
+    @Builder.Default
+    private boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private ZonedDateTime deledAt;
+
 
     public void updateVendorName(String vendorName) {
         if (vendorName != null && !vendorName.trim().isEmpty()) {

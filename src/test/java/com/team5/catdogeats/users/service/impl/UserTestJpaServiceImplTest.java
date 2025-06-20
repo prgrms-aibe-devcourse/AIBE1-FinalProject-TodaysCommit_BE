@@ -28,7 +28,6 @@ class UserTestJpaServiceImplTest {
         Users user = Users.builder()
                 .name("test")
                 .role(Role.ROLE_BUYER)
-                .accountDisable(false)
                 .userNameAttribute("test")
                 .provider("test")
                 .providerId("test")

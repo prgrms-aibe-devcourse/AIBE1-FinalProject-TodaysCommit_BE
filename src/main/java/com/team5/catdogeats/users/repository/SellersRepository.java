@@ -36,7 +36,9 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
             s.tags,
             s.operatingStartTime,
             s.operatingEndTime,
-            s.closedDays
+            s.closedDays,
+            s.isDeleted,
+            s.deledAt
         )
         FROM Sellers s
         JOIN s.user u

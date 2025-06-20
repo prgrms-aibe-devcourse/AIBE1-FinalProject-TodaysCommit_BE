@@ -5,6 +5,7 @@ import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.ZonedDateTime;
 import java.util.UUID;
 
 @Entity
@@ -25,5 +26,13 @@ public class Buyers extends BaseEntity {
     @Column(name = "name_masking_status")
     @Builder.Default
     private boolean nameMaskingStatus = true;
+
+    @Column(nullable = false, name = "is_deleted")
+    @Builder.Default
+    private boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private ZonedDateTime deledAt;
+
 
 }
