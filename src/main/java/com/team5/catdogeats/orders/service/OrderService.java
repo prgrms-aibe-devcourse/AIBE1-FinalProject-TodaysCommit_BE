@@ -60,8 +60,6 @@ public interface OrderService {
      * @deprecated 보안상 위험하므로 {@link #createOrderByUserPrincipal(UserPrincipal, OrderCreateRequest)} 사용을 권장합니다.
      *             이 메서드는 향후 버전에서 제거될 예정입니다.
      */
-    @Deprecated(since = "1.0", forRemoval = true)
-    OrderCreateResponse createOrder(String userId, OrderCreateRequest request);
 
     // TODO: 향후 추가될 메서드들 (2단계 이후)
     // OrderDetailResponse getOrderDetail(UserPrincipal userPrincipal, String orderNumber);

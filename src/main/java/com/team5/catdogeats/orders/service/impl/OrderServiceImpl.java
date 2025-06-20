@@ -95,52 +95,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 기존 메서드 (deprecated) - 하위 호환성을 위해 유지하되 보안 경고
-     * @deprecated 보안상 위험하므로 createOrderByUserPrincipal 사용 권장
-     */
-    @Override
-    @Deprecated(since = "1.0", forRemoval = true)
-    @SuppressWarnings("deprecation") // deprecated 메서드 구현 시 경고 억제
-    @Transactional
-    public OrderCreateResponse createOrder(String userId, OrderCreateRequest request) {
-        log.warn("Deprecated 메서드 사용됨: createOrder(String userId). createOrderByUserPrincipal 사용을 권장합니다.");
-        log.info("주문 생성 시작: userId={}, 상품 개수={}", userId, request.getOrderItems().size());
-
-        // 1. 사용자 조회 및 검증
-        Users user = findUserById(userId);
-
-        // 2. 구매자 권한 검증
-        validateBuyerPermission(user);
-
-        // 3. 주문 상품들 검증 및 정보 수집
-        List<OrderItemInfo> orderItemInfos = validateOrderItems(request.getOrderItems());
-
-        // 4. 재고 차감 (중요: 주문 생성 전에 수행)
-        performStockDeduction(orderItemInfos);
-
-        // 5. 총 주문 금액 계산
-        Long totalPrice = calculateTotalPrice(orderItemInfos);
-
-        // 6. 주문 엔티티 생성 및 저장
-        Orders order = createAndSaveOrder(user, totalPrice);
-
-        // 7. 주문 아이템들 생성 및 저장
-        List<OrderItems> savedOrderItems = createAndSaveOrderItems(order, orderItemInfos);
-
-        // 8. 토스 페이먼츠 정보 생성
-        OrderCreateResponse.TossPaymentInfo tossPaymentInfo = createTossPaymentInfo(
-                order, request.getPaymentInfo(), totalPrice);
-
-        // 9. 응답 DTO 생성
-        OrderCreateResponse response = buildOrderCreateResponse(order, savedOrderItems, tossPaymentInfo);
-
-        log.info("주문 생성 완료 (재고 차감 완료): orderId={}, orderNumber={}, totalPrice={}",
-                order.getId(), order.getOrderNumber(), totalPrice);
-
-        return response;
-    }
-
-    /**
      * UserPrincipal로 사용자 조회 (보안 강화)
      */
     private Users findUserByPrincipal(UserPrincipal userPrincipal) {
