@@ -187,8 +187,8 @@ public class AddressServiceImpl implements AddressService {
     private void validateAddressLimit(UUID userId, AddressType addressType) {
         long addressCount = addressRepository.countByUserIdAndAddressType(userId, addressType);
 
-        // 주소 개수 제한 (개인 주소: 10개, 사업자 주소: 5개)
-        int maxAddresses = (addressType == AddressType.PERSONAL) ? 10 : 5;
+        // 주소 제한 (개인 주소: 10개, 사업자 주소: 1개)
+        int maxAddresses = (addressType == AddressType.PERSONAL) ? 10 : 1;
 
         if (addressCount >= maxAddresses) {
             String message = String.format("%s은(는) 최대 %d개까지만 등록할 수 있습니다.",
