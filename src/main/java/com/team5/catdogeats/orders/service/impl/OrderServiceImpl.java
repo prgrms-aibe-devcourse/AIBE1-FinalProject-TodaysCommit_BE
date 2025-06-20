@@ -14,11 +14,15 @@ import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.web.format.DateTimeFormatters;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 // ⭐️ 임포트 추가
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.concurrent.ThreadLocalRandom;
 // ⭐️ 임포트 추가 끝
@@ -309,7 +313,8 @@ public class OrderServiceImpl implements OrderService {
      */
     private Long generateOrderNumber() {
         // ⭐️ yyyy -> yy 로 변경하여 길이를 줄임
-        String timestamp = new SimpleDateFormat("yyMMddHHmmss").format(new Date());
+        String timestamp = DateTimeFormatter.ofPattern("yyMMddHHmmss")
+                .format(LocalDateTime.now());
         // ⭐️ 6자리 -> 4자리 랜덤 숫자로 변경
         int randomNum = ThreadLocalRandom.current().nextInt(1000, 10000);
 
