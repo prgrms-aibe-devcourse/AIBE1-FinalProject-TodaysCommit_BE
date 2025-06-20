@@ -1,5 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.TossPaymentsConfig;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
@@ -11,27 +12,21 @@ import com.team5.catdogeats.orders.service.OrderService;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.web.format.DateTimeFormatters;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-// ⭐️ 임포트 추가
-import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
-import java.util.concurrent.ThreadLocalRandom;
-// ⭐️ 임포트 추가 끝
-
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 주문 관리 서비스 구현체 (1단계: 재고 차감 포함)
@@ -43,11 +38,12 @@ import java.util.UUID;
  * - 토스 페이먼츠 정보 응답
  *
  * 모든 작업이 하나의 트랜잭션에서 수행되어 재고 차감 실패 시 주문도 롤백됩니다.
+ * - 클래스 레벨의 readOnly=true는 쓰기 작업이 포함된 메서드에서 혼란을 야기할 수 있음
+ * - 메서드별로 명시적인 트랜잭션 설정이 더 명확하고 안전함
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
@@ -56,46 +52,104 @@ public class OrderServiceImpl implements OrderService {
     private final TossPaymentsConfig.TossPaymentsProperties tossPaymentsProperties;
 
     /**
-     * 주문을 생성합니다. (1단계: 재고 차감 포함)
-     *
-     * @param userId 주문을 생성하는 사용자 ID
-     * @param request 주문 생성 요청 정보
-     * @return 생성된 주문 정보 (토스 페이먼츠 연동 정보 포함)
+     * UserPrincipal을 사용한 안전한 주문 생성 (보안 개선 버전)
      */
     @Override
     @Transactional
-    public OrderCreateResponse createOrder(String userId, OrderCreateRequest request) {
-        log.info("주문 생성 시작: userId={}, 상품 개수={}", userId, request.getOrderItems().size());
+    public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
+        log.info("주문 생성 시작: provider={}, providerId={}, 상품 개수={}",
+                userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());
 
-        // 1. 사용자 조회 및 검증
-        Users user = findUserById(userId);
+        // 1. UserPrincipal로 사용자 조회 및 검증
+        Users user = findUserByPrincipal(userPrincipal);
 
-        // 2. 주문 상품들 검증 및 정보 수집
+        // 2. 구매자 권한 검증 (보안 강화)
+        validateBuyerPermission(user);
+
+        // 3. 주문 상품들 검증 및 정보 수집
         List<OrderItemInfo> orderItemInfos = validateOrderItems(request.getOrderItems());
 
-        // 3. 재고 차감 (중요: 주문 생성 전에 수행)
+        // 4. 재고 차감 (중요: 주문 생성 전에 수행)
         performStockDeduction(orderItemInfos);
 
-        // 4. 총 주문 금액 계산
+        // 5. 총 주문 금액 계산
         Long totalPrice = calculateTotalPrice(orderItemInfos);
 
-        // 5. 주문 엔티티 생성 및 저장
+        // 6. 주문 엔티티 생성 및 저장
         Orders order = createAndSaveOrder(user, totalPrice);
 
-        // 6. 주문 아이템들 생성 및 저장
+        // 7. 주문 아이템들 생성 및 저장
         List<OrderItems> savedOrderItems = createAndSaveOrderItems(order, orderItemInfos);
 
-        // 7. 토스 페이먼츠 정보 생성
+        // 8. 토스 페이먼츠 정보 생성
         OrderCreateResponse.TossPaymentInfo tossPaymentInfo = createTossPaymentInfo(
                 order, request.getPaymentInfo(), totalPrice);
 
-        // 8. 응답 DTO 생성
+        // 9. 응답 DTO 생성
         OrderCreateResponse response = buildOrderCreateResponse(order, savedOrderItems, tossPaymentInfo);
 
         log.info("주문 생성 완료 (재고 차감 완료): orderId={}, orderNumber={}, totalPrice={}",
                 order.getId(), order.getOrderNumber(), totalPrice);
 
         return response;
+    }
+
+    /**
+     * 기존 메서드 (deprecated) - 하위 호환성을 위해 유지하되 보안 경고
+     * @deprecated 보안상 위험하므로 createOrderByUserPrincipal 사용 권장
+     */
+    @Override
+    @Deprecated(since = "1.0", forRemoval = true)
+    @SuppressWarnings("deprecation") // deprecated 메서드 구현 시 경고 억제
+    @Transactional
+    public OrderCreateResponse createOrder(String userId, OrderCreateRequest request) {
+        log.warn("Deprecated 메서드 사용됨: createOrder(String userId). createOrderByUserPrincipal 사용을 권장합니다.");
+        log.info("주문 생성 시작: userId={}, 상품 개수={}", userId, request.getOrderItems().size());
+
+        // 1. 사용자 조회 및 검증
+        Users user = findUserById(userId);
+
+        // 2. 구매자 권한 검증
+        validateBuyerPermission(user);
+
+        // 3. 주문 상품들 검증 및 정보 수집
+        List<OrderItemInfo> orderItemInfos = validateOrderItems(request.getOrderItems());
+
+        // 4. 재고 차감 (중요: 주문 생성 전에 수행)
+        performStockDeduction(orderItemInfos);
+
+        // 5. 총 주문 금액 계산
+        Long totalPrice = calculateTotalPrice(orderItemInfos);
+
+        // 6. 주문 엔티티 생성 및 저장
+        Orders order = createAndSaveOrder(user, totalPrice);
+
+        // 7. 주문 아이템들 생성 및 저장
+        List<OrderItems> savedOrderItems = createAndSaveOrderItems(order, orderItemInfos);
+
+        // 8. 토스 페이먼츠 정보 생성
+        OrderCreateResponse.TossPaymentInfo tossPaymentInfo = createTossPaymentInfo(
+                order, request.getPaymentInfo(), totalPrice);
+
+        // 9. 응답 DTO 생성
+        OrderCreateResponse response = buildOrderCreateResponse(order, savedOrderItems, tossPaymentInfo);
+
+        log.info("주문 생성 완료 (재고 차감 완료): orderId={}, orderNumber={}, totalPrice={}",
+                order.getId(), order.getOrderNumber(), totalPrice);
+
+        return response;
+    }
+
+    /**
+     * UserPrincipal로 사용자 조회 (보안 강화)
+     */
+    private Users findUserByPrincipal(UserPrincipal userPrincipal) {
+        return userRepository.findByProviderAndProviderId(
+                        userPrincipal.provider(),
+                        userPrincipal.providerId())
+                .orElseThrow(() -> new NoSuchElementException(
+                        String.format("사용자를 찾을 수 없습니다: provider=%s, providerId=%s",
+                                userPrincipal.provider(), userPrincipal.providerId())));
     }
 
     /**
@@ -107,9 +161,29 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
+     * 구매자 권한 검증 (보안 강화)
+     */
+    private void validateBuyerPermission(Users user) {
+        if (user.getRole() != Role.ROLE_BUYER) {
+            throw new IllegalArgumentException(
+                    String.format("구매자 권한이 필요합니다. 현재 권한: %s", user.getRole()));
+        }
+
+        if (user.isAccountDisable()) {
+            throw new IllegalArgumentException("비활성화된 계정입니다.");
+        }
+
+        log.debug("구매자 권한 검증 완료: userId={}, role={}", user.getId(), user.getRole());
+    }
+
+    /**
      * 주문 상품들 검증 (존재 확인 + 재고 확인)
      */
     private List<OrderItemInfo> validateOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
+        if (orderItems == null || orderItems.isEmpty()) {
+            throw new IllegalArgumentException("주문 상품이 비어있습니다.");
+        }
+
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
         for (OrderCreateRequest.OrderItemRequest item : orderItems) {
@@ -129,6 +203,13 @@ public class OrderServiceImpl implements OrderService {
                                 product.getTitle(), item.getQuantity(), product.getQuantity()));
             }
 
+            // 상품 가격 검증 (가격 조작 방지)
+            if (product.getPrice() <= 0) {
+                throw new IllegalArgumentException(
+                        String.format("잘못된 상품 가격입니다. 상품: %s, 가격: %d",
+                                product.getTitle(), product.getPrice()));
+            }
+
             // 주문 상품 정보 생성
             OrderItemInfo orderItemInfo = OrderItemInfo.builder()
                     .productId(product.getId().toString())
@@ -141,6 +222,7 @@ public class OrderServiceImpl implements OrderService {
             orderItemInfos.add(orderItemInfo);
         }
 
+        log.debug("주문 상품 검증 완료: 상품 개수={}", orderItemInfos.size());
         return orderItemInfos;
     }
 
@@ -176,9 +258,12 @@ public class OrderServiceImpl implements OrderService {
      * 총 주문 금액 계산
      */
     private Long calculateTotalPrice(List<OrderItemInfo> orderItemInfos) {
-        return orderItemInfos.stream()
+        Long totalPrice = orderItemInfos.stream()
                 .mapToLong(OrderItemInfo::getTotalPrice)
                 .sum();
+
+        log.debug("총 주문 금액 계산 완료: {}원", totalPrice);
+        return totalPrice;
     }
 
     /**
@@ -187,13 +272,17 @@ public class OrderServiceImpl implements OrderService {
     private Orders createAndSaveOrder(Users user, Long totalPrice) {
         Orders order = Orders.builder()
                 .user(user)
-                .orderNumber(generateOrderNumber()) // ⭐️ 주문 번호 생성 로직 호출
+                .orderNumber(generateOrderNumber()) // 주문 번호 생성 로직 호출
                 .orderStatus(OrderStatus.PAYMENT_PENDING) // 결제 대기 상태 (재고는 이미 차감됨)
                 .totalPrice(totalPrice)
                 // createdAt은 BaseEntity의 @PrePersist에서 자동 설정
                 .build();
 
-        return orderRepository.save(order);
+        Orders savedOrder = orderRepository.save(order);
+        log.debug("주문 엔티티 저장 완료: orderId={}, orderNumber={}",
+                savedOrder.getId(), savedOrder.getOrderNumber());
+
+        return savedOrder;
     }
 
     /**
@@ -220,6 +309,8 @@ public class OrderServiceImpl implements OrderService {
         // return orderItemRepository.saveAll(orderItems);
         // 현재는 Orders와 cascade로 저장되므로 이 부분을 수정할 필요는 없다.
         // 만약 명시적 저장을 원하신다면 OrderItemRepository를 추가하고 주석을 해제
+
+        log.debug("주문 아이템 생성 완료: 아이템 개수={}", orderItems.size());
         return orderItems; // 현재는 Orders와 cascade로 저장됨
     }
 
@@ -231,7 +322,7 @@ public class OrderServiceImpl implements OrderService {
 
         String orderName = generateOrderName(order);
 
-        return OrderCreateResponse.TossPaymentInfo.builder()
+        OrderCreateResponse.TossPaymentInfo tossInfo = OrderCreateResponse.TossPaymentInfo.builder()
                 .tossOrderId(order.getId().toString())
                 .orderName(orderName)
                 .amount(totalPrice)
@@ -243,13 +334,16 @@ public class OrderServiceImpl implements OrderService {
                         paymentInfo.getFailUrl() : tossPaymentsProperties.getFailUrl())
                 .clientKey(tossPaymentsProperties.getClientKey())
                 .build();
+
+        log.debug("토스 페이먼츠 정보 생성 완료: orderName={}, amount={}", orderName, totalPrice);
+        return tossInfo;
     }
 
     /**
      * 주문명 생성 (토스 페이먼츠용)
      */
     private String generateOrderName(Orders order) {
-        // ⭐️ TossPaymentsProperties 또는 orderNumber가 null일 경우를 대비한 방어 코드
+        // TossPaymentsProperties 또는 orderNumber가 null일 경우를 대비한 방어 코드
         String prefix = "CATDOG"; // 기본 접두사
         if (tossPaymentsProperties.getOrder() != null && tossPaymentsProperties.getOrder().getPrefix() != null) {
             prefix = tossPaymentsProperties.getOrder().getPrefix();
@@ -308,17 +402,20 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * ⭐️ 고유한 주문 번호를 생성하는 메서드
+     * 고유한 주문 번호를 생성하는 메서드
      * (yyyyMMddHHmmss + 6자리 랜덤 숫자)
      */
     private Long generateOrderNumber() {
-        // ⭐️ yyyy -> yy 로 변경하여 길이를 줄임
+        // yyyy -> yy 로 변경하여 길이를 줄임
         String timestamp = DateTimeFormatter.ofPattern("yyMMddHHmmss")
                 .format(LocalDateTime.now());
-        // ⭐️ 6자리 -> 4자리 랜덤 숫자로 변경
+        // 6자리 -> 4자리 랜덤 숫자로 변경
         int randomNum = ThreadLocalRandom.current().nextInt(1000, 10000);
 
         // timestamp(12자리) + randomNum(4자리) = 16자리 숫자 (Long 범위 내)
-        return Long.parseLong(timestamp + randomNum);
+        Long orderNumber = Long.parseLong(timestamp + randomNum);
+        log.debug("주문 번호 생성: {}", orderNumber);
+
+        return orderNumber;
     }
 }
