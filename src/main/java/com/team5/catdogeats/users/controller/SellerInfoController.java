@@ -42,7 +42,7 @@ public class SellerInfoController {
     @GetMapping("/info")
     public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo() {
         // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
-        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
+        UUID tempUserId = UUID.fromString("2aa4ad9f-dd05-4739-a683-eb8d2115635f");
         log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
 
         SellerInfoResponse response = sellerInfoService.getSellerInfo(tempUserId);
@@ -78,7 +78,7 @@ public class SellerInfoController {
             BindingResult bindingResult) {
 
         // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
-        UUID tempUserId = UUID.fromString("2ceb807f-586f-4450-b470-d1ece7173749");
+        UUID tempUserId = UUID.fromString("2aa4ad9f-dd05-4739-a683-eb8d2115635f");
         log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
                 tempUserId, request.vendorName());
 
