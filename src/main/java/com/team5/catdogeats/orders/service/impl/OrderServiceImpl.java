@@ -21,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -29,17 +28,16 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (1단계: 재고 차감 포함)
+ * 주문 관리 서비스 구현체 (업데이트된 Products 엔티티 적용)
+ *
+ * Products 엔티티의 quantity 필드가 stock으로 변경됨에 따라
+ * 모든 재고 관련 로직을 수정하였습니다.
  *
  * 1단계 "주문(구매자)" 기능:
- * - 상품 존재 확인 및 재고 검증
+ * - 상품 존재 확인 및 재고 검증 (stock 필드 사용)
  * - 재고 차감 (동시성 제어)
  * - 주문 엔티티 생성 (PENDING 상태)
  * - 토스 페이먼츠 정보 응답
- *
- * 모든 작업이 하나의 트랜잭션에서 수행되어 재고 차감 실패 시 주문도 롤백됩니다.
- * - 클래스 레벨의 readOnly=true는 쓰기 작업이 포함된 메서드에서 혼란을 야기할 수 있음
- * - 메서드별로 명시적인 트랜잭션 설정이 더 명확하고 안전함
  */
 @Slf4j
 @Service
@@ -76,114 +74,92 @@ public class OrderServiceImpl implements OrderService {
         Long totalPrice = calculateTotalPrice(orderItemInfos);
 
         // 6. 주문 엔티티 생성 및 저장
-        Orders order = createAndSaveOrder(user, totalPrice);
+        Orders savedOrder = createAndSaveOrder(user, totalPrice);
 
         // 7. 주문 아이템들 생성 및 저장
-        List<OrderItems> savedOrderItems = createAndSaveOrderItems(order, orderItemInfos);
+        List<OrderItems> orderItems = createAndSaveOrderItems(savedOrder, orderItemInfos);
 
-        // 8. 토스 페이먼츠 정보 생성
-        OrderCreateResponse.TossPaymentInfo tossPaymentInfo = createTossPaymentInfo(
-                order, request.getPaymentInfo(), totalPrice);
+        // 8. 토스 페이먼츠 응답 생성
+        OrderCreateResponse response = buildTossPaymentResponse(savedOrder, request.getPaymentInfo());
 
-        // 9. 응답 DTO 생성
-        OrderCreateResponse response = buildOrderCreateResponse(order, savedOrderItems, tossPaymentInfo);
-
-        log.info("주문 생성 완료 (재고 차감 완료): orderId={}, orderNumber={}, totalPrice={}",
-                order.getId(), order.getOrderNumber(), totalPrice);
+        log.info("주문 생성 완료: orderId={}, orderNumber={}, totalPrice={}",
+                savedOrder.getId(), savedOrder.getOrderNumber(), totalPrice);
 
         return response;
     }
 
     /**
-     * UserPrincipal로 사용자 조회 (보안 강화)
+     * UserPrincipal로 사용자 조회
      */
     private Users findUserByPrincipal(UserPrincipal userPrincipal) {
         return userRepository.findByProviderAndProviderId(
-                        userPrincipal.provider(),
-                        userPrincipal.providerId())
-                .orElseThrow(() -> new NoSuchElementException(
-                        String.format("사용자를 찾을 수 없습니다: provider=%s, providerId=%s",
-                                userPrincipal.provider(), userPrincipal.providerId())));
+                        userPrincipal.provider(), userPrincipal.providerId())
+                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다"));
     }
 
     /**
-     * 사용자 조회
-     */
-    private Users findUserById(String userId) {
-        return userRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다: " + userId));
-    }
-
-    /**
-     * 구매자 권한 검증 (보안 강화)
+     * 구매자 권한 검증
      */
     private void validateBuyerPermission(Users user) {
         if (user.getRole() != Role.ROLE_BUYER) {
-            throw new IllegalArgumentException(
-                    String.format("구매자 권한이 필요합니다. 현재 권한: %s", user.getRole()));
+            throw new IllegalArgumentException("구매자만 주문을 생성할 수 있습니다");
         }
 
         if (user.isAccountDisable()) {
-            throw new IllegalArgumentException("비활성화된 계정입니다.");
+            throw new IllegalStateException("비활성화된 계정입니다");
         }
-
-        log.debug("구매자 권한 검증 완료: userId={}, role={}", user.getId(), user.getRole());
     }
 
     /**
-     * 주문 상품들 검증 (존재 확인 + 재고 확인)
+     * 주문 상품들 검증 및 정보 수집 (stock 필드 사용)
      */
     private List<OrderItemInfo> validateOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
-        if (orderItems == null || orderItems.isEmpty()) {
-            throw new IllegalArgumentException("주문 상품이 비어있습니다.");
-        }
+        log.debug("주문 상품 검증 시작: 상품 개수={}", orderItems.size());
 
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
         for (OrderCreateRequest.OrderItemRequest item : orderItems) {
-            // 실제 상품 조회
+            // 상품 존재 여부 확인
             Products product = productRepository.findById(UUID.fromString(item.getProductId()))
-                    .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + item.getProductId()));
+                    .orElseThrow(() -> new NoSuchElementException(
+                            "상품을 찾을 수 없습니다: " + item.getProductId()));
 
-            // 기본 수량 검증
+            // 수량 유효성 검증
             if (item.getQuantity() <= 0) {
-                throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다.");
+                throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다");
             }
 
-            // 재고 확인 (차감 전 검증)
-            if (item.getQuantity() > product.getQuantity()) {
+            // 재고 충분성 검증 (stock 필드 사용)
+            if (product.getStock() < item.getQuantity()) {
                 throw new IllegalArgumentException(
-                        String.format("재고가 부족합니다. 상품: %s, 요청 수량: %d, 재고: %d",
-                                product.getTitle(), item.getQuantity(), product.getQuantity()));
+                        String.format("재고 부족: 상품=%s, 요청수량=%d, 현재재고=%d",
+                                product.getTitle(), item.getQuantity(), product.getStock()));
             }
 
-            // 상품 가격 검증 (가격 조작 방지)
-            if (product.getPrice() <= 0) {
-                throw new IllegalArgumentException(
-                        String.format("잘못된 상품 가격입니다. 상품: %s, 가격: %d",
-                                product.getTitle(), product.getPrice()));
-            }
-
-            // 주문 상품 정보 생성
+            // 주문 상품 정보 수집
             OrderItemInfo orderItemInfo = OrderItemInfo.builder()
                     .productId(product.getId().toString())
                     .productName(product.getTitle())
-                    .unitPrice(product.getPrice())
                     .quantity(item.getQuantity())
+                    .unitPrice(product.getPrice())
                     .totalPrice(product.getPrice() * item.getQuantity())
                     .build();
 
             orderItemInfos.add(orderItemInfo);
+
+            log.debug("상품 검증 완료: 상품={}, 요청수량={}, 단가={}, 총액={}",
+                    product.getTitle(), item.getQuantity(), product.getPrice(), orderItemInfo.getTotalPrice());
         }
 
-        log.debug("주문 상품 검증 완료: 상품 개수={}", orderItemInfos.size());
+        log.debug("전체 주문 상품 검증 완료");
         return orderItemInfos;
     }
 
     /**
-     * 재고 차감 수행 (원자적 처리)
+     * 재고 차감 (업데이트된 Repository 메서드 사용)
      *
-     * 동시성 제어를 위해 데이터베이스 레벨에서 원자적으로 처리합니다.
+     * ProductRepository의 decreaseStock 메서드를 사용하여
+     * 원자적 재고 차감을 수행합니다.
      */
     private void performStockDeduction(List<OrderItemInfo> orderItemInfos) {
         log.info("재고 차감 시작: 상품 개수={}", orderItemInfos.size());
@@ -192,8 +168,8 @@ public class OrderServiceImpl implements OrderService {
             UUID productId = UUID.fromString(itemInfo.getProductId());
             Integer quantity = itemInfo.getQuantity();
 
-            // 원자적 재고 차감
-            int updatedRows = productRepository.decreaseQuantity(productId, quantity);
+            // 원자적 재고 차감 (decreaseStock 메서드 사용)
+            int updatedRows = productRepository.decreaseStock(productId, quantity);
 
             if (updatedRows == 0) {
                 // 재고 차감 실패: 동시성 충돌 또는 재고 부족
@@ -226,10 +202,9 @@ public class OrderServiceImpl implements OrderService {
     private Orders createAndSaveOrder(Users user, Long totalPrice) {
         Orders order = Orders.builder()
                 .user(user)
-                .orderNumber(generateOrderNumber()) // 주문 번호 생성 로직 호출
-                .orderStatus(OrderStatus.PAYMENT_PENDING) // 결제 대기 상태 (재고는 이미 차감됨)
+                .orderNumber(generateOrderNumber())
+                .orderStatus(OrderStatus.PAYMENT_PENDING)
                 .totalPrice(totalPrice)
-                // createdAt은 BaseEntity의 @PrePersist에서 자동 설정
                 .build();
 
         Orders savedOrder = orderRepository.save(order);
@@ -259,29 +234,21 @@ public class OrderServiceImpl implements OrderService {
             orderItems.add(orderItem);
         }
 
-        // TODO: OrderItemRepository가 있다면 saveAll로 저장
-        // return orderItemRepository.saveAll(orderItems);
-        // 현재는 Orders와 cascade로 저장되므로 이 부분을 수정할 필요는 없다.
-        // 만약 명시적 저장을 원하신다면 OrderItemRepository를 추가하고 주석을 해제
-
         log.debug("주문 아이템 생성 완료: 아이템 개수={}", orderItems.size());
-        return orderItems; // 현재는 Orders와 cascade로 저장됨
+        return orderItems;
     }
 
     /**
-     * 토스 페이먼츠 정보 생성
+     * 토스 페이먼츠 응답 생성
      */
-    private OrderCreateResponse.TossPaymentInfo createTossPaymentInfo(
-            Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo, Long totalPrice) {
-
-        String orderName = generateOrderName(order);
-
-        OrderCreateResponse.TossPaymentInfo tossInfo = OrderCreateResponse.TossPaymentInfo.builder()
+    private OrderCreateResponse buildTossPaymentResponse(Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo) {
+        // TossPaymentInfo 생성
+        OrderCreateResponse.TossPaymentInfo tossPaymentInfo = OrderCreateResponse.TossPaymentInfo.builder()
                 .tossOrderId(order.getId().toString())
-                .orderName(orderName)
-                .amount(totalPrice)
-                .customerName(paymentInfo.getCustomerName())
-                .customerEmail(paymentInfo.getCustomerEmail())
+                .orderName(generateOrderName(order))
+                .amount(order.getTotalPrice()) // amount는 TossPaymentInfo에 있음
+                .customerName(paymentInfo.getCustomerName()) // PaymentInfoRequest에서 가져옴
+                .customerEmail(paymentInfo.getCustomerEmail()) // PaymentInfoRequest에서 가져옴
                 .successUrl(paymentInfo.getSuccessUrl() != null ?
                         paymentInfo.getSuccessUrl() : tossPaymentsProperties.getSuccessUrl())
                 .failUrl(paymentInfo.getFailUrl() != null ?
@@ -289,70 +256,14 @@ public class OrderServiceImpl implements OrderService {
                 .clientKey(tossPaymentsProperties.getClientKey())
                 .build();
 
-        log.debug("토스 페이먼츠 정보 생성 완료: orderName={}, amount={}", orderName, totalPrice);
-        return tossInfo;
-    }
-
-    /**
-     * 주문명 생성 (토스 페이먼츠용)
-     */
-    private String generateOrderName(Orders order) {
-        // TossPaymentsProperties 또는 orderNumber가 null일 경우를 대비한 방어 코드
-        String prefix = "CATDOG"; // 기본 접두사
-        if (tossPaymentsProperties.getOrder() != null && tossPaymentsProperties.getOrder().getPrefix() != null) {
-            prefix = tossPaymentsProperties.getOrder().getPrefix();
-        }
-
-        if (order.getOrderNumber() == null) {
-            return String.format("%s-임시주문", prefix);
-        }
-
-        return String.format("%s%d번 주문",
-                prefix,
-                order.getOrderNumber());
-    }
-
-    /**
-     * 주문 생성 응답 DTO 생성
-     */
-    private OrderCreateResponse buildOrderCreateResponse(
-            Orders order, List<OrderItems> orderItems, OrderCreateResponse.TossPaymentInfo tossPaymentInfo) {
-
-        List<OrderCreateResponse.OrderItemResponse> orderItemResponses = new ArrayList<>();
-
-        for (OrderItems item : orderItems) {
-            orderItemResponses.add(OrderCreateResponse.OrderItemResponse.builder()
-                    .orderItemId(item.getId() != null ? item.getId().toString() : "temp-" + System.nanoTime())
-                    .productId(item.getProducts().getId().toString())
-                    .productName(item.getProducts().getTitle())
-                    .quantity(item.getQuantity())
-                    .unitPrice(item.getPrice())
-                    .totalPrice(item.getPrice() * item.getQuantity())
-                    .build());
-        }
-
         return OrderCreateResponse.builder()
-                .orderId(order.getId().toString())
                 .orderNumber(order.getOrderNumber())
+                .totalPrice(order.getTotalPrice()) // totalPrice는 메인 클래스에 있음
+                .orderId(order.getId().toString())
                 .orderStatus(order.getOrderStatus())
-                .totalPrice(order.getTotalPrice())
                 .createdAt(order.getCreatedAt())
-                .orderItems(orderItemResponses)
                 .tossPaymentInfo(tossPaymentInfo)
                 .build();
-    }
-
-    /**
-     * 주문 상품 정보를 담는 내부 DTO
-     */
-    @lombok.Builder
-    @lombok.Getter
-    private static class OrderItemInfo {
-        private String productId;
-        private String productName;
-        private Long unitPrice;
-        private Integer quantity;
-        private Long totalPrice;
     }
 
     /**
@@ -371,5 +282,27 @@ public class OrderServiceImpl implements OrderService {
         log.debug("주문 번호 생성: {}", orderNumber);
 
         return orderNumber;
+    }
+
+    /**
+     * 주문명 생성
+     */
+    private String generateOrderName(Orders order) {
+        return "반려동물 용품 주문 #" + order.getOrderNumber();
+    }
+
+    /**
+     * 주문 상품 정보를 담는 내부 클래스
+     */
+    @lombok.Data
+    @lombok.Builder
+    @lombok.NoArgsConstructor
+    @lombok.AllArgsConstructor
+    private static class OrderItemInfo {
+        private String productId;
+        private String productName;
+        private Integer quantity;
+        private Long unitPrice;
+        private Long totalPrice;
     }
 }
