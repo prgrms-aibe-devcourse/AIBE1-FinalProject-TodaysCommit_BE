@@ -7,11 +7,19 @@ import com.team5.catdogeats.users.mapper.SellerMapper;
 import com.team5.catdogeats.users.mapper.UserMapper;
 import com.team5.catdogeats.users.service.WithdrawService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WithdrawServiceImpl implements WithdrawService {
@@ -21,23 +29,34 @@ public class WithdrawServiceImpl implements WithdrawService {
 
     @Override
     @Transactional
-    public void withdraw(UserPrincipal userPrincipal, Role role) {
-        if (role == Role.ROLE_TEMP) {
-            throw new IllegalStateException("잘못된 권한을 가진 유저입니다.");
+    public void withdraw(UserPrincipal userPrincipal) {
+
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String firstAuthority = authentication.getAuthorities().stream()
+                    .findFirst()
+                    .map(GrantedAuthority::getAuthority)
+                    .orElseThrow(() -> new IllegalStateException("권한 정보가 없습니다."));
+
+            if (Objects.equals(firstAuthority, Role.ROLE_TEMP.toString())) {
+                throw new IllegalStateException("잘못된 권한을 가진 유저입니다.");
+            }
+
+            userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId());
+
+            if (Objects.equals(firstAuthority, Role.ROLE_SELLER.toString())) {
+                sellerMapper.softDeleteSellerByProviderAndProviderId(userPrincipal.provider(),
+                        userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
+            }
+
+            if (Objects.equals(firstAuthority, Role.ROLE_BUYER.toString())) {
+                buyerMapper.softDeleteBuyerByProviderAndProviderId(userPrincipal.provider(),
+                        userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
+            }
+        } catch (BadSqlGrammarException e) {
+            log.error("sql 에러", e);
+            throw e;
         }
 
-        if (role == Role.ROLE_SELLER) {
-            userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId());
-            sellerMapper.softDeleteSellerByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId(), ZonedDateTime.now());
-        }
-
-        if (role == Role.ROLE_BUYER) {
-            userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId());
-            buyerMapper.softDeleteBuyerByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId(), ZonedDateTime.now());
-        }
     }
 }

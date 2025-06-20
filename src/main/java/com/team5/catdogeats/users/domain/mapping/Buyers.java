@@ -5,7 +5,7 @@ import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
@@ -32,7 +32,7 @@ public class Buyers extends BaseEntity {
     private boolean isDeleted = false;
 
     @Column(name = "deleted_at")
-    private ZonedDateTime deledAt;
+    private OffsetDateTime deledAt;
 
 
 }

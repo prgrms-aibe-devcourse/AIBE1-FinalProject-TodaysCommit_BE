@@ -1,7 +1,7 @@
 package com.team5.catdogeats.users.domain.dto;
 
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record SellerDTO(UUID userId,
@@ -15,5 +15,5 @@ public record SellerDTO(UUID userId,
                         LocalTime operatingEndTime,
                         String closedDays,
                         boolean isDeleted,
-                        ZonedDateTime deletedAt) {
+                        OffsetDateTime deletedAt) {
 }
