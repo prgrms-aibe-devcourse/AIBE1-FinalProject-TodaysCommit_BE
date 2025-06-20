@@ -24,13 +24,13 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class SellerInfoServiceImpl implements SellerInfoService {
 
     private final SellersRepository sellersRepository;
     private final UserRepository userRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public SellerInfoResponse getSellerInfo(UUID userId) {
         log.info("판매자 정보 조회 - userId: {}", userId);
 
@@ -40,6 +40,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return getSellerInfoInternal(userId);
     }
 
+    @Transactional
     public SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request) {
         log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.vendorName());
 

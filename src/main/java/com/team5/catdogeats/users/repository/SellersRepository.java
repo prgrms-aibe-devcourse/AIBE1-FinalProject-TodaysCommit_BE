@@ -23,6 +23,10 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
      */
     Optional<Sellers> findByBusinessNumber(String businessNumber);
 
+    /**
+     * 상점명으로 판매자 정보 조회
+     */
+    Optional<Sellers> findByVendorName(String vendorName);
 
 
     @Query("""

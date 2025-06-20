@@ -36,6 +36,11 @@ public enum ResponseCode {
     INVALID_OPERATING_HOURS(HttpStatus.BAD_REQUEST, "운영 시간 설정이 올바르지 않습니다."),
     INVALID_CLOSED_DAYS(HttpStatus.BAD_REQUEST, "휴무일 설정이 올바르지 않습니다."),
 
+    // === 판매자 스토어 관련 응답 ===
+    SELLER_STORE_SUCCESS(HttpStatus.OK, "판매자 스토어 페이지 조회 성공"),
+    SELLER_STORE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 판매자 스토어입니다."),
+    SELLER_STORE_PRODUCTS_SUCCESS(HttpStatus.OK, "판매자 상품 목록 조회 성공"),
+
     // === 상품 관련 응답 ===
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 상품을 찾을 수 없습니다."),
     PRODUCT_SAVE_SUCCESS(HttpStatus.OK, "상품이 성공적으로 저장되었습니다."),
