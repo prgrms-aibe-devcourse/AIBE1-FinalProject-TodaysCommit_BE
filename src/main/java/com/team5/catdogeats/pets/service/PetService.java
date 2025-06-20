@@ -1,5 +1,6 @@
 package com.team5.catdogeats.pets.service;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.pets.domain.dto.PetCreateRequestDto;
 import com.team5.catdogeats.pets.domain.dto.PetDeleteRequestDto;
 import com.team5.catdogeats.pets.domain.dto.PetResponseDto;
@@ -9,8 +10,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface PetService {
-    UUID registerPet(PetCreateRequestDto dto);
-    List<PetResponseDto> getMyPets();
+    UUID registerPet(UserPrincipal userPrincipal, PetCreateRequestDto dto);
+    List<PetResponseDto> getMyPets(UserPrincipal userPrincipal);
     void updatePet(PetUpdateRequestDto dto);
     void deletePet(PetDeleteRequestDto dto);
 }
