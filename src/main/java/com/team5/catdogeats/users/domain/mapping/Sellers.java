@@ -2,9 +2,14 @@ package com.team5.catdogeats.users.domain.mapping;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.domain.enums.DayOfWeek;
+
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -15,7 +20,6 @@ import java.util.UUID;
 public class Sellers extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id", length = 36)
     private UUID userId;
 
@@ -41,4 +45,56 @@ public class Sellers extends BaseEntity {
 
     @Column(name = "tags")
     private String tags;
+
+    @Column(name = "operating_start_time")
+    private LocalTime operatingStartTime;
+
+    @Column(name = "operating_end_time")
+    private LocalTime operatingEndTime;
+
+    @Column(name = "closed_days", length = 20)
+    private String closedDays;
+
+    public void updateVendorName(String vendorName) {
+        if (vendorName != null && !vendorName.trim().isEmpty()) {
+            this.vendorName = vendorName;
+        }
+    }
+
+    public void updateVendorProfileImage(String vendorProfileImage) {
+        if (vendorProfileImage != null && !vendorProfileImage.trim().isEmpty()) {
+            this.vendorProfileImage = vendorProfileImage;
+        }
+    }
+
+    public void updateBusinessNumber(String businessNumber) {
+        if (businessNumber != null && !businessNumber.trim().isEmpty()) {
+            this.businessNumber = businessNumber;
+        }
+    }
+
+    public void updateSettlementBank(String settlementBank) {
+        this.settlementBank = settlementBank;
+    }
+
+    public void updateSettlementAcc(String settlementAcc) {
+        this.settlementAccount = settlementAcc;
+    }
+
+    public void updateTags(String tags) {
+        this.tags = tags;
+    }
+
+    public void updateOperatingStartTime(LocalTime operatingStartTime) {
+        this.operatingStartTime = operatingStartTime;
+    }
+
+    public void updateOperatingEndTime(LocalTime operatingEndTime) {
+        this.operatingEndTime = operatingEndTime;
+    }
+
+    public void updateClosedDays(String closedDays) {
+        this.closedDays = closedDays;
+    }
 }
+

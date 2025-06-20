@@ -29,6 +29,9 @@ CREATE TABLE sellers (
                          settlement_bank VARCHAR(50),
                          settlement_acc  VARCHAR(30),
                          tags VARCHAR(36),
+                         operating_start_time TIME,
+                         operating_end_time TIME,
+                         closed_days VARCHAR(20),
                          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                          CONSTRAINT fk_sellers_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

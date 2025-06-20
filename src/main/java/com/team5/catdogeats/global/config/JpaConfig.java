@@ -1,6 +1,7 @@
 package com.team5.catdogeats.global.config;
 
 import jakarta.persistence.EntityManagerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -13,33 +14,47 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = {"com.team5.catdogeats.users.repository", "com.team5.catdogeats.support.domain.notice.repository", "com.team5.catdogeats.storage.domain.repository"},
+        basePackages = {"com.team5.catdogeats.users.repository", "com.team5.catdogeats.pets.repository", "com.team5.catdogeats.support.domain.notice.repository", "com.team5.catdogeats.storage.domain.repository"},
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "jpaTransactionManager"
 )
+
 public class JpaConfig {
 
-    @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
-        LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
-        emf.setDataSource(dataSource);
-        emf.setPackagesToScan("com.team5.catdogeats");
+        @Value("${spring.jpa.hibernate.ddl-auto}")
+        private String ddlAuto;
 
-        HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
-        vendorAdapter.setGenerateDdl(true);
-        vendorAdapter.setShowSql(true);
-        vendorAdapter.setDatabasePlatform("org.hibernate.dialect.PostgreSQLDialect");
-        emf.setJpaVendorAdapter(vendorAdapter);
+        @Value("${spring.jpa.show-sql}")
+        private boolean showSql;
 
-        java.util.Properties jpaProperties = new java.util.Properties();
-        jpaProperties.put("hibernate.hbm2ddl.auto", "update");
-        jpaProperties.put("hibernate.format_sql", "true");
-        emf.setJpaProperties(jpaProperties);
+        @Value("${spring.jpa.properties.hibernate.format_sql}")
+        private boolean formatSql;
 
-        return emf;
-    }
+        @Value("${spring.jpa.database-platform}")
+        private String databasePlatform;
 
-    @Bean
+        @Bean
+        public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
+            LocalContainerEntityManagerFactoryBean emf = new LocalContainerEntityManagerFactoryBean();
+            emf.setDataSource(dataSource);
+            emf.setPackagesToScan("com.team5.catdogeats");
+
+            HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
+            vendorAdapter.setGenerateDdl(true);
+            vendorAdapter.setShowSql(showSql);
+            vendorAdapter.setDatabasePlatform(databasePlatform);
+            emf.setJpaVendorAdapter(vendorAdapter);
+
+            java.util.Properties jpaProperties = new java.util.Properties();
+            jpaProperties.put("hibernate.hbm2ddl.auto", ddlAuto);
+            jpaProperties.put("hibernate.format_sql", String.valueOf(formatSql));
+            emf.setJpaProperties(jpaProperties);
+
+            return emf;
+        }
+
+
+        @Bean
     public PlatformTransactionManager jpaTransactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
