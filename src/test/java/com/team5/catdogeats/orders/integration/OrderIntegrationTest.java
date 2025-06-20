@@ -1,6 +1,8 @@
 package com.team5.catdogeats.orders.integration;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
 import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.products.domain.Products;
@@ -78,8 +80,9 @@ class OrderIntegrationTest {
         product2 = productRepository.save(Products.builder().seller(seller).title("유기농 고양이 사료").contents("상품 상세 내용 2").productNumber(1002L).price(15000L).quantity(50).build());
         product3 = productRepository.save(Products.builder().seller(seller).title("수제 강아지 간식").contents("상품 상세 내용 3").productNumber(1003L).price(8000L).quantity(30).build());
 
+        UserPrincipal userPrincipal = new UserPrincipal(testUser.getProvider(), testUser.getProviderId());
         testAuthentication = new UsernamePasswordAuthenticationToken(
-                testUser.getId().toString(),
+                userPrincipal,
                 null,
                 Collections.singletonList(new SimpleGrantedAuthority(testUser.getRole().toString()))
         );
@@ -112,24 +115,26 @@ class OrderIntegrationTest {
     void createOrder_Success() throws Exception {
         System.out.println("🔧 현재 테스트 사용자 ID: " + testUser.getId());
 
-        // ⭐️ andReturn()을 가장 마지막에 호출하여 MvcResult를 얻도록 수정
+        // --- 여기부터 수정 ---
         MvcResult result = mockMvc.perform(post("/v1/buyers/orders")
-                        .param("userId", testUser.getId().toString())
                         .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validRequest)))
                 .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.orderId").exists())
-                .andExpect(jsonPath("$.totalPrice").value(50000))
-                .andReturn(); // ⭐️ .andReturn()을 체인의 마지막으로 이동
+                .andExpect(jsonPath("$.data.orderId").exists()) // JSON Path 수정
+                .andExpect(jsonPath("$.data.totalPrice").value(50000)) // JSON Path 수정
+                .andReturn();
 
-        // ⭐️ 응답 본문을 직접 꺼내서 객체로 변환 후 검증
+        // ObjectMapper로 응답을 파싱하여 객체 검증
         String responseContent = result.getResponse().getContentAsString();
-        OrderCreateResponse response = objectMapper.readValue(responseContent, OrderCreateResponse.class);
+        JsonNode responseNode = objectMapper.readTree(responseContent);
+        OrderCreateResponse response = objectMapper.treeToValue(responseNode.get("data"), OrderCreateResponse.class);
+
         assertThat(response.getOrderId()).isNotNull();
         assertThat(response.getTotalPrice()).isEqualTo(50000);
+        // --- 여기까지 수정 ---
     }
 
     @Test
@@ -148,15 +153,14 @@ class OrderIntegrationTest {
     @Test
     @DisplayName("❌ 존재하지 않는 사용자 - 실제 에러 테스트")
     void createOrder_UserNotFound() throws Exception {
-        String nonExistentUserId = UUID.randomUUID().toString();
+        UserPrincipal nonExistentUserPrincipal = new UserPrincipal("DUMMY_PROVIDER", "non-existent-user-id");
         UsernamePasswordAuthenticationToken nonExistentUserAuth = new UsernamePasswordAuthenticationToken(
-                nonExistentUserId,
+                nonExistentUserPrincipal,
                 null,
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_BUYER"))
         );
 
         mockMvc.perform(post("/v1/buyers/orders")
-                        .param("userId", nonExistentUserId)
                         .with(authentication(nonExistentUserAuth))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -180,7 +184,6 @@ class OrderIntegrationTest {
                 .build();
 
         mockMvc.perform(post("/v1/buyers/orders")
-                        .param("userId", testUser.getId().toString())
                         .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -202,15 +205,16 @@ class OrderIntegrationTest {
                 .paymentInfo(validRequest.getPaymentInfo())
                 .build();
 
+        // --- 여기부터 수정 ---
         mockMvc.perform(post("/v1/buyers/orders")
-                        .param("userId", testUser.getId().toString())
                         .with(authentication(testAuthentication))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(multiProductRequest)))
                 .andDo(print())
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.totalPrice").value(48000))
-                .andExpect(jsonPath("$.orderItems.length()").value(3));
+                .andExpect(jsonPath("$.data.totalPrice").value(48000)) // JSON Path 수정
+                .andExpect(jsonPath("$.data.orderItems.length()").value(3)); // JSON Path 수정
+        // --- 여기까지 수정 ---
     }
 }
