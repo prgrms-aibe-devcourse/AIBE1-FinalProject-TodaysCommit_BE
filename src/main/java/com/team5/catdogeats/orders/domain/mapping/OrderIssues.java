@@ -9,6 +9,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,10 +49,10 @@ public class OrderIssues extends BaseEntity {
     private IssueStatus issueStatus = IssueStatus.REQUESTED;
 
     @Column(name = "issue_request_date", nullable = false)
-    private LocalDateTime issueRequestDate;
+    private Date issueRequestDate;
 
     @Column(name = "issue_complete_date")
-    private LocalDateTime issueCompleteDate;
+    private Date issueCompleteDate;
 
     @Column(name = "total_amount", nullable = false)
     private Long totalAmount;
