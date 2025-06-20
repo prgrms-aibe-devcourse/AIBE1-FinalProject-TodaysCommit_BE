@@ -14,14 +14,11 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = {
-                "com.team5.catdogeats.users.repository",
+        basePackages = {"com.team5.catdogeats.users.repository",
+                "com.team5.catdogeats.addresses.repository",
                 "com.team5.catdogeats.orders.repository",
                 "com.team5.catdogeats.products.repository",
-                "com.team5.catdogeats.pets.repository"
-        },
-        entityManagerFactoryRef = "entityManagerFactory",
-        transactionManagerRef = "jpaTransactionManager"
+                "com.team5.catdogeats.pets.repository"}
 )
 
 public class JpaConfig {

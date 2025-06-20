@@ -81,7 +81,7 @@ public class ModifyUserRoleServiceImpl  implements ModifyUserRoleService {
 
         // 새로운 권한 부여
         Collection<GrantedAuthority> updatedAuthorities = List.of(
-                new SimpleGrantedAuthority(role.toString())
+                new SimpleGrantedAuthority(user.getRole().toString())
         );
 
         // 사용자 속성 구성
