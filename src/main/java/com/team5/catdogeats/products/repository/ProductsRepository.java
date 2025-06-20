@@ -12,8 +12,7 @@ import java.util.UUID;
 public interface ProductsRepository extends JpaRepository<Products, UUID> {
 
 
-    @Query("SELECT COUNT(p) FROM Products p WHERE p.seller.userId = :sellerId AND p.stockStatus = 'IN_STOCK'")
+    @Query("SELECT COUNT(p) FROM Products p WHERE p.seller.userId = :sellerId")
     Long countSellerActiveProducts(@Param("sellerId") UUID sellerId);
-
 
 }

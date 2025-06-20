@@ -10,16 +10,16 @@ import java.util.List;
  */
 @Schema(description = "상품 카드 페이징 응답")
 public record ProductCardPageResponse(
-        @Schema(description = "상품 목록")
+        @Schema(description = "상품 카드 목록")
         List<SellerStoreProductCard> content,
 
-        @Schema(description = "전체 요소 수", example = "50")
+        @Schema(description = "전체 요소 수", example = "100")
         long totalElements,
 
-        @Schema(description = "전체 페이지 수", example = "5")
+        @Schema(description = "전체 페이지 수", example = "10")
         int totalPages,
 
-        @Schema(description = "현재 페이지", example = "0")
+        @Schema(description = "현재 페이지 번호 (1-based)", example = "1")
         int currentPage,
 
         @Schema(description = "페이지 크기", example = "12")
@@ -37,7 +37,7 @@ public record ProductCardPageResponse(
                 page.getContent(),
                 page.getTotalElements(),
                 page.getTotalPages(),
-                page.getNumber(),
+                page.getNumber() + 1, // 0-based를 1-based로 변환
                 page.getSize(),
                 page.hasNext(),
                 page.hasPrevious()

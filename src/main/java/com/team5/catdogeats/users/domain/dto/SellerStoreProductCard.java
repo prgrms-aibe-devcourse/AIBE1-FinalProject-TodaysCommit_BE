@@ -44,7 +44,10 @@ public record SellerStoreProductCard(
         Double avgRating,
 
         @Schema(description = "리뷰 수", example = "10")
-        Long reviewCount
+        Long reviewCount,
+
+        @Schema(description = "베스트 점수", example = "85.5")
+        Double bestScore
 ) {
 
     public static SellerStoreProductCard from(ProductStoreInfo productInfo) {
@@ -62,6 +65,10 @@ public record SellerStoreProductCard(
                 ? BigDecimal.valueOf(productInfo.avgRating()).setScale(1, RoundingMode.HALF_UP).doubleValue()
                 : 0.0;
 
+        Double bestScore = productInfo.bestScore() != null
+                ? BigDecimal.valueOf(productInfo.bestScore()).setScale(1, RoundingMode.HALF_UP).doubleValue()
+                : 0.0;
+
         return new SellerStoreProductCard(
                 productInfo.productId().toString(),
                 productInfo.productNumber(),
@@ -73,7 +80,8 @@ public record SellerStoreProductCard(
                 productInfo.petCategory(),
                 productInfo.stockStatus(),
                 avgRating,
-                productInfo.reviewCount()
+                productInfo.reviewCount(),
+                bestScore
         );
     }
 

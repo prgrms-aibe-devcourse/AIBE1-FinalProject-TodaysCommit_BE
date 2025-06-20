@@ -20,5 +20,6 @@ public record ProductStoreInfo(
         PetCategory petCategory,
         StockStatus stockStatus,
         Double avgRating,
-        Long reviewCount
+        Long reviewCount,
+        Double bestScore
 ) {}
