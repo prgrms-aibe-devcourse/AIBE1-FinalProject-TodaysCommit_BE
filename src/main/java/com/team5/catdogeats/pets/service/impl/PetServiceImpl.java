@@ -1,5 +1,6 @@
 package com.team5.catdogeats.pets.service.impl;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.pets.domain.Pets;
 import com.team5.catdogeats.pets.domain.dto.PetCreateRequestDto;
 import com.team5.catdogeats.pets.domain.dto.PetDeleteRequestDto;
@@ -7,6 +8,7 @@ import com.team5.catdogeats.pets.domain.dto.PetResponseDto;
 import com.team5.catdogeats.pets.domain.dto.PetUpdateRequestDto;
 import com.team5.catdogeats.pets.repository.PetRepository;
 import com.team5.catdogeats.pets.service.PetService;
+import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
 import jakarta.transaction.Transactional;
@@ -25,22 +27,28 @@ public class PetServiceImpl implements PetService {
     private final BuyerRepository buyerRepository;
 
     @Override
-    public UUID registerPet(PetCreateRequestDto dto) {
-//      TODO: UUID userId = SecurityUtil.getCurrentUserId();
-        UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        Buyers buyer = buyerRepository.findById(userId)
+    public UUID registerPet(UserPrincipal userPrincipal, PetCreateRequestDto dto) {
+        BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
+
+        Buyers buyer = Buyers.builder()
+                .userId(buyerDTO.userId())
+                .nameMaskingStatus(buyerDTO.nameMaskingStatus())
+                .build();
 
         Pets pet = Pets.fromDto(dto, buyer);
         return petRepository.save(pet).getId();
     }
 
     @Override
-    public List<PetResponseDto> getMyPets() {
-//      TODO:  UUID userId = SecurityUtil.getCurrentUserId();
-        UUID userId = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        Buyers buyer = buyerRepository.findById(userId)
+    public List<PetResponseDto> getMyPets(UserPrincipal userPrincipal) {
+        BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
+
+        Buyers buyer = Buyers.builder()
+                .userId(buyerDTO.userId())
+                .nameMaskingStatus(buyerDTO.nameMaskingStatus())
+                .build();
 
         return petRepository.findByBuyer(buyer)
                 .stream()
