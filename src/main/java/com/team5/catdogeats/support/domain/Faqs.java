@@ -22,7 +22,6 @@ public class Faqs {
     @Column(nullable = false)
     private String question;
 
-    @Lob
     @Column(nullable = false)
     private String answer;
 }

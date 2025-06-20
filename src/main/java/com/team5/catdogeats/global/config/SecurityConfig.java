@@ -1,5 +1,9 @@
 package com.team5.catdogeats.global.config;
 
+import com.team5.catdogeats.auth.filter.JwtAuthenticationFilter;
+import com.team5.catdogeats.auth.filter.PreventDuplicateLoginFilter;
+import com.team5.catdogeats.auth.handler.CustomLogoutSuccessHandler;
+import com.team5.catdogeats.auth.handler.OAuth2AuthenticationEntryPointHandler;
 import com.team5.catdogeats.auth.handler.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +17,14 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestRedirectFilter;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -28,7 +36,10 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final OAuth2AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler;
-    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService; // 추가
+    private final OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final PreventDuplicateLoginFilter preventDuplicateLoginFilter;
+    private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
 
     @Bean
     @Order(value = 1)
@@ -56,8 +67,6 @@ public class SecurityConfig {
         try {
             http
                     .csrf(AbstractHttpConfigurer::disable)
-                    .csrf(csrf -> csrf
-                            .ignoringRequestMatchers("/swagger-ui/**", "/v3/api-docs/**"))
                     .sessionManagement(session
                             -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(authorize
@@ -71,9 +80,9 @@ public class SecurityConfig {
                             .requestMatchers("/login/oauth2/code/google/**").permitAll()
                             .requestMatchers("/login/oauth2/code/naver/**").permitAll()
                             .requestMatchers("/login/oauth2/code/kakao/**").permitAll()
+                            .requestMatchers("/v1/auth/refresh").permitAll()
                             .requestMatchers("/v1/notices").permitAll()
                             .requestMatchers("/v1/faqs").permitAll()
-                            .requestMatchers("/v1/login").permitAll()
                             .requestMatchers("/v1/buyers/products/list").permitAll()
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-id}/list").permitAll()
@@ -81,6 +90,7 @@ public class SecurityConfig {
                             .requestMatchers("/v1/users/**").hasAnyRole("BUYER", "SELLER")
                             .requestMatchers("/v1/sellers/**").hasRole("SELLER")
                             .requestMatchers("/v1/buyers/**").hasRole("BUYER")
+                            .requestMatchers("/v1/auth/role").hasRole("TEMP")
                             .anyRequest().authenticated())
 
                     .oauth2Login(oauth2 -> oauth2
@@ -91,13 +101,17 @@ public class SecurityConfig {
                     )
                     .httpBasic(AbstractHttpConfigurer::disable)
                     .formLogin(AbstractHttpConfigurer::disable)
+                    .exceptionHandling(exception ->
+                            exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
                     .logout(logout -> logout
-                            .logoutUrl("/logout")
-//                            .logoutSuccessHandler(customLogoutSuccessHandler)
-//                            .invalidateHttpSession(true)
-//                            .deleteCookies("JSESSIONID", "jwt_token")
+                            .logoutUrl("/v1/auth/logout")
+                            .logoutSuccessHandler(customLogoutSuccessHandler)
+                            .invalidateHttpSession(true)
+                            .deleteCookies("token")
                             .permitAll()
-                    );
+                    )
+                    .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                    .addFilterBefore(preventDuplicateLoginFilter, OAuth2AuthorizationRequestRedirectFilter.class);
             return http.build();
         } catch (Exception e) {
             log.error("User SecurityFilterChain 설정 중 예외 발생: ", e);
@@ -108,5 +122,10 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 }
