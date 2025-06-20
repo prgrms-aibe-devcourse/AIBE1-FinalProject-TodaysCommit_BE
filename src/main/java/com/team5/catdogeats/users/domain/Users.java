@@ -36,4 +36,8 @@ public class Users extends BaseEntity {
     @Column(nullable = false)
     @Builder.Default
     private boolean accountDisable = false;
+
+    public void updateRole(Role role) {
+        this.role = role;
+    }
 }
