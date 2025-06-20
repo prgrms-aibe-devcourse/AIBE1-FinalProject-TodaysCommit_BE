@@ -8,6 +8,7 @@ import com.team5.catdogeats.addresses.exception.AddressNotFoundException;
 import com.team5.catdogeats.addresses.exception.UserNotFoundException;
 import com.team5.catdogeats.addresses.repository.AddressRepository;
 import com.team5.catdogeats.addresses.service.AddressService;
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,24 +31,24 @@ public class AddressServiceImpl implements AddressService {
     private final UserRepository userRepository;
 
     @Override
-    public AddressListResponseDto getAddressesByUserAndType(UUID userId, AddressType addressType, Pageable pageable) {
-        // 사용자 존재 여부 확인
-        validateUserExists(userId);
+    public AddressListResponseDto getAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType, Pageable pageable) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
         Page<Addresses> addressPage = addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
-                userId, addressType, pageable);
+                user.getId(), addressType, pageable);
 
         Page<AddressResponseDto> dtoPage = addressPage.map(AddressResponseDto::from);
         return AddressListResponseDto.from(dtoPage);
     }
 
     @Override
-    public List<AddressResponseDto> getAllAddressesByUserAndType(UUID userId, AddressType addressType) {
-        // 사용자 존재 여부 확인
-        validateUserExists(userId);
+    public List<AddressResponseDto> getAllAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
         List<Addresses> addresses = addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
-                userId, addressType);
+                user.getId(), addressType);
 
         return addresses.stream()
                 .map(AddressResponseDto::from)
@@ -55,23 +56,27 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public AddressResponseDto getAddressById(UUID addressId, UUID userId) {
-        Addresses address = findAddressById(addressId);
-        validateAddressOwnership(address, userId);
+    public AddressResponseDto getAddressById(String addressId, UserPrincipal userPrincipal) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
+
+        Addresses address = findAddressById(UUID.fromString(addressId));
+        validateAddressOwnership(address, user.getId());
         return AddressResponseDto.from(address);
     }
 
     @Override
     @Transactional
-    public AddressResponseDto createAddress(AddressRequestDto requestDto, UUID userId) {
-        Users user = findUserById(userId);
+    public AddressResponseDto createAddress(AddressRequestDto requestDto, UserPrincipal userPrincipal) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
-        // 주소 개수 제한 검증 (선택사항)
-        validateAddressLimit(userId, requestDto.getAddressType());
+        // 주소 개수 제한 검증
+        validateAddressLimit(user.getId(), requestDto.getAddressType());
 
         // 기본 주소 설정 시 기존 기본 주소 해제
         if (requestDto.isDefault()) {
-            addressRepository.clearDefaultAddresses(userId, requestDto.getAddressType());
+            addressRepository.clearDefaultAddresses(user.getId(), requestDto.getAddressType());
         }
 
         Addresses address = Addresses.builder()
@@ -89,16 +94,20 @@ public class AddressServiceImpl implements AddressService {
                 .build();
 
         Addresses savedAddress = addressRepository.save(address);
-        log.info("주소 생성 완료 - userId: {}, addressId: {}, type: {}", userId, savedAddress.getId(), requestDto.getAddressType());
+        log.info("주소 생성 완료 - userId: {}, addressId: {}, type: {}",
+                user.getId(), savedAddress.getId(), requestDto.getAddressType());
 
         return AddressResponseDto.from(savedAddress);
     }
 
     @Override
     @Transactional
-    public AddressResponseDto updateAddress(UUID addressId, AddressUpdateRequestDto updateDto, UUID userId) {
-        Addresses address = findAddressById(addressId);
-        validateAddressOwnership(address, userId);
+    public AddressResponseDto updateAddress(String addressId, AddressUpdateRequestDto updateDto, UserPrincipal userPrincipal) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
+
+        Addresses address = findAddressById(UUID.fromString(addressId));
+        validateAddressOwnership(address, user.getId());
 
         // 주소 정보 업데이트
         address.updateAddress(
@@ -114,68 +123,74 @@ public class AddressServiceImpl implements AddressService {
 
         // 기본 주소 설정 변경
         if (updateDto.hasIsDefault() && updateDto.getIsDefault()) {
-            addressRepository.clearDefaultAddresses(userId, address.getAddressType());
+            addressRepository.clearDefaultAddresses(user.getId(), address.getAddressType());
             address.setAsDefault();
         } else if (updateDto.hasIsDefault() && !updateDto.getIsDefault()) {
             address.removeDefault();
         }
 
-        log.info("주소 수정 완료 - userId: {}, addressId: {}", userId, addressId);
+        log.info("주소 수정 완료 - userId: {}, addressId: {}", user.getId(), addressId);
         return AddressResponseDto.from(address);
     }
 
     @Override
     @Transactional
-    public void deleteAddress(UUID addressId, UUID userId) {
-        Addresses address = findAddressById(addressId);
-        validateAddressOwnership(address, userId);
+    public void deleteAddress(String addressId, UserPrincipal userPrincipal) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
+
+        Addresses address = findAddressById(UUID.fromString(addressId));
+        validateAddressOwnership(address, user.getId());
 
         addressRepository.delete(address);
-        log.info("주소 삭제 완료 - userId: {}, addressId: {}", userId, addressId);
+        log.info("주소 삭제 완료 - userId: {}, addressId: {}", user.getId(), addressId);
     }
 
     @Override
     @Transactional
-    public AddressResponseDto setDefaultAddress(UUID addressId, UUID userId) {
-        Addresses address = findAddressById(addressId);
-        validateAddressOwnership(address, userId);
+    public AddressResponseDto setDefaultAddress(String addressId, UserPrincipal userPrincipal) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
+
+        Addresses address = findAddressById(UUID.fromString(addressId));
+        validateAddressOwnership(address, user.getId());
 
         // 기존 기본 주소 해제
-        addressRepository.clearDefaultAddresses(userId, address.getAddressType());
+        addressRepository.clearDefaultAddresses(user.getId(), address.getAddressType());
 
         // 새로운 기본 주소 설정
         address.setAsDefault();
 
-        log.info("기본 주소 설정 완료 - userId: {}, addressId: {}", userId, addressId);
+        log.info("기본 주소 설정 완료 - userId: {}, addressId: {}", user.getId(), addressId);
         return AddressResponseDto.from(address);
     }
 
     @Override
-    public AddressResponseDto getDefaultAddress(UUID userId, AddressType addressType) {
-        // 사용자 존재 여부 확인
-        validateUserExists(userId);
+    public AddressResponseDto getDefaultAddress(UserPrincipal userPrincipal, AddressType addressType) {
+        // UserPrincipal에서 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
-        return addressRepository.findByUserIdAndAddressTypeAndIsDefaultTrue(userId, addressType)
+        return addressRepository.findByUserIdAndAddressTypeAndIsDefaultTrue(user.getId(), addressType)
                 .map(AddressResponseDto::from)
                 .orElse(null);
     }
 
     // Private 헬퍼 메서드
 
+    /**
+     * UserPrincipal에서 Users 엔티티 조회
+     * 팀원과 동일한 패턴으로 provider, providerId 사용
+     */
+    private Users findUserByPrincipal(UserPrincipal userPrincipal) {
+        return userRepository.findByProviderAndProviderId(
+                userPrincipal.provider(),
+                userPrincipal.providerId()
+        ).orElseThrow(() -> new UserNotFoundException("해당 유저 정보를 찾을 수 없습니다."));
+    }
+
     private Addresses findAddressById(UUID addressId) {
         return addressRepository.findById(addressId)
                 .orElseThrow(() -> new AddressNotFoundException("주소를 찾을 수 없습니다: " + addressId));
-    }
-
-    private Users findUserById(UUID userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
-    }
-
-    private void validateUserExists(UUID userId) {
-        if (!userRepository.existsById(userId)) {
-            throw new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId);
-        }
     }
 
     private void validateAddressOwnership(Addresses address, UUID userId) {
