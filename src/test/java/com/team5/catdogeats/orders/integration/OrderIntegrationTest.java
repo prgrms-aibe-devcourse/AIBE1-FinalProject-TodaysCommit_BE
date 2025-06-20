@@ -12,18 +12,24 @@ import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
+import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.MediaType;
+import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
@@ -44,6 +50,19 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @DisplayName("주문 통합 테스트")
 class OrderIntegrationTest {
+
+    // 테스트 환경에서만 사용될 트랜잭션 매니저 설정
+    @TestConfiguration
+    static class OrderIntegrationTestConfig {
+
+        // @Primary 어노테이션을 사용하여 이 Bean을 테스트 환경의 기본 트랜잭션 매니저로 지정합니다.
+        @Bean
+        @Primary
+        public PlatformTransactionManager transactionManager(EntityManagerFactory entityManagerFactory) {
+            return new JpaTransactionManager(entityManagerFactory);
+        }
+    }
+
 
     @Autowired
     private MockMvc mockMvc;
