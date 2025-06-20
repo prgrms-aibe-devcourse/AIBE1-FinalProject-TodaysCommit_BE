@@ -11,15 +11,15 @@ import java.util.List;
 import java.util.UUID;
 
 @Repository
-public interface NoticeFilesRepository extends JpaRepository<NoticeFiles, UUID> {
+public interface NoticeFilesRepository extends JpaRepository<NoticeFiles, String> {
 
-    List<NoticeFiles> findByNoticesId(UUID noticeId);
+    List<NoticeFiles> findByNoticesId(String noticeId);
 
-//    공지사항에 연결된 파일 목록 조회
-    @Query("SELECT nf from NoticeFiles nf JOIN FETCH nf.files WHERE  nf.notices.id = :noticeId")
-    List<NoticeFiles> findByNoticeIdWithFiles(@Param("noticeId") UUID noticeId);
+    // 공지사항에 연결된 파일 목록 조회
+    @Query("SELECT nf from NoticeFiles nf JOIN FETCH nf.files WHERE nf.notices.id = :noticeId")
+    List<NoticeFiles> findByNoticeIdWithFiles(@Param("noticeId") String noticeId);
 
     @Modifying
     @Query("DELETE FROM NoticeFiles nf WHERE nf.notices.id = :noticeId")
-    void deleteByNoticesId(@Param("noticeId") UUID noticeId);
+    void deleteByNoticesId(@Param("noticeId") String noticeId);
 }

@@ -8,10 +8,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.UUID;
-
 @Repository
-public interface NoticeRepository extends JpaRepository<Notices, UUID> {
+public interface NoticeRepository extends JpaRepository<Notices, String> {
 
 //    제목으로 검색 (대소문자 구분 X)
     Page<Notices> findByTitleContainingIgnoreCase(String title, Pageable pageable);

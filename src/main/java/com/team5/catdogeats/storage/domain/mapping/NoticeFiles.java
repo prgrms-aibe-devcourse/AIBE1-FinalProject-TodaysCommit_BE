@@ -18,7 +18,7 @@ public class NoticeFiles extends BaseEntity {
     @Id
     @Column(length = 36, columnDefinition = "varchar(36)")
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notice_id", nullable = false, columnDefinition = "varchar(36)")

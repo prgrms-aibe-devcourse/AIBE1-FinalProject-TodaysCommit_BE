@@ -4,8 +4,6 @@ import com.team5.catdogeats.baseEntity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "notices")
 @Getter
@@ -17,7 +15,7 @@ public class Notices extends BaseEntity {
     @Id
     @Column(length = 36, columnDefinition = "varchar(36)")
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @Column(nullable = false, length = 255)
     private String title;

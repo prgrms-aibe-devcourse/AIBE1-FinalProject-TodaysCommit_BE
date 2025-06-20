@@ -11,24 +11,30 @@ import java.util.UUID;
 
 public interface NoticeService {
 
-//    공지사항 목록 조회 (페이징, 검색)
+    // 공지사항 목록 조회 (페이징, 검색)
     NoticeListResponseDTO getNotices(int page, int size, String search);
 
-//    공지사항 상세 조회
-    NoticeResponseDTO getNotice(UUID noticeId);
+    // 공지사항 상세 조회
+    NoticeResponseDTO getNotice(String noticeId);
 
-//    공지사항 생성
+    // 공지사항 생성
     NoticeResponseDTO createNotice(NoticeCreateRequestDTO requestDTO);
 
-//    공지사항 수정
-    NoticeResponseDTO updateNotice(NoticeUpdateRequestDTO requestDTO);
+    // 공지사항 수정
+    NoticeResponseDTO updateNotice(String noticeId, NoticeUpdateRequestDTO requestDTO);
 
-//    공지사항 삭제
-    void deleteNotice(UUID noticeId);
+    // 공지사항 삭제
+    void deleteNotice(String noticeId);
 
-//    파일 업로드
-    NoticeResponseDTO uploadFile(UUID noticeId, MultipartFile file);
+    // 파일 업로드
+    NoticeResponseDTO uploadFile(String noticeId, MultipartFile file);
 
-//    파일 다운로드
-    Resource downloadFile(UUID fileId);
+    // 파일 다운로드
+    Resource downloadFile(String fileId);
+
+    // 파일 삭제
+    void deleteFile(String noticeId, String fileId);
+
+    // 파일 수정(교체)
+    NoticeResponseDTO replaceFile(String noticeId, String fileId, MultipartFile newFile);
 }

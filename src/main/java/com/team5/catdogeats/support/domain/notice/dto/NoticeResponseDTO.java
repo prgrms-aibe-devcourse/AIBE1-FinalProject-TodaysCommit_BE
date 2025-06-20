@@ -9,14 +9,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Getter
 @Builder
 public class NoticeResponseDTO {
 
-    private UUID id;
+    private String id;
     private String title;
     private String content;
     private String createdAt;
