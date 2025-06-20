@@ -1,5 +1,6 @@
 package com.team5.catdogeats.pets.controller;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.pets.domain.dto.*;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
@@ -27,9 +29,9 @@ public class PetController {
 
     @Operation(summary = "펫 등록", description = "새로운 펫 정보를 등록합니다.")
     @PostMapping("/pet")
-    public ResponseEntity<ApiResponse<Void>> registerPet(@RequestBody @Valid @Parameter(description = "등록할 펫 정보", required = true) PetCreateRequestDto dto) {
+    public ResponseEntity<ApiResponse<Void>> registerPet(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody @Valid @Parameter(description = "등록할 펫 정보", required = true) PetCreateRequestDto dto) {
         try {
-            UUID petId = petService.registerPet(dto);
+            UUID petId = petService.registerPet(userPrincipal, dto);
             return ResponseEntity
                     .created(URI.create("/v1/buyers/pet/" + petId))
                     .body(ApiResponse.success(ResponseCode.CREATED));
@@ -46,9 +48,9 @@ public class PetController {
 
     @Operation(summary = "내 펫 목록 조회", description = "로그인한 사용자의 펫 목록을 조회합니다.")
     @GetMapping("/pet")
-    public ResponseEntity<ApiResponse<List<PetResponseDto>>> getMyPets() {
+    public ResponseEntity<ApiResponse<List<PetResponseDto>>> getMyPets(@AuthenticationPrincipal UserPrincipal userPrincipal) {
         try {
-            List<PetResponseDto> pets = petService.getMyPets();
+            List<PetResponseDto> pets = petService.getMyPets(userPrincipal);
             return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, pets));
         } catch (NoSuchElementException e) {
             return ResponseEntity
