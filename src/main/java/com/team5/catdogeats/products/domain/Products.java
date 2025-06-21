@@ -53,5 +53,14 @@ public class Products extends BaseEntity {
     private Long price;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private Integer stock;
+
+    @Version // 동시성 제어
+    private Long version;
+
+    public void decreaseStock(int qty) {
+        if (this.stock < qty) throw new IllegalArgumentException("재고 부족");
+        this.stock -= qty;
+    }
+
 }
