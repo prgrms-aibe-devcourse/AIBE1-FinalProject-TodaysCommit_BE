@@ -2,6 +2,7 @@ package com.team5.catdogeats.products.service;
 
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.users.domain.dto.SellerStoreStats;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -27,4 +28,12 @@ public interface SellerStoreProductService {
      * @return 활성 상품 총 개수
      */
     Long countSellerActiveProducts(UUID sellerId);
+
+    /**
+     * 판매자 스토어 통계 조회 (판매량 + 배송 정보)
+     *
+     * @param sellerId 판매자 ID (UUID)
+     * @return 판매자 스토어 통계 정보
+     */
+    SellerStoreStats getSellerStoreStats(UUID sellerId);
 }

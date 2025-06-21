@@ -30,10 +30,19 @@ public record SellerStoreInfo(
         String operationStartYear,
 
         @Schema(description = "총 상품 수", example = "50")
-        Long totalProducts
+        Long totalProducts,
+
+        @Schema(description = "전체 상품 판매량", example = "1250")
+        Long totalSalesQuantity,
+
+        @Schema(description = "판매량 정보 텍스트", example = "총 판매량: 1.3K개")
+        String salesInfoText,
+
+        @Schema(description = "배송 정보 텍스트", example = "배송 정보: 평균 3~5일 소요")
+        String deliveryInfoText
 ) {
 
-    public static SellerStoreInfo from(Sellers seller, Long totalProducts) {
+    public static SellerStoreInfo from(Sellers seller, Long totalProducts, SellerStoreStats stats) {
         if (seller == null) {
             return null;
         }
@@ -45,6 +54,11 @@ public record SellerStoreInfo(
 
         String operationStartYear = formatOperationStartYear(seller.getCreatedAt());
 
+        // 통계 정보가 없는 경우 기본값 처리
+        Long totalSalesQuantity = stats != null ? stats.totalSalesQuantity() : 0L;
+        String salesInfoText = stats != null ? stats.getSalesInfoText() : "총 판매량: 판매 실적 없음";
+        String deliveryInfoText = stats != null ? stats.getDeliveryInfoText() : "배송 정보: 데이터 부족";
+
         return new SellerStoreInfo(
                 seller.getUserId() != null ? seller.getUserId().toString() : null,
                 seller.getVendorName(),
@@ -52,8 +66,18 @@ public record SellerStoreInfo(
                 seller.getTags(),
                 operatingHours,
                 operationStartYear,
-                totalProducts
+                totalProducts,
+                totalSalesQuantity,
+                salesInfoText,
+                deliveryInfoText
         );
+    }
+
+    /**
+     * 기존 호환성을 위한 메서드 (통계 없이)
+     */
+    public static SellerStoreInfo from(Sellers seller, Long totalProducts) {
+        return from(seller, totalProducts, null);
     }
 
     private static String formatOperatingHours(LocalTime startTime, LocalTime endTime) {

@@ -1,6 +1,7 @@
 package com.team5.catdogeats.products.mapper;
 
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.users.domain.dto.SellerStoreStats;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
 import java.util.UUID;
@@ -142,4 +143,46 @@ public interface ProductStoreMapper {
             @Param("category") String category,
             @Param("filter") String filter
     );
+
+    /**
+     * 판매자 통계 조회 (전체 판매량 + 배송 통계)
+     */
+    @Select("""
+        WITH seller_sales AS (
+            SELECT 
+                p.seller_id,
+                COALESCE(SUM(oi.quantity), 0) as total_sales_quantity
+            FROM products p
+            LEFT JOIN order_items oi ON p.id = oi.product_id
+            LEFT JOIN orders o ON oi.order_id = o.id
+            WHERE p.seller_id = #{sellerId}::uuid
+            AND o.order_status IN ('PAYMENT_COMPLETED', 'PREPARING', 'READY_FOR_SHIPMENT', 'IN_DELIVERY', 'DELIVERED')
+            GROUP BY p.seller_id
+        ),
+        delivery_stats AS (
+            SELECT 
+                s.seller_id,
+                COUNT(s.id) as total_deliveries,
+                ROUND(AVG(EXTRACT(EPOCH FROM (s.delivered_at - o.created_at)) / 86400), 1) as avg_delivery_days,
+                MIN(EXTRACT(EPOCH FROM (s.delivered_at - o.created_at)) / 86400) as min_delivery_days,
+                MAX(EXTRACT(EPOCH FROM (s.delivered_at - o.created_at)) / 86400) as max_delivery_days
+            FROM shipments s
+            JOIN orders o ON s.order_id::uuid = o.id
+            WHERE s.seller_id = #{sellerId}::uuid
+            AND s.delivered_at IS NOT NULL
+            AND o.created_at IS NOT NULL
+            AND s.delivered_at > o.created_at
+            AND s.delivered_at >= NOW() - INTERVAL '6 months'
+            GROUP BY s.seller_id
+        )
+        SELECT 
+            COALESCE(ss.total_sales_quantity, 0) as totalSalesQuantity,
+            COALESCE(ds.total_deliveries, 0) as totalDeliveries,
+            COALESCE(ds.avg_delivery_days, 0.0) as avgDeliveryDays,
+            COALESCE(ds.min_delivery_days, 0.0) as minDeliveryDays,
+            COALESCE(ds.max_delivery_days, 0.0) as maxDeliveryDays
+        FROM seller_sales ss
+        FULL OUTER JOIN delivery_stats ds ON ss.seller_id = ds.seller_id
+        """)
+    SellerStoreStats getSellerStoreStats(@Param("sellerId") UUID sellerId);
 }

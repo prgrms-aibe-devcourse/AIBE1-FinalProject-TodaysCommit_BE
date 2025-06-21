@@ -5,6 +5,7 @@ import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
 import com.team5.catdogeats.products.repository.ProductsRepository;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
+import com.team5.catdogeats.users.domain.dto.SellerStoreStats;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -73,6 +74,31 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
     @Cacheable(value = "sellerActiveProductCount", key = "#sellerId")
     public Long countSellerActiveProducts(UUID sellerId) {
         return productsRepository.countSellerActiveProducts(sellerId);
+    }
+
+    // MyBatis 사용 - 판매자 스토어 통계 조회 (판매량 + 배송 정보)
+    @Override
+    @Cacheable(value = "sellerStoreStats", key = "#sellerId", cacheManager = "cacheManager")
+    public SellerStoreStats getSellerStoreStats(UUID sellerId) {
+        log.debug("판매자 스토어 통계 조회 - sellerId: {}", sellerId);
+
+        try {
+            SellerStoreStats stats = productStoreMapper.getSellerStoreStats(sellerId);
+
+            if (stats == null) {
+                log.debug("통계 데이터가 없어 기본값 반환 - sellerId: {}", sellerId);
+                return new SellerStoreStats(0L, 0L, 0.0, 0.0, 0.0);
+            }
+
+            log.debug("통계 조회 완료 - sellerId: {}, totalSales: {}, avgDeliveryDays: {}",
+                    sellerId, stats.totalSalesQuantity(), stats.avgDeliveryDays());
+
+            return stats;
+        } catch (Exception e) {
+            log.error("판매자 스토어 통계 조회 중 오류 발생 - sellerId: {}", sellerId, e);
+            // 오류 발생 시 기본값 반환
+            return new SellerStoreStats(0L, 0L, 0.0, 0.0, 0.0);
+        }
     }
 
     /**

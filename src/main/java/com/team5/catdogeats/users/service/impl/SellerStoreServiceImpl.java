@@ -40,22 +40,25 @@ public class SellerStoreServiceImpl implements SellerStoreService {
         // 2. 총 상품 수 조회 (필터와 무관하게 전체 활성 상품 수)
         Long totalProducts = sellerStoreProductService.countSellerActiveProducts(seller.getUserId());
 
-        // 3. 판매자 정보 생성
-        SellerStoreInfo sellerInfo = SellerStoreInfo.from(seller, totalProducts);
+        // 3. 판매자 스토어 통계 조회 (판매량 + 배송 정보)
+        SellerStoreStats stats = sellerStoreProductService.getSellerStoreStats(seller.getUserId());
 
-        // 4. 상품 목록 조회 (페이징 + 필터링)
+        // 4. 판매자 정보 생성 (통계 정보 포함)
+        SellerStoreInfo sellerInfo = SellerStoreInfo.from(seller, totalProducts, stats);
+
+        // 5. 상품 목록 조회 (페이징 + 필터링)
         Page<ProductStoreInfo> productInfoPage = sellerStoreProductService
                 .getSellerProductsForStore(seller.getUserId(), category, filter, pageable);
 
-        // 5. 상품 카드로 변환
+        // 6. 상품 카드로 변환
         Page<SellerStoreProductCard> productCardPage = productInfoPage
                 .map(SellerStoreProductCard::from);
 
-        // 6. 페이징 응답 생성
+        // 7. 페이징 응답 생성
         ProductCardPageResponse productResponse = ProductCardPageResponse.from(productCardPage);
 
-        log.info("판매자 스토어 페이지 조회 완료 - vendorName: {}, filter: {}, totalProducts: {}, pageContent: {}",
-                vendorName, filter, totalProducts, productCardPage.getNumberOfElements());
+        log.info("판매자 스토어 페이지 조회 완료 - vendorName: {}, filter: {}, totalProducts: {}, totalSales: {}, avgDeliveryDays: {}, pageContent: {}",
+                vendorName, filter, totalProducts, stats.totalSalesQuantity(), stats.avgDeliveryDays(), productCardPage.getNumberOfElements());
 
         return SellerStorePageResponse.of(sellerInfo, productResponse);
     }
