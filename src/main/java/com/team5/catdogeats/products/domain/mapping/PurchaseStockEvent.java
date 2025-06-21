@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "purchase_stock_events")
@@ -16,9 +15,9 @@ import java.util.UUID;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class PurchaseStockEvent {
     @Id
-    private UUID id;                       // RabbitMQ 메시지 eventId와 동일
+    private String id;                       // RabbitMQ 메시지 eventId와 동일
 
-    private UUID productId;
+    private String productId;
     private int quantity;
 
     @Enumerated(EnumType.STRING)

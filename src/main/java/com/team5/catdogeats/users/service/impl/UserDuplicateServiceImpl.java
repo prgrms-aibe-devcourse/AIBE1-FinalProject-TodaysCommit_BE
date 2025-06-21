@@ -21,7 +21,7 @@ public class UserDuplicateServiceImpl implements UserDuplicateService {
     @Transactional
     public Users isDuplicate(Users users) {
         try {
-            log.info("isDuplicate 확인하기 {}", users);
+            log.info("isDuplicate 확인하기 {}", users.getId());
             Optional<Users> user = userRepository.findByProviderAndProviderId(
                     users.getProvider(),
                     users.getProviderId());

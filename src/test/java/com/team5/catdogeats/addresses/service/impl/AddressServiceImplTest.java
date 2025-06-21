@@ -2,7 +2,10 @@ package com.team5.catdogeats.addresses.service.impl;
 
 import com.team5.catdogeats.addresses.domain.Addresses;
 import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.*;
+import com.team5.catdogeats.addresses.dto.AddressListResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressRequestDto;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressUpdateRequestDto;
 import com.team5.catdogeats.addresses.exception.AddressAccessDeniedException;
 import com.team5.catdogeats.addresses.exception.AddressNotFoundException;
 import com.team5.catdogeats.addresses.exception.UserNotFoundException;
@@ -30,10 +33,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AddressService 테스트")
@@ -50,13 +50,13 @@ class AddressServiceImplTest {
 
     private Users testUser;
     private Addresses testAddress;
-    private UUID userId;
-    private UUID addressId;
+    private String userId;
+    private String addressId;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
-        addressId = UUID.randomUUID();
+        userId = UUID.randomUUID().toString();
+        addressId = UUID.randomUUID().toString();
 
         testUser = Users.builder()
                 .id(userId)
@@ -69,7 +69,7 @@ class AddressServiceImplTest {
                 .build();
 
         testAddress = Addresses.builder()
-                .id(addressId)
+                .id(addressId.toString())
                 .user(testUser)
                 .title("집")
                 .city("서울특별시")
@@ -91,7 +91,7 @@ class AddressServiceImplTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<Addresses> addressPage = new PageImpl<>(Arrays.asList(testAddress), pageable, 1);
 
-        given(userRepository.existsById(userId)).willReturn(true);
+        given(userRepository.existsById(UUID.fromString(userId))).willReturn(true);
         given(addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
                 userId, AddressType.PERSONAL, pageable)).willReturn(addressPage);
 
@@ -110,7 +110,7 @@ class AddressServiceImplTest {
     void getAddressesByUserAndType_UserNotFound() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        given(userRepository.existsById(userId)).willReturn(false);
+        given(userRepository.existsById(UUID.fromString(userId))).willReturn(false);
 
         // when & then
         assertThatThrownBy(() -> addressService.getAddressesByUserAndType(
@@ -125,7 +125,7 @@ class AddressServiceImplTest {
         // given
         List<Addresses> addresses = Arrays.asList(testAddress);
 
-        given(userRepository.existsById(userId)).willReturn(true);
+        given(userRepository.existsById(UUID.fromString(userId))).willReturn(true);
         given(addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
                 userId, AddressType.PERSONAL)).willReturn(addresses);
 
@@ -142,7 +142,7 @@ class AddressServiceImplTest {
     @DisplayName("주소 상세 조회 - 성공")
     void getAddressById_Success() {
         // given
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(testAddress));
+        given(addressRepository.findById(UUID.fromString(addressId))).willReturn(Optional.of(testAddress));
 
         // when
         AddressResponseDto result = addressService.getAddressById(addressId, userId);
@@ -156,7 +156,7 @@ class AddressServiceImplTest {
     @DisplayName("주소 상세 조회 - 주소가 존재하지 않으면 예외 발생")
     void getAddressById_AddressNotFound() {
         // given
-        given(addressRepository.findById(addressId)).willReturn(Optional.empty());
+        given(addressRepository.findById(UUID.fromString(addressId))).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> addressService.getAddressById(addressId, userId))
@@ -168,8 +168,8 @@ class AddressServiceImplTest {
     @DisplayName("주소 상세 조회 - 다른 사용자의 주소에 접근 시 예외 발생")
     void getAddressById_AccessDenied() {
         // given
-        UUID otherUserId = UUID.randomUUID();
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(testAddress));
+        String otherUserId = UUID.randomUUID().toString();
+        given(addressRepository.findById(UUID.fromString(addressId))).willReturn(Optional.of(testAddress));
 
         // when & then
         assertThatThrownBy(() -> addressService.getAddressById(addressId, otherUserId))
@@ -194,7 +194,7 @@ class AddressServiceImplTest {
                 .isDefault(false)
                 .build();
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userRepository.findById(UUID.fromString(userId))).willReturn(Optional.of(testUser));
         given(addressRepository.countByUserIdAndAddressType(userId, AddressType.PERSONAL)).willReturn(5L);
         given(addressRepository.save(any(Addresses.class))).willReturn(testAddress);
 
@@ -223,7 +223,7 @@ class AddressServiceImplTest {
                 .isDefault(true)
                 .build();
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userRepository.findById(UUID.fromString(userId))).willReturn(Optional.of(testUser));
         given(addressRepository.countByUserIdAndAddressType(userId, AddressType.PERSONAL)).willReturn(5L);
         given(addressRepository.save(any(Addresses.class))).willReturn(testAddress);
         willDoNothing().given(addressRepository).clearDefaultAddresses(userId, AddressType.PERSONAL);
@@ -252,7 +252,7 @@ class AddressServiceImplTest {
                 .phoneNumber("010-9999-8888")
                 .build();
 
-        given(userRepository.findById(userId)).willReturn(Optional.of(testUser));
+        given(userRepository.findById(UUID.fromString(userId))).willReturn(Optional.of(testUser));
         given(addressRepository.countByUserIdAndAddressType(userId, AddressType.PERSONAL)).willReturn(10L);
 
         // when & then
@@ -277,7 +277,7 @@ class AddressServiceImplTest {
                 .isDefault(false)
                 .build();
 
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(testAddress));
+        given(addressRepository.findById(UUID.fromString(addressId))).willReturn(Optional.of(testAddress));
 
         // when
         AddressResponseDto result = addressService.updateAddress(addressId, updateDto, userId);
@@ -290,7 +290,7 @@ class AddressServiceImplTest {
     @DisplayName("주소 삭제 - 성공")
     void deleteAddress_Success() {
         // given
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(testAddress));
+        given(addressRepository.findById(UUID.fromString(addressId))).willReturn(Optional.of(testAddress));
         willDoNothing().given(addressRepository).delete(testAddress);
 
         // when
@@ -304,7 +304,7 @@ class AddressServiceImplTest {
     @DisplayName("기본 주소 설정 - 성공")
     void setDefaultAddress_Success() {
         // given
-        given(addressRepository.findById(addressId)).willReturn(Optional.of(testAddress));
+        given(addressRepository.findById(UUID.fromString(addressId))).willReturn(Optional.of(testAddress));
         willDoNothing().given(addressRepository).clearDefaultAddresses(userId, AddressType.PERSONAL);
 
         // when
@@ -319,7 +319,7 @@ class AddressServiceImplTest {
     @DisplayName("기본 주소 조회 - 성공")
     void getDefaultAddress_Success() {
         // given
-        given(userRepository.existsById(userId)).willReturn(true);
+        given(userRepository.existsById(UUID.fromString(userId))).willReturn(true);
         given(addressRepository.findByUserIdAndAddressTypeAndIsDefaultTrue(userId, AddressType.PERSONAL))
                 .willReturn(Optional.of(testAddress));
 
@@ -336,7 +336,7 @@ class AddressServiceImplTest {
     @DisplayName("기본 주소 조회 - 기본 주소가 없는 경우 null 반환")
     void getDefaultAddress_NotFound() {
         // given
-        given(userRepository.existsById(userId)).willReturn(true);
+        given(userRepository.existsById(UUID.fromString(userId))).willReturn(true);
         given(addressRepository.findByUserIdAndAddressTypeAndIsDefaultTrue(userId, AddressType.PERSONAL))
                 .willReturn(Optional.empty());
 

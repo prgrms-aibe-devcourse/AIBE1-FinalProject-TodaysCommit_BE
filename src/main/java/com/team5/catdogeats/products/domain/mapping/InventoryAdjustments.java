@@ -6,8 +6,6 @@ import com.team5.catdogeats.products.domain.enums.AdjustmentType;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "inventory_adjustments")
 @Getter
@@ -19,7 +17,7 @@ public class InventoryAdjustments extends BaseEntity {
     @Id
     @Column(name = "id", length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(

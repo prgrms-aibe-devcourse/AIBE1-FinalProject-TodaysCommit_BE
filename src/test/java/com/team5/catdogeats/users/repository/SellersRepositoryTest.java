@@ -40,7 +40,6 @@ class SellersRepositoryTest {
                 .userNameAttribute("email")
                 .name("테스트 판매자1")
                 .role(Role.ROLE_SELLER)
-                .accountDisable(false)
                 .build();
 
         testUser2 = Users.builder()
@@ -49,7 +48,6 @@ class SellersRepositoryTest {
                 .userNameAttribute("email")
                 .name("테스트 판매자2")
                 .role(Role.ROLE_SELLER)
-                .accountDisable(false)
                 .build();
 
         // Users 저장
@@ -107,7 +105,7 @@ class SellersRepositoryTest {
         @DisplayName("실패 - 존재하지 않는 사용자 ID로 조회")
         void findByUserId_NotFound() {
             // given
-            UUID nonExistentUserId = UUID.randomUUID();
+            String nonExistentUserId = UUID.randomUUID().toString();
 
             // when
             Optional<Sellers> result = sellersRepository.findByUserId(nonExistentUserId);
@@ -228,7 +226,6 @@ class SellersRepositoryTest {
                     .userNameAttribute("email")
                     .name("새로운 판매자")
                     .role(Role.ROLE_SELLER)
-                    .accountDisable(false)
                     .build();
 
             newUser = entityManager.persistAndFlush(newUser);
@@ -296,7 +293,7 @@ class SellersRepositoryTest {
         @DisplayName("findById() - ID로 판매자 조회")
         void findById_Success() {
             // when
-            Optional<Sellers> result = sellersRepository.findById(testUser1.getId());
+            Optional<Sellers> result = sellersRepository.findById(UUID.fromString(testUser1.getId()));
 
             // then
             assertThat(result).isPresent();
@@ -308,8 +305,8 @@ class SellersRepositoryTest {
         @DisplayName("existsById() - ID 존재 여부 확인")
         void existsById_Test() {
             // when & then
-            assertThat(sellersRepository.existsById(testUser1.getId())).isTrue();
-            assertThat(sellersRepository.existsById(testUser2.getId())).isTrue();
+            assertThat(sellersRepository.existsById(UUID.fromString(testUser1.getId()))).isTrue();
+            assertThat(sellersRepository.existsById(UUID.fromString(testUser2.getId()))).isTrue();
             assertThat(sellersRepository.existsById(UUID.randomUUID())).isFalse();
         }
 
@@ -327,18 +324,18 @@ class SellersRepositoryTest {
         @DisplayName("deleteById() - ID로 판매자 삭제")
         void deleteById_Success() {
             // given
-            UUID userIdToDelete = testUser1.getId();
-            assertThat(sellersRepository.existsById(userIdToDelete)).isTrue();
+            String userIdToDelete = testUser1.getId();
+            assertThat(sellersRepository.existsById(UUID.fromString(userIdToDelete))).isTrue();
 
             // when
-            sellersRepository.deleteById(userIdToDelete);
+            sellersRepository.deleteById(UUID.fromString(userIdToDelete));
 
             // then
-            assertThat(sellersRepository.existsById(userIdToDelete)).isFalse();
+            assertThat(sellersRepository.existsById(UUID.fromString(userIdToDelete))).isFalse();
             assertThat(sellersRepository.findByUserId(userIdToDelete)).isEmpty();
 
             // 다른 판매자는 여전히 존재하는지 확인
-            assertThat(sellersRepository.existsById(testUser2.getId())).isTrue();
+            assertThat(sellersRepository.existsById(UUID.fromString(testUser2.getId()))).isTrue();
         }
     }
 
@@ -402,7 +399,6 @@ class SellersRepositoryTest {
                     .userNameAttribute("email")
                     .name("중복 테스트 사용자")
                     .role(Role.ROLE_SELLER)
-                    .accountDisable(false)
                     .build();
 
             anotherUser = entityManager.persistAndFlush(anotherUser);
@@ -438,17 +434,17 @@ class SellersRepositoryTest {
         @DisplayName("성공 - Repository를 통한 삭제 테스트")
         void repositoryDelete_Success() {
             // given
-            UUID userIdToDelete = testUser1.getId();
+            String userIdToDelete = testUser1.getId();
 
             // 판매자 정보가 존재하는지 확인
-            assertThat(sellersRepository.existsById(userIdToDelete)).isTrue();
+            assertThat(sellersRepository.existsById(UUID.fromString(userIdToDelete))).isTrue();
 
             // when - Repository를 통한 삭제
-            sellersRepository.deleteById(userIdToDelete);
+            sellersRepository.deleteById(UUID.fromString(userIdToDelete));
             entityManager.flush();
 
             // then - 삭제되었는지 확인
-            assertThat(sellersRepository.existsById(userIdToDelete)).isFalse();
+            assertThat(sellersRepository.existsById(UUID.fromString(userIdToDelete))).isFalse();
             assertThat(sellersRepository.findByUserId(userIdToDelete)).isEmpty();
         }
     }

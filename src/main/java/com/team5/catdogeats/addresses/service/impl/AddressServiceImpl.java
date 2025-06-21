@@ -30,7 +30,7 @@ public class AddressServiceImpl implements AddressService {
     private final UserRepository userRepository;
 
     @Override
-    public AddressListResponseDto getAddressesByUserAndType(UUID userId, AddressType addressType, Pageable pageable) {
+    public AddressListResponseDto getAddressesByUserAndType(String userId, AddressType addressType, Pageable pageable) {
         // 사용자 존재 여부 확인
         validateUserExists(userId);
 
@@ -42,7 +42,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public List<AddressResponseDto> getAllAddressesByUserAndType(UUID userId, AddressType addressType) {
+    public List<AddressResponseDto> getAllAddressesByUserAndType(String userId, AddressType addressType) {
         // 사용자 존재 여부 확인
         validateUserExists(userId);
 
@@ -55,7 +55,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public AddressResponseDto getAddressById(UUID addressId, UUID userId) {
+    public AddressResponseDto getAddressById(String addressId, String userId) {
         Addresses address = findAddressById(addressId);
         validateAddressOwnership(address, userId);
         return AddressResponseDto.from(address);
@@ -63,7 +63,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponseDto createAddress(AddressRequestDto requestDto, UUID userId) {
+    public AddressResponseDto createAddress(AddressRequestDto requestDto, String userId) {
         Users user = findUserById(userId);
 
         // 주소 개수 제한 검증 (선택사항)
@@ -96,7 +96,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponseDto updateAddress(UUID addressId, AddressUpdateRequestDto updateDto, UUID userId) {
+    public AddressResponseDto updateAddress(String addressId, AddressUpdateRequestDto updateDto, String userId) {
         Addresses address = findAddressById(addressId);
         validateAddressOwnership(address, userId);
 
@@ -126,7 +126,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public void deleteAddress(UUID addressId, UUID userId) {
+    public void deleteAddress(String addressId, String userId) {
         Addresses address = findAddressById(addressId);
         validateAddressOwnership(address, userId);
 
@@ -136,7 +136,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     @Transactional
-    public AddressResponseDto setDefaultAddress(UUID addressId, UUID userId) {
+    public AddressResponseDto setDefaultAddress(String addressId, String userId) {
         Addresses address = findAddressById(addressId);
         validateAddressOwnership(address, userId);
 
@@ -151,7 +151,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    public AddressResponseDto getDefaultAddress(UUID userId, AddressType addressType) {
+    public AddressResponseDto getDefaultAddress(String userId, AddressType addressType) {
         // 사용자 존재 여부 확인
         validateUserExists(userId);
 
@@ -162,29 +162,29 @@ public class AddressServiceImpl implements AddressService {
 
     // Private 헬퍼 메서드
 
-    private Addresses findAddressById(UUID addressId) {
-        return addressRepository.findById(addressId)
+    private Addresses findAddressById(String addressId) {
+        return addressRepository.findById(UUID.fromString(addressId))
                 .orElseThrow(() -> new AddressNotFoundException("주소를 찾을 수 없습니다: " + addressId));
     }
 
-    private Users findUserById(UUID userId) {
-        return userRepository.findById(userId)
+    private Users findUserById(String userId) {
+        return userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
     }
 
-    private void validateUserExists(UUID userId) {
-        if (!userRepository.existsById(userId)) {
+    private void validateUserExists(String userId) {
+        if (!userRepository.existsById(UUID.fromString(userId))) {
             throw new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId);
         }
     }
 
-    private void validateAddressOwnership(Addresses address, UUID userId) {
-        if (!address.isOwnedBy(userId)) {
+    private void validateAddressOwnership(Addresses address, String userId) {
+        if (!address.isOwnedBy(UUID.fromString(userId))) {
             throw new AddressAccessDeniedException("해당 주소에 접근할 권한이 없습니다.");
         }
     }
 
-    private void validateAddressLimit(UUID userId, AddressType addressType) {
+    private void validateAddressLimit(String userId, AddressType addressType) {
         long addressCount = addressRepository.countByUserIdAndAddressType(userId, addressType);
 
         // 주소 제한 (개인 주소: 10개, 사업자 주소: 1개)

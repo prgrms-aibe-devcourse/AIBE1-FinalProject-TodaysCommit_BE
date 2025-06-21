@@ -29,8 +29,8 @@ public class RotateRefreshTokenServiceImpl implements RotateRefreshTokenService 
 
     @Override
     @Transactional
-    public RotateTokenDTO RotateRefreshToken(UUID refreshTokenId) {
-        RefreshTokens token = refreshTokenRepository.findById(refreshTokenId)
+    public RotateTokenDTO RotateRefreshToken(String refreshTokenId) {
+        RefreshTokens token = refreshTokenRepository.findById(UUID.fromString(refreshTokenId))
                 .orElseThrow(() -> new NoSuchElementException("Refresh token not found"));
 
         validateToken(refreshTokenId, token);
@@ -40,7 +40,7 @@ public class RotateRefreshTokenServiceImpl implements RotateRefreshTokenService 
         return buildRefreshTokens(newToken);
     }
 
-    private void validateToken(UUID refreshTokenId, RefreshTokens token) {
+    private void validateToken(String refreshTokenId, RefreshTokens token) {
         if (token.getExpiresAt() == null || token.getExpiresAt().isBefore(Instant.now())) {
             log.warn("Expired or invalid refresh token: {}", refreshTokenId);
             refreshTokenRepository.deleteByUserId(token.getUserId());
@@ -60,7 +60,7 @@ public class RotateRefreshTokenServiceImpl implements RotateRefreshTokenService 
 
         Authentication authentication = jwtService.getAuthentication(principal);
         String newAccessToken = jwtService.createAccessToken(authentication);
-        UUID newRefreshToken = refreshTokenService.createRefreshToken(authentication);
+        String newRefreshToken = refreshTokenService.createRefreshToken(authentication);
 
         return new RotateTokenDTO(newAccessToken, newRefreshToken, "Cookie", 60 * 60 * 24);
     }

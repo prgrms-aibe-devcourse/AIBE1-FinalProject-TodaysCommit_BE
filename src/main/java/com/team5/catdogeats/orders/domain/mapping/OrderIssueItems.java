@@ -6,8 +6,6 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "order_issue_items")
 @Getter
@@ -20,7 +18,7 @@ public class OrderIssueItems extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false,
@@ -43,6 +41,7 @@ public class OrderIssueItems extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
+    @Builder.Default
     private IssueStatus issueStatus = IssueStatus.REQUESTED;
 
     @Column(name = "issue_reason")
@@ -52,12 +51,15 @@ public class OrderIssueItems extends BaseEntity {
     private String refundMethod;
 
     @Column(name = "refund_amount", nullable = false)
+    @Builder.Default
     private Long refundAmount = 0L;
 
     @Column(name = "delivery_fee", nullable = false)
+    @Builder.Default
     private Long deliveryFee = 0L;
 
     @Column(name = "return_fee", nullable = false)
+    @Builder.Default
     private Long returnFee = 0L;
 
 }

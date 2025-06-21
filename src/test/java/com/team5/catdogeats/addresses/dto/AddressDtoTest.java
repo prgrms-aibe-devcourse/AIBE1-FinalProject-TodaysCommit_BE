@@ -11,11 +11,7 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
-import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +32,7 @@ class AddressDtoTest {
         validator = factory.getValidator();
 
         testUser = Users.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .name("테스트사용자")
                 .role(Role.ROLE_BUYER)
                 .accountDisable(false)
@@ -46,7 +42,7 @@ class AddressDtoTest {
                 .build();
 
         testAddress = Addresses.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .user(testUser)
                 .title("집")
                 .city("서울특별시")

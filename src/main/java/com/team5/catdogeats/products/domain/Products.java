@@ -7,8 +7,6 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Getter
 @Builder

@@ -14,7 +14,9 @@ public interface BuyerRepository extends JpaRepository<Buyers, UUID> {
     @Query("""
       SELECT new com.team5.catdogeats.users.domain.dto.BuyerDTO(
         b.userId,
-        b.nameMaskingStatus
+        b.nameMaskingStatus,
+        b.isDeleted,
+        b.deledAt
       )
       FROM Buyers b
       JOIN b.user u

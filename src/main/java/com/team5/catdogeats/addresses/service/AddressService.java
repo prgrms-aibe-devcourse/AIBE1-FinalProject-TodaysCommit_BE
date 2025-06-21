@@ -1,35 +1,37 @@
 package com.team5.catdogeats.addresses.service;
 
 import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.*;
+import com.team5.catdogeats.addresses.dto.AddressListResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressRequestDto;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressUpdateRequestDto;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
-import java.util.UUID;
 
 public interface AddressService {
 
     // 사용자별 주소 목록 조회 (페이징)
-    AddressListResponseDto getAddressesByUserAndType(UUID userId, AddressType addressType, Pageable pageable);
+    AddressListResponseDto getAddressesByUserAndType(String userId, AddressType addressType, Pageable pageable);
 
     // 사용자별 주소 목록 조회 (전체)
-    List<AddressResponseDto> getAllAddressesByUserAndType(UUID userId, AddressType addressType);
+    List<AddressResponseDto> getAllAddressesByUserAndType(String userId, AddressType addressType);
 
     // 주소 상세 조회
-    AddressResponseDto getAddressById(UUID addressId, UUID userId);
+    AddressResponseDto getAddressById(String addressId, String userId);
 
     // 주소 생성
-    AddressResponseDto createAddress(AddressRequestDto requestDto, UUID userId);
+    AddressResponseDto createAddress(AddressRequestDto requestDto, String userId);
 
     // 주소 수정
-    AddressResponseDto updateAddress(UUID addressId, AddressUpdateRequestDto updateDto, UUID userId);
+    AddressResponseDto updateAddress(String addressId, AddressUpdateRequestDto updateDto, String userId);
 
     // 주소 삭제
-    void deleteAddress(UUID addressId, UUID userId);
+    void deleteAddress(String addressId, String userId);
 
     // 기본 주소 설정
-    AddressResponseDto setDefaultAddress(UUID addressId, UUID userId);
+    AddressResponseDto setDefaultAddress(String addressId, String userId);
 
     // 기본 주소 조회
-    AddressResponseDto getDefaultAddress(UUID userId, AddressType addressType);
+    AddressResponseDto getDefaultAddress(String userId, AddressType addressType);
 }

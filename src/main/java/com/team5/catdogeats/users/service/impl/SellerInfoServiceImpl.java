@@ -73,7 +73,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      * 판매자 정보 등록/수정 로직
      */
     private SellerInfoResponse upsertSellerInfoInternal(Users user, SellerInfoRequest request) {
-        String userId = String.valueOf(user.getId());
+        String userId = user.getId();
         // 사업자 등록번호 중복 체크
         validateBusinessNumberDuplication(userId, request.businessNumber());
 

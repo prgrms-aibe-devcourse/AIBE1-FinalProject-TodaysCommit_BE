@@ -6,8 +6,6 @@ import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
-
-
 @Entity
 @Table(name = "orders")
 @Getter
