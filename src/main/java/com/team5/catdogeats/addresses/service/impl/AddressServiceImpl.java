@@ -10,6 +10,8 @@ import com.team5.catdogeats.addresses.repository.AddressRepository;
 import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.domain.dto.BuyerDTO;
+import com.team5.catdogeats.users.repository.BuyerRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +31,7 @@ public class AddressServiceImpl implements AddressService {
 
     private final AddressRepository addressRepository;
     private final UserRepository userRepository;
+    private final BuyerRepository buyerRepository; // 추가된 의존성
 
     @Override
     public AddressListResponseDto getAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType, Pageable pageable) {
@@ -179,10 +182,15 @@ public class AddressServiceImpl implements AddressService {
 
     // UserPrincipal에서 Users 엔티티 조회
     private Users findUserByPrincipal(UserPrincipal userPrincipal) {
-        return userRepository.findByProviderAndProviderId(
+        // 1. BuyerRepository로 BuyerDTO 조회
+        BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(
                 userPrincipal.provider(),
                 userPrincipal.providerId()
         ).orElseThrow(() -> new UserNotFoundException("해당 유저 정보를 찾을 수 없습니다."));
+
+        // 2. BuyerDTO의 userId로 Users 엔티티 조회
+        return userRepository.findById(buyerDTO.userId())
+                .orElseThrow(() -> new UserNotFoundException("해당 유저 정보를 찾을 수 없습니다."));
     }
 
     private Addresses findAddressById(UUID addressId) {
