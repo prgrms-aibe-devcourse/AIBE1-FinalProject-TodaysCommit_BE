@@ -35,10 +35,7 @@ public class WithdrawServiceImpl implements WithdrawService {
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String firstAuthority = validate(authentication);
-            
             log.debug("firstAuthority: {}", firstAuthority);
-            userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId(), Role.ROLE_WITHDRAWN.toString());
 
             trigger(userPrincipal, firstAuthority);
 
@@ -49,14 +46,17 @@ public class WithdrawServiceImpl implements WithdrawService {
     }
 
     private void trigger(UserPrincipal userPrincipal, String firstAuthority) {
+        userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
+                userPrincipal.providerId(), Role.ROLE_WITHDRAWN.toString());
+
         if (Objects.equals(firstAuthority, Role.ROLE_SELLER.toString())) {
-            log.info("seller 탈퇴 시작");
+            log.debug("seller 탈퇴 시작");
             sellerMapper.softDeleteSellerByProviderAndProviderId(userPrincipal.provider(),
                     userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
         }
 
         if (Objects.equals(firstAuthority, Role.ROLE_BUYER.toString())) {
-            log.info("buyer 탈퇴 시작");
+            log.debug("buyer 탈퇴 시작");
             buyerMapper.softDeleteBuyerByProviderAndProviderId(userPrincipal.provider(),
                     userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
         }
