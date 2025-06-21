@@ -16,16 +16,16 @@ public interface SellerStoreStatsMapper {
             SELECT 
                 COALESCE(SUM(oi.quantity), 0) as total_sales_count
             FROM products p
-            LEFT JOIN order_items oi ON p.id = oi.product_id
-            LEFT JOIN orders o ON oi.order_id = o.id
+            INNER JOIN order_items oi ON p.id = oi.product_id
+            INNER JOIN orders o ON oi.order_id = o.id
             WHERE p.seller_id = #{sellerId}
-            AND (o.order_status IS NULL OR o.order_status IN ('PAYMENT_COMPLETED', 'PREPARING', 'READY_FOR_SHIPMENT', 'IN_DELIVERY', 'DELIVERED'))
+            AND o.order_status IN ('PAYMENT_COMPLETED', 'PREPARING', 'READY_FOR_SHIPMENT', 'IN_DELIVERY', 'DELIVERED')
         ),
         delivery_data AS (
             SELECT 
                 COALESCE(AVG(EXTRACT(EPOCH FROM (s.delivered_at - o.created_at)) / 86400), 0) as avg_delivery_days
             FROM shipments s
-            JOIN orders o ON s.order_id = o.id
+            INNER JOIN orders o ON s.order_id = o.id
             WHERE s.seller_id = #{sellerId}
             AND s.delivered_at IS NOT NULL
             AND o.created_at IS NOT NULL
@@ -40,12 +40,12 @@ public interface SellerStoreStatsMapper {
             WHERE p.seller_id = #{sellerId}
         )
         SELECT 
-            sd.total_sales_count as totalSalesCount,
-            dd.avg_delivery_days as avgDeliveryDays,
-            rd.total_reviews as totalReviews
-        FROM sales_data sd
-        CROSS JOIN delivery_data dd
-        CROSS JOIN review_data rd
+            COALESCE(sd.total_sales_count, 0) as totalSalesCount,
+            COALESCE(dd.avg_delivery_days, 0) as avgDeliveryDays,
+            COALESCE(rd.total_reviews, 0) as totalReviews
+        FROM review_data rd
+        LEFT JOIN sales_data sd ON 1=1
+        LEFT JOIN delivery_data dd ON 1=1
         """)
     SellerStoreStats getSellerStoreStats(@Param("sellerId") String sellerId);
 }
