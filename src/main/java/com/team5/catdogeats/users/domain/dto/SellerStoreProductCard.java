@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 /**
- * 판매자 스토어 페이지 상품 카드 DTO
+ * 판매자 스토어 페이지 상품 카드 DTO (bestScore 복원)
  */
 @Schema(description = "스토어 상품 카드 정보")
 public record SellerStoreProductCard(

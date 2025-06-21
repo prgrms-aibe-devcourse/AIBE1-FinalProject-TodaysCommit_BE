@@ -1,11 +1,12 @@
 package com.team5.catdogeats.products.service.impl;
 
+import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
 import com.team5.catdogeats.products.repository.ProductsRepository;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
-import com.team5.catdogeats.users.domain.dto.SellerStoreStats;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
@@ -17,22 +18,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
+import java.util.stream.Collectors;
 
+/**
+ * 판매자 스토어용 상품 서비스 구현체 (String ID 적용)
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class SellerStoreProductServiceImpl implements SellerStoreProductService {
 
-    private final ProductsRepository productsRepository;  // JPA - 단순 CRUD
-    private final ProductStoreMapper productStoreMapper;  // MyBatis - 복잡한 조회
+    private final ProductsRepository productsRepository;        // JPA - 단순 CRUD
+    private final ProductStoreMapper productStoreMapper;        // MyBatis - 복잡한 조회
+    private final ProductBestScoreService productBestScoreService;  // Orders 도메인 - 베스트 점수 데이터
 
-    // MyBatis 사용 - 상품 목록조회(상품카드) + 필터링
     @Override
-    @Cacheable(value = "sellerProducts", key = "#sellerId + '_' + #category + '_' + #filter + '_' + #pageable.pageNumber")
-    public Page<ProductStoreInfo> getSellerProductsForStore(UUID sellerId, PetCategory category, String filter, Pageable pageable) {
-        log.debug("판매자 스토어 상품 목록 조회 - sellerId: {}, category: {}, filter: {}, page: {}",
+    @Cacheable(value = "sellerProductsBaseInfo", key = "#sellerId + '_' + #category + '_' + #filter + '_' + #pageable.pageNumber")
+    public Page<ProductStoreInfo> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable) {
+        log.debug("판매자 상품 정보 조회 - sellerId: {}, category: {}, filter: {}, page: {}",
                 sellerId, category, filter, pageable.getPageNumber());
 
         String categoryStr = category != null ? category.name() : null;
@@ -42,63 +47,93 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
         // 필터 값 검증 및 정규화
         String normalizedFilter = validateAndNormalizeFilter(filter);
 
-        // 베스트 상품은 무조건 10개만 (페이징 무시)
+        // 베스트 상품 처리 (새로운 로직)
         if ("best".equals(normalizedFilter)) {
-            List<ProductStoreInfo> products = productStoreMapper.findSellerProductsForStore(
-                    sellerId, categoryStr, normalizedFilter, 10, 0
-            );
-
-            // 베스트 상품은 항상 10개 또는 그 이하로 고정
-            long total = Math.min(products.size(), 10);
-
-            log.debug("베스트 상품 조회 결과 - total: {}, products: {}", total, products.size());
-
-            return new PageImpl<>(products, PageRequest.of(0, 10), total);
+            return getBestProducts(sellerId, categoryStr);
         }
 
-        // MyBatis로 한 번의 쿼리로 모든 정보 조회 (필터 포함)
-        List<ProductStoreInfo> products = productStoreMapper.findSellerProductsForStore(
+        // 일반 상품 조회 (기존 로직 유지)
+        List<ProductStoreInfo> products = productStoreMapper.findSellerProductsBaseInfo(
                 sellerId, categoryStr, normalizedFilter, limit, offset
         );
 
-        // 페이징을 위한 개수 조회 (카테고리 + 필터별 개수)
+        // 페이징을 위한 개수 조회
         Long total = productStoreMapper.countSellerProductsForStore(sellerId, categoryStr, normalizedFilter);
 
-        log.debug("조회 결과 - total: {}, products: {}", total, products.size());
+        log.debug("상품 조회 결과 - total: {}, products: {}", total, products.size());
 
         return new PageImpl<>(products, pageable, total);
     }
 
-    // ProductsRepository - JPA 사용, 총 상품 수 조회
-    @Override
-    @Cacheable(value = "sellerActiveProductCount", key = "#sellerId")
-    public Long countSellerActiveProducts(UUID sellerId) {
-        return productsRepository.countSellerActiveProducts(sellerId);
+    /**
+     * 베스트 상품 조회 (새로운 베스트 점수 로직 적용, String ID 사용)
+     */
+    private Page<ProductStoreInfo> getBestProducts(String sellerId, String categoryStr) {
+        log.debug("베스트 상품 조회 시작 - sellerId: {}, category: {}", sellerId, categoryStr);
+
+        // 1. Orders 도메인에서 베스트 점수 계산 데이터 조회
+        List<ProductBestScoreData> bestScoreDataList = productBestScoreService.getProductBestScoreData(sellerId);
+
+        if (bestScoreDataList.isEmpty()) {
+            log.debug("베스트 점수 데이터가 없음 - sellerId: {}", sellerId);
+            return new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
+        }
+
+        // 2. 베스트 점수 계산 및 상위 10개 상품 ID 추출 (String List로 유지)
+        List<String> topProductIds = bestScoreDataList.stream()
+                .peek(data -> log.debug("베스트 점수 계산 - productId: {}, score: {}",
+                        data.productId(), data.calculateBestScore()))
+                .sorted((a, b) -> Double.compare(b.calculateBestScore(), a.calculateBestScore()))
+                .limit(10)
+                .map(ProductBestScoreData::productId)
+                .collect(Collectors.toList());
+
+        if (topProductIds.isEmpty()) {
+            log.debug("베스트 상품이 없음 - sellerId: {}", sellerId);
+            return new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
+        }
+
+        // 3. 상위 상품들의 기본 정보 조회 (String List 그대로 사용)
+        List<ProductStoreInfo> bestProducts = productStoreMapper.findProductsByIds(topProductIds, categoryStr);
+
+        // 4. 베스트 점수를 ProductStoreInfo에 매핑 (String key 사용)
+        Map<String, Double> bestScoreMap = bestScoreDataList.stream()
+                .collect(Collectors.toMap(
+                        ProductBestScoreData::productId,
+                        ProductBestScoreData::calculateBestScore
+                ));
+
+        // 5. 베스트 점수 순으로 정렬된 최종 결과
+        List<ProductStoreInfo> sortedBestProducts = bestProducts.stream()
+                .map(product -> new ProductStoreInfo(
+                        product.productId(),
+                        product.productNumber(),
+                        product.title(),
+                        product.price(),
+                        product.isDiscounted(),
+                        product.discountRate(),
+                        product.mainImageUrl(),
+                        product.petCategory(),
+                        product.stockStatus(),
+                        product.avgRating(),
+                        product.reviewCount(),
+                        bestScoreMap.getOrDefault(product.productId(), 0.0) // String key 그대로 사용
+                ))
+                .sorted((a, b) -> Double.compare(b.bestScore(), a.bestScore()))
+                .collect(Collectors.toList());
+
+        long total = Math.min(sortedBestProducts.size(), 10);
+
+        log.debug("베스트 상품 조회 완료 - total: {}, products: {}", total, sortedBestProducts.size());
+
+        return new PageImpl<>(sortedBestProducts, PageRequest.of(0, 10), total);
     }
 
-    // MyBatis 사용 - 판매자 스토어 통계 조회 (판매량 + 배송 정보)
     @Override
-    @Cacheable(value = "sellerStoreStats", key = "#sellerId", cacheManager = "cacheManager")
-    public SellerStoreStats getSellerStoreStats(UUID sellerId) {
-        log.debug("판매자 스토어 통계 조회 - sellerId: {}", sellerId);
-
-        try {
-            SellerStoreStats stats = productStoreMapper.getSellerStoreStats(sellerId);
-
-            if (stats == null) {
-                log.debug("통계 데이터가 없어 기본값 반환 - sellerId: {}", sellerId);
-                return new SellerStoreStats(0L, 0L, 0.0, 0.0, 0.0);
-            }
-
-            log.debug("통계 조회 완료 - sellerId: {}, totalSales: {}, avgDeliveryDays: {}",
-                    sellerId, stats.totalSalesQuantity(), stats.avgDeliveryDays());
-
-            return stats;
-        } catch (Exception e) {
-            log.error("판매자 스토어 통계 조회 중 오류 발생 - sellerId: {}", sellerId, e);
-            // 오류 발생 시 기본값 반환
-            return new SellerStoreStats(0L, 0L, 0.0, 0.0, 0.0);
-        }
+    @Cacheable(value = "sellerActiveProductCount", key = "#sellerId")
+    public Long countSellerActiveProducts(String sellerId) {
+        log.debug("판매자 활성 상품 수 조회 - sellerId: {}", sellerId);
+        return productsRepository.countSellerActiveProducts(sellerId);
     }
 
     /**
@@ -111,7 +146,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
 
         String normalizedFilter = filter.trim().toLowerCase();
 
-        // 허용된 필터 값 검증
+        // 허용된 필터 값 검증 (best 포함)
         return switch (normalizedFilter) {
             case "best", "discount", "new", "exclude_sold_out" -> normalizedFilter;
             default -> {

@@ -19,7 +19,7 @@ public class Products extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
-    private UUID id;
+    private String id;
 
     @Column(name = "product_number", nullable = false, unique = true)
     private Long productNumber;

@@ -13,8 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -42,7 +40,7 @@ public class SellerInfoController {
     @GetMapping("/info")
     public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo() {
         // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
-        UUID tempUserId = UUID.fromString("2aa4ad9f-dd05-4739-a683-eb8d2115635f");
+        String tempUserId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
         log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
 
         SellerInfoResponse response = sellerInfoService.getSellerInfo(tempUserId);
@@ -78,7 +76,7 @@ public class SellerInfoController {
             BindingResult bindingResult) {
 
         // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
-        UUID tempUserId = UUID.fromString("2aa4ad9f-dd05-4739-a683-eb8d2115635f");
+        String tempUserId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
         log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
                 tempUserId, request.vendorName());
 
