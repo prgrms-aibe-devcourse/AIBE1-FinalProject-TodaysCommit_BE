@@ -31,7 +31,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private final UserRepository userRepository;
 
     @Override
-    public SellerInfoResponse getSellerInfo(UUID userId) {
+    public SellerInfoResponse getSellerInfo(String userId) {
         log.info("판매자 정보 조회 - userId: {}", userId);
 
         // 사용자 존재 여부 및 판매자 권한 확인
@@ -40,7 +40,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return getSellerInfoInternal(userId);
     }
 
-    public SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request) {
+    public SellerInfoResponse upsertSellerInfo(String userId, SellerInfoRequest request) {
         log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.vendorName());
 
         // 사용자 존재 여부 및 판매자 권한 확인
@@ -56,7 +56,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 판매자 정보 조회 로직 (권한 검증 분리)
      */
-    private SellerInfoResponse getSellerInfoInternal(UUID userId) {
+    private SellerInfoResponse getSellerInfoInternal(String userId) {
         Optional<Sellers> sellerOpt = sellersRepository.findByUserId(userId);
 
         if (sellerOpt.isEmpty()) {
@@ -71,7 +71,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      * 판매자 정보 등록/수정 로직
      */
     private SellerInfoResponse upsertSellerInfoInternal(Users user, SellerInfoRequest request) {
-        UUID userId = user.getId();
+        String userId = user.getId();
         // 사업자 등록번호 중복 체크
         validateBusinessNumberDuplication(userId, request.businessNumber());
 
@@ -97,8 +97,8 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 판매자 사용자 검증 (존재 여부 + 판매자 권한)
      */
-    private Users validateSellerUser(UUID userId) {
-        Users user = userRepository.findById(userId)
+    private Users validateSellerUser(String userId) {
+        Users user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         if (user.getRole() != Role.ROLE_SELLER) {
@@ -113,14 +113,14 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 사업자 등록번호 중복 검증
      */
-    private void validateBusinessNumberDuplication(UUID userId, String businessNumber) {
+    private void validateBusinessNumberDuplication(String userId, String businessNumber) {
         Optional<Sellers> existingSeller = sellersRepository.findByBusinessNumber(businessNumber);
 
         if (existingSeller.isPresent()) {
             Sellers seller = existingSeller.get();
 
             // Null 체크
-            UUID existingUserId = seller.getUserId();
+            String existingUserId = seller.getUserId();
             if (existingUserId == null) {
                 // userId가 null인 경우 Users 관계에서 가져오기
                 if (seller.getUser() != null) {

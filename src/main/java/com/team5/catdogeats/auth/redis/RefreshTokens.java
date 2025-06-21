@@ -7,7 +7,6 @@ import org.springframework.data.redis.core.index.Indexed;
 
 import java.io.Serializable;
 import java.time.Instant;
-import java.util.UUID;
 
 @Getter
 @Builder(toBuilder = true)
@@ -18,13 +17,13 @@ import java.util.UUID;
 public class RefreshTokens implements Serializable {
 
     @Id
-    private UUID id;
+    private String id;
 
     private String provider;
     private String providerId;
 
     @Indexed
-    private UUID userId;
+    private String userId;
 
     @Indexed
     private boolean used;

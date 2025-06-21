@@ -15,8 +15,8 @@ public class UserTestJpaServiceImpl implements UserTestJpaService {
     private final UserRepository userRepository;
 
     @Override
-    public Users JpaTest(UUID id) {
-        return userRepository.findById(id)
+    public Users JpaTest(String id) {
+        return userRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new NoSuchElementException("유저 없음"));
     }
 }

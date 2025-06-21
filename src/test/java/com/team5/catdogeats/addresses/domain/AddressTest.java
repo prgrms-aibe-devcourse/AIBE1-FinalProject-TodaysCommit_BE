@@ -20,7 +20,7 @@ class AddressesTest {
     @BeforeEach
     void setUp() {
         testUser = Users.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .name("테스트사용자")
                 .role(Role.ROLE_BUYER)
                 .accountDisable(false)
@@ -30,7 +30,7 @@ class AddressesTest {
                 .build();
 
         testAddress = Addresses.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .user(testUser)
                 .title("집")
                 .city("서울특별시")
@@ -151,7 +151,7 @@ class AddressesTest {
     @DisplayName("주소 소유자 확인이 올바르게 동작한다")
     void isOwnedBy_WithCorrectUserId_ReturnsTrue() {
         // when & then
-        assertThat(testAddress.isOwnedBy(testUser.getId())).isTrue();
+        assertThat(testAddress.isOwnedBy(UUID.fromString(testUser.getId()))).isTrue();
     }
 
     @Test
@@ -169,7 +169,7 @@ class AddressesTest {
     void isOwnedBy_WithNullUser_ReturnsFalse() {
         // given
         Addresses addressWithNullUser = Addresses.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .user(null)
                 .title("테스트")
                 .city("서울")

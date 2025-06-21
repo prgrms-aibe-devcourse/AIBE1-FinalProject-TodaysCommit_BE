@@ -13,10 +13,10 @@ import java.time.ZonedDateTime;
 public abstract class BaseEntity {
 
     @Column(updatable = false, nullable = false, name = "created_at") // 생성 시간은 업데이트되면 안 됨
-    private ZonedDateTime createdAt;
+    private ZonedDateTime createdAt = ZonedDateTime.now();
 
     @Column(nullable = false, name = "updated_at")
-    private ZonedDateTime updatedAt;
+    private ZonedDateTime updatedAt = ZonedDateTime.now();
 
     @PrePersist
     public void prePersist() {

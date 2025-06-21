@@ -25,7 +25,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Slf4j
 @RestController
@@ -54,8 +53,7 @@ public class AuthController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.error(ResponseCode.INVALID_TOKEN));
             }
 
-            UUID id = UUID.fromString(refreshTokenId);
-            RotateTokenDTO dto = rotateRefreshTokenService.RotateRefreshToken(id);
+            RotateTokenDTO dto = rotateRefreshTokenService.RotateRefreshToken((refreshTokenId));
             ResponseCookie accessCookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), dto.newAccessToken());
             ResponseCookie refreshIdCookie = cookieUtils.createCookie("refreshTokenId", cookieProperties.getMaxAge(), dto.newRefreshToken().toString());
 

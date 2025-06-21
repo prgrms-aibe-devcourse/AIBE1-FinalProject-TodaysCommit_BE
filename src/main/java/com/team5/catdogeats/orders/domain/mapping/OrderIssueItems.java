@@ -6,8 +6,6 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "order_issue_items")
 @Getter
@@ -20,7 +18,7 @@ public class OrderIssueItems extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false,

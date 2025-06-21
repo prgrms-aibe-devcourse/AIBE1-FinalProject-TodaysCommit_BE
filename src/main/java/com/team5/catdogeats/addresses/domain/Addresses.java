@@ -5,6 +5,7 @@ import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
@@ -18,7 +19,7 @@ public class Addresses extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
-    private UUID id;
+    private String id;
 
     @Column(name = "title", length = 30, nullable = false)
     private String title;

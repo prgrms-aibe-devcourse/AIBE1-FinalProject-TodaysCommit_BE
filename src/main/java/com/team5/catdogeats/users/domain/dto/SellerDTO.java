@@ -2,9 +2,8 @@ package com.team5.catdogeats.users.domain.dto;
 
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
-public record SellerDTO(UUID userId,
+public record SellerDTO(String userId,
                         String vendorName,
                         String vendorProfileImage,
                         String businessNumber,

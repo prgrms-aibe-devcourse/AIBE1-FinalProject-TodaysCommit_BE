@@ -1,10 +1,12 @@
 package com.team5.catdogeats.users.mapper;
 
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Update;
 
 import java.time.OffsetDateTime;
 
+@Mapper
 public interface BuyerMapper {
 
     @Update("""

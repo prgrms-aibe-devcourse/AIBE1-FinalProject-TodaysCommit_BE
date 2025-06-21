@@ -7,7 +7,6 @@ import lombok.*;
 
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -18,11 +17,11 @@ public class Sellers extends BaseEntity {
 
     @Id
     @Column(name = "user_id", length = 36)
-    private UUID userId;
+    private String userId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_sellers_user_id"))
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_sellers_user_id"), nullable = false)
     private Users user;
 
     @Column(name = "vendor_name", length = 100)

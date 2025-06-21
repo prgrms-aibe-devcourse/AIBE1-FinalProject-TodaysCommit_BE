@@ -2,8 +2,6 @@ package com.team5.catdogeats.users.service;
 
 import com.team5.catdogeats.users.domain.Users;
 
-import java.util.UUID;
-
 public interface UserTestJpaService {
-    Users JpaTest(UUID id);
+    Users JpaTest(String id);
 }

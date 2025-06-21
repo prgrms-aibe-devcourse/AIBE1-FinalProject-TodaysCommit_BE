@@ -37,7 +37,7 @@ class RefreshTokenServiceImplTest {
     @InjectMocks private RefreshTokenServiceImpl refreshTokenService;
 
     private OAuth2AuthenticationToken authentication;
-    private final UUID userId = UUID.randomUUID();
+    private final String userId = UUID.randomUUID().toString();
 
     @BeforeEach
     void setUp() {
@@ -63,7 +63,7 @@ class RefreshTokenServiceImplTest {
         ArgumentCaptor<RefreshTokens> captor = ArgumentCaptor.forClass(RefreshTokens.class);
         when(refreshTokenRepository.save(captor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
 
-        UUID result = refreshTokenService.createRefreshToken(authentication);
+        String result = refreshTokenService.createRefreshToken(authentication);
 
         RefreshTokens saved = captor.getValue();
         assertNotNull(result);

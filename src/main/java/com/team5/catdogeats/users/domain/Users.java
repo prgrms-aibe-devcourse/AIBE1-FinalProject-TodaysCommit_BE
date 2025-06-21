@@ -5,8 +5,6 @@ import com.team5.catdogeats.users.domain.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Builder
 @Getter
@@ -17,7 +15,7 @@ public class Users extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
-    private UUID id;
+    private String id;
 
     @Column(length = 36, updatable = false, nullable = false)
     private String provider;
@@ -30,7 +28,7 @@ public class Users extends BaseEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(length = 11, nullable = false)
+    @Column(length = 15, nullable = false)
     private Role role;
 
     @Column(nullable = false, name = "account_disable")

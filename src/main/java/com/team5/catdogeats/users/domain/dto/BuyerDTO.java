@@ -1,9 +1,8 @@
 package com.team5.catdogeats.users.domain.dto;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
-public record BuyerDTO(UUID userId,
+public record BuyerDTO(String userId,
                        boolean nameMaskingStatus,
                        boolean isDeleted,
                        OffsetDateTime deletedAt) {

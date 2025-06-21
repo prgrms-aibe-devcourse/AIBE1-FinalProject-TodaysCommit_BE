@@ -17,7 +17,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +26,7 @@ public class PetServiceImpl implements PetService {
     private final BuyerRepository buyerRepository;
 
     @Override
-    public UUID registerPet(UserPrincipal userPrincipal, PetCreateRequestDto dto) {
+    public String registerPet(UserPrincipal userPrincipal, PetCreateRequestDto dto) {
         BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
 
