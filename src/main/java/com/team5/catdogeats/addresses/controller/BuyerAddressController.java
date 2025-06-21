@@ -55,15 +55,15 @@ public class BuyerAddressController {
     }
 
     // 구매자 주소 상세 조회
-    @GetMapping("/address/{addressId}")
+    @PostMapping("/address/detail")
     public ResponseEntity<ApiResponse<AddressResponseDto>> getAddressById(
-            @PathVariable String addressId,
+            @Valid @RequestBody AddressIdRequestDto requestDto,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        AddressResponseDto response = addressService.getAddressById(addressId, userPrincipal);
+        AddressResponseDto response = addressService.getAddressById(requestDto.getAddressId().toString(), userPrincipal);
 
         log.info("구매자 주소 상세 조회 - provider: {}, providerId: {}, addressId: {}",
-                userPrincipal.provider(), userPrincipal.providerId(), addressId);
+                userPrincipal.provider(), userPrincipal.providerId(), requestDto.getAddressId());
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
@@ -95,42 +95,44 @@ public class BuyerAddressController {
     }
 
     // 구매자 주소 수정
-    @PatchMapping("/address/{addressId}")
+    @PatchMapping("/address")
     public ResponseEntity<ApiResponse<AddressResponseDto>> updateAddress(
-            @PathVariable String addressId,
-            @Valid @RequestBody AddressUpdateRequestDto updateDto,
+            @Valid @RequestBody AddressUpdateWithIdRequestDto updateDto,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        AddressResponseDto response = addressService.updateAddress(addressId, updateDto, userPrincipal);
+        AddressResponseDto response = addressService.updateAddress(
+                updateDto.getAddressId().toString(),
+                updateDto.toAddressUpdateRequestDto(),
+                userPrincipal);
 
         log.info("구매자 주소 수정 완료 - provider: {}, providerId: {}, addressId: {}",
-                userPrincipal.provider(), userPrincipal.providerId(), addressId);
+                userPrincipal.provider(), userPrincipal.providerId(), updateDto.getAddressId());
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
     // 구매자 주소 삭제
-    @DeleteMapping("/address/{addressId}")
+    @DeleteMapping("/address")
     public ResponseEntity<ApiResponse<Void>> deleteAddress(
-            @PathVariable String addressId,
+            @Valid @RequestBody AddressIdRequestDto requestDto,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        addressService.deleteAddress(addressId, userPrincipal);
+        addressService.deleteAddress(requestDto.getAddressId().toString(), userPrincipal);
 
         log.info("구매자 주소 삭제 완료 - provider: {}, providerId: {}, addressId: {}",
-                userPrincipal.provider(), userPrincipal.providerId(), addressId);
+                userPrincipal.provider(), userPrincipal.providerId(), requestDto.getAddressId());
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS));
     }
 
     // 기본 주소 설정
-    @PatchMapping("/address/{addressId}/default")
+    @PatchMapping("/address/default")
     public ResponseEntity<ApiResponse<AddressResponseDto>> setDefaultAddress(
-            @PathVariable String addressId,
+            @Valid @RequestBody AddressIdRequestDto requestDto,
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        AddressResponseDto response = addressService.setDefaultAddress(addressId, userPrincipal);
+        AddressResponseDto response = addressService.setDefaultAddress(requestDto.getAddressId().toString(), userPrincipal);
 
         log.info("기본 주소 설정 완료 - provider: {}, providerId: {}, addressId: {}",
-                userPrincipal.provider(), userPrincipal.providerId(), addressId);
+                userPrincipal.provider(), userPrincipal.providerId(), requestDto.getAddressId());
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
