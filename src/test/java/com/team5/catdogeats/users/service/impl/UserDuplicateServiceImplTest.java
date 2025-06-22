@@ -1,9 +1,9 @@
 package com.team5.catdogeats.users.service.impl;
 
-import com.team5.catdogeats.global.exception.WithdrawnAccountException;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.OAuthDTO;
 import com.team5.catdogeats.users.domain.enums.Role;
+import com.team5.catdogeats.users.exception.WithdrawnAccountDomainException;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
@@ -17,7 +17,6 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -104,12 +103,10 @@ class UserDuplicateServiceImplTest {
                 .build();
         when(userRepository.findByProviderAndProviderId(provider, providerId)).thenReturn(Optional.of(user));
 
-        RuntimeException ex =
-                assertThrows(RuntimeException.class,
-                        () -> userDuplicateService.isDuplicate(user));
-
-        assertThat(ex.getCause()).isInstanceOf(WithdrawnAccountException.class);
-
+        assertThrows(
+                WithdrawnAccountDomainException.class,   // ← 서비스 전용 예외
+                () -> userDuplicateService.isDuplicate(user)
+        );
         verify(userRepository, never()).save(any());   // 저장이 호출되지 않는지 추가 검증
     }
 
