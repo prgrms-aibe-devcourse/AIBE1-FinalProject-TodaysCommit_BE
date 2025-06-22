@@ -2,8 +2,6 @@ package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.users.domain.enums.Role;
-import com.team5.catdogeats.users.mapper.BuyerMapper;
-import com.team5.catdogeats.users.mapper.SellerMapper;
 import com.team5.catdogeats.users.mapper.UserMapper;
 import com.team5.catdogeats.users.service.WithdrawService;
 import lombok.RequiredArgsConstructor;
@@ -24,8 +22,6 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class WithdrawServiceImpl implements WithdrawService {
     private final UserMapper userMapper;
-    private final BuyerMapper buyerMapper;
-    private final SellerMapper sellerMapper;
 
     @Override
     @Transactional
@@ -36,8 +32,9 @@ public class WithdrawServiceImpl implements WithdrawService {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String firstAuthority = validate(authentication);
             log.debug("firstAuthority: {}", firstAuthority);
-
-            withdrawWithRoleTrigger(userPrincipal, firstAuthority);
+            userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
+                    userPrincipal.providerId(),
+                    OffsetDateTime.now(ZoneOffset.UTC));
 
         } catch (BadSqlGrammarException e) {
             log.error("sql 에러", e);
@@ -45,18 +42,6 @@ public class WithdrawServiceImpl implements WithdrawService {
         }
     }
 
-    private void withdrawWithRoleTrigger(UserPrincipal userPrincipal, String firstAuthority) {
-        userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
-                                                        userPrincipal.providerId(),
-                                                        OffsetDateTime.now(ZoneOffset.UTC));
-        switch (firstAuthority) {
-            case "ROLE_BUYER" -> buyerMapper.softDeleteBuyerByProviderAndProviderId(userPrincipal.provider(),
-                                                userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
-
-            case "ROLE_SELLER" -> sellerMapper.softDeleteSellerByProviderAndProviderId(userPrincipal.provider(),
-                                                userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
-        }
-    }
 
     private String validate(Authentication authentication) {
         String firstAuthority = authentication.getAuthorities().stream()

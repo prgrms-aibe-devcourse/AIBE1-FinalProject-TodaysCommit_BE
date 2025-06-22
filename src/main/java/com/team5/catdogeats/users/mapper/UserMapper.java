@@ -14,7 +14,7 @@ public interface UserMapper {
 
     @Update("""
     UPDATE users
-       SET account_disable = true , deled_at = #{now}
+       SET account_disable = true , deleted_at = #{now}
        WHERE  provider = #{provider}
        AND provider_id = #{providerId}
 """)
