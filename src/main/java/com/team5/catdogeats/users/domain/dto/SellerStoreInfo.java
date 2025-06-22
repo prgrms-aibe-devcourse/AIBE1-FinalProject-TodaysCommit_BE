@@ -8,7 +8,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * 판매자 스토어 페이지 정보 DTO (수정됨)
+ * 판매자 스토어 페이지 정보 DTO
  * Orders 도메인의 SellerStoreStats 사용
  */
 @Schema(description = "판매자 스토어 정보")
@@ -25,10 +25,13 @@ public record SellerStoreInfo(
         @Schema(description = "태그", example = "수제간식,강아지")
         String tags,
 
-        @Schema(description = "운영시간", example = "09:00 - 18:00")
-        String operatingHours,
+        @Schema(description = "운영 시작시간", example = "09:00")
+        String operatingStartTime,
 
-        @Schema(description = "운영 시작년도", example = "2020년부터")
+        @Schema(description = "운영 종료시간", example = "18:00")
+        String operatingEndTime,
+
+        @Schema(description = "운영 시작년도", example = "2020")
         String operationStartYear,
 
         @Schema(description = "총 상품 수", example = "50")
@@ -53,12 +56,11 @@ public record SellerStoreInfo(
             return null;
         }
 
-        String operatingHours = formatOperatingHours(
-                seller.getOperatingStartTime(),
-                seller.getOperatingEndTime()
-        );
+        String operatingStartTime = formatTimeOnly(seller.getOperatingStartTime());
+        String operatingEndTime = formatTimeOnly(seller.getOperatingEndTime());
+        String operationStartYear = extractYear(seller.getCreatedAt());
 
-        String operationStartYear = formatOperationStartYear(seller.getCreatedAt());
+
 
         // Orders 도메인의 SellerStoreStats 사용
         Long totalSalesCount = stats != null ? stats.totalSalesCount() : 0L;
@@ -66,11 +68,12 @@ public record SellerStoreInfo(
         Long totalReviews = stats != null ? stats.totalReviews() : 0L;
 
         return new SellerStoreInfo(
-                seller.getUserId() != null ? seller.getUserId().toString() : null,
+                seller.getUserId(),
                 seller.getVendorName(),
                 seller.getVendorProfileImage(),
                 seller.getTags(),
-                operatingHours,
+                operatingStartTime,
+                operatingEndTime,
                 operationStartYear,
                 totalProducts,
                 totalSalesCount,
@@ -80,29 +83,23 @@ public record SellerStoreInfo(
     }
 
     /**
-     * 기존 호환성을 위한 메서드 (통계 없이) - Deprecated
+     *  LocalTime -> "HH:mm" 문자열 변환
      */
-    @Deprecated
-    public static SellerStoreInfo from(Sellers seller, Long totalProducts) {
-        return from(seller, totalProducts, null);
-    }
-
-    private static String formatOperatingHours(LocalTime startTime, LocalTime endTime) {
-        if (startTime == null || endTime == null) {
-            return "운영시간 미설정";
+    private static String formatTimeOnly(LocalTime time) {
+        if (time == null) {
+            return null;
         }
-
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-        return String.format("%s - %s",
-                startTime.format(formatter),
-                endTime.format(formatter));
+        return time.format(formatter);
     }
 
-    private static String formatOperationStartYear(java.time.ZonedDateTime createdAt) {
+    /**
+     *  ZoneDateTime -> 연도만 문자열로 추출
+     */
+    private static String extractYear(java.time.ZonedDateTime createdAt) {
         if (createdAt == null) {
-            return "정보 없음";
+            return null;
         }
-
-        return createdAt.getYear() + "년부터";
+        return String.valueOf(createdAt.getYear());
     }
 }
