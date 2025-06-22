@@ -3,7 +3,6 @@ package com.team5.catdogeats.users.controller;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.users.domain.dto.ProductCardPageResponse;
 import com.team5.catdogeats.users.domain.dto.SellerStorePageResponse;
 import com.team5.catdogeats.users.service.SellerStoreService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -11,9 +10,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -42,7 +38,7 @@ public class SellerStoreController {
                     - page: 페이지 번호 (1부터 시작, 기본값: 1)
                     - size: 페이지 크기 (기본값: 12)
                     - sort: 정렬 기준 (기본값: createdAt,desc)
-                    - category: 상품 카테고리 필터 (DOG, CAT - 선택사항)
+                    - category: 상품 카테고리 필터 (DOG,CAT - 선택사항)
                     - filter: 추가 필터 조건 (선택사항)
                     
                     **필터 옵션:**
