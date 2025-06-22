@@ -1,7 +1,9 @@
 package com.team5.catdogeats.users.mapper;
 
-import com.team5.catdogeats.users.domain.Users;
-import org.apache.ibatis.annotations.*;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.time.OffsetDateTime;
 
@@ -23,15 +25,4 @@ public interface UserMapper {
             @Param("providerId") String providerId,
             @Param("now") OffsetDateTime now);
 
-
-    @Insert("""
-  INSERT INTO users
-       (id, provider, provider_id, user_name_attribute,
-        name, role, account_disable, created_at, updated_at)
-      VALUES
-       (#{id}, #{provider}, #{providerId}, #{userNameAttribute},
-        #{name}, #{role}, #{accountDisable},
-        #{createdAt}, #{updatedAt})
-""")
-    int insert(Users user);
 }

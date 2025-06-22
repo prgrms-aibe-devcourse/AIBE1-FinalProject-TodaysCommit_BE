@@ -14,9 +14,12 @@ public interface UserWithdrawMapper {
        SELECT id, role, account_disable, deleted_at
          FROM users
         WHERE account_disable = true
-          AND deleted_at     <= #{cutoff}
+          AND deleted_at IS NOT NULL
+          AND deleted_at     <= #{deletedAt}
+          AND role != 'ROLE_WITHDRAWN'
+       
        """)
-    List<Users> selectTargets(@Param("cutoff") OffsetDateTime cutoff);
+    List<Users> selectTargets(@Param("deletedAt") OffsetDateTime deletedAt);
 
     @Lang(XMLLanguageDriver.class)
     @Update("""
