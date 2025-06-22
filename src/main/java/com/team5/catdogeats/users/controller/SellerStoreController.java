@@ -36,7 +36,7 @@ public class SellerStoreController {
                     **파라미터 설명:**
                     - vendor-name: 판매자 상점명 (URL 경로)
                     - page: 페이지 번호 (1부터 시작, 기본값: 1)
-                    - size: 페이지 크기 (기본값: 12)
+                    - size: 페이지 크기 (기본값: 10)
                     - sort: 정렬 기준 (기본값: createdAt,desc)
                     - category: 상품 카테고리 필터 (DOG,CAT - 선택사항)
                     - filter: 추가 필터 조건 (선택사항)
@@ -71,8 +71,8 @@ public class SellerStoreController {
             @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")
             @RequestParam(value = "page", defaultValue = "1") int page,
 
-            @Parameter(description = "페이지 크기", example = "12")
-            @RequestParam(value = "size", defaultValue = "12") int size,
+            @Parameter(description = "페이지 크기", example = "10")
+            @RequestParam(value = "size", defaultValue = "10") int size,
 
             @Parameter(description = "정렬 기준", example = "createdAt,desc")
             @RequestParam(value = "sort", defaultValue = "createdAt,desc") String sort,

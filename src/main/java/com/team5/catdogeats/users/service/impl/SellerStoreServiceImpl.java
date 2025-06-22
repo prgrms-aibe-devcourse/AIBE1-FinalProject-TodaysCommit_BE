@@ -119,7 +119,7 @@ public class SellerStoreServiceImpl implements SellerStoreService {
      * 페이징 및 정렬 조건 생성
      */
     private Pageable createPageable(int page, int size, String sort, String filter) {
-        // 페이지 크기 제한 (최대 50개)
+        // 페이지 크기 제한 (최대 50개) -사용자가 악의적으로 개수를 조작하여 db부하 방지
         size = Math.min(size, 50);
 
         // 필터가 있는 경우 필터 전용 정렬 적용
