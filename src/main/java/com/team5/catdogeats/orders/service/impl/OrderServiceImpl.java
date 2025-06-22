@@ -29,10 +29,8 @@ import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 주문 관리 서비스 구현체 (업데이트된 Products 엔티티 적용)
- *
  * Products 엔티티의 quantity 필드가 stock으로 변경됨에 따라
  * 모든 재고 관련 로직을 수정하였습니다.
- *
  * 1단계 "주문(구매자)" 기능:
  * - 상품 존재 확인 및 재고 검증 (stock 필드 사용)
  * - 재고 차감 (동시성 제어)
@@ -157,7 +155,6 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 재고 차감 (업데이트된 Repository 메서드 사용)
-     *
      * ProductRepository의 decreaseStock 메서드를 사용하여
      * 원자적 재고 차감을 수행합니다.
      */
