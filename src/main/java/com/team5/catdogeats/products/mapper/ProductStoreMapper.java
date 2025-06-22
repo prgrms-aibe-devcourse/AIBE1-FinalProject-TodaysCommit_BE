@@ -8,7 +8,7 @@ import java.util.List;
 public interface ProductStoreMapper {
 
     /**
-     * 특정 상품 ID들로 상품 기본 정보 조회 (베스트 상품용, String ID 사용)
+     * 특정 상품 ID들로 상품 기본 정보 조회 (베스트 상품용)
      */
     @Select("""
         <script>
@@ -126,7 +126,7 @@ public interface ProductStoreMapper {
     );
 
     /**
-     * 판매자 상품 개수 조회
+     * 판매자 상품 개수 조회 (필터별,카레고리별,페이징을 위한 스토어의 상품 개수 조회)
      */
     @Select("""
         <script>

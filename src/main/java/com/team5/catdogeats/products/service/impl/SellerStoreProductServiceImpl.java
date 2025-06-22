@@ -30,8 +30,8 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class SellerStoreProductServiceImpl implements SellerStoreProductService {
 
-    private final ProductsRepository productsRepository;        // JPA - 단순 CRUD
-    private final ProductStoreMapper productStoreMapper;        // MyBatis - 복잡한 조회
+    private final ProductsRepository productsRepository;
+    private final ProductStoreMapper productStoreMapper;
     private final ProductBestScoreService productBestScoreService;  // Orders 도메인 - 베스트 점수 데이터
 
     @Override
@@ -40,19 +40,19 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
         log.debug("판매자 상품 정보 조회 - sellerId: {}, category: {}, filter: {}, page: {}",
                 sellerId, category, filter, pageable.getPageNumber());
 
-        String categoryStr = category != null ? category.name() : null;
-        int limit = pageable.getPageSize();
-        int offset = (int) pageable.getOffset();
+        String categoryStr = category != null ? category.name() : null;  // 카테고리 enum -> String로 변환 mybatis 호환성 때문에
+        int limit = pageable.getPageSize();  // 한 페이지에 보여줄 상품 개수
+        int offset = (int) pageable.getOffset(); // 몇 번째 상품부터 가져올지
 
-        // 필터 값 검증 및 정규화
+        // 필터 값 검증
         String normalizedFilter = validateAndNormalizeFilter(filter);
 
-        // 베스트 상품 처리 (새로운 로직)
+        // 베스트 상품 처리
         if ("best".equals(normalizedFilter)) {
             return getBestProducts(sellerId, categoryStr);
         }
 
-        // 일반 상품 조회 (기존 로직 유지)
+        // 일반 상품 조회
         List<ProductStoreInfo> products = productStoreMapper.findSellerProductsBaseInfo(
                 sellerId, categoryStr, normalizedFilter, limit, offset
         );
@@ -66,7 +66,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
     }
 
     /**
-     * 베스트 상품 조회 (새로운 베스트 점수 로직 적용, String ID 사용)
+     * 베스트 상품 조회 (베스트 점수 로직 적용)
      */
     private Page<ProductStoreInfo> getBestProducts(String sellerId, String categoryStr) {
         log.debug("베스트 상품 조회 시작 - sellerId: {}, category: {}", sellerId, categoryStr);
@@ -79,7 +79,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
             return new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
         }
 
-        // 2. 베스트 점수 계산 및 상위 10개 상품 ID 추출 (String List로 유지)
+        // 2. 베스트 점수 계산 및 상위 10개 상품 ID 추출
         List<String> topProductIds = bestScoreDataList.stream()
                 .peek(data -> log.debug("베스트 점수 계산 - productId: {}, score: {}",
                         data.productId(), data.calculateBestScore()))
@@ -93,10 +93,10 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
             return new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
         }
 
-        // 3. 상위 상품들의 기본 정보 조회 (String List 그대로 사용)
+        // 3. 상위 상품들의 기본 정보 조회
         List<ProductStoreInfo> bestProducts = productStoreMapper.findProductsByIds(topProductIds, categoryStr);
 
-        // 4. 베스트 점수를 ProductStoreInfo에 매핑 (String key 사용)
+        // 4. 베스트 점수를 ProductStoreInfo에 매핑
         Map<String, Double> bestScoreMap = bestScoreDataList.stream()
                 .collect(Collectors.toMap(
                         ProductBestScoreData::productId,
@@ -117,7 +117,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
                         product.stockStatus(),
                         product.avgRating(),
                         product.reviewCount(),
-                        bestScoreMap.getOrDefault(product.productId(), 0.0) // String key 그대로 사용
+                        bestScoreMap.getOrDefault(product.productId(), 0.0)
                 ))
                 .sorted((a, b) -> Double.compare(b.bestScore(), a.bestScore()))
                 .collect(Collectors.toList());
@@ -146,7 +146,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
 
         String normalizedFilter = filter.trim().toLowerCase();
 
-        // 허용된 필터 값 검증 (best 포함)
+        // 허용된 필터 값 검증
         return switch (normalizedFilter) {
             case "best", "discount", "new", "exclude_sold_out" -> normalizedFilter;
             default -> {

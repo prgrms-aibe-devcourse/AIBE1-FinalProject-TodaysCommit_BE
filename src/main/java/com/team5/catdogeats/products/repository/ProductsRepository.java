@@ -11,7 +11,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ProductsRepository extends JpaRepository<Products, String> {
 
-
+    // 단순 스토어 상품 개수 조회
     @Query("SELECT COUNT(p) FROM Products p WHERE p.seller.userId = :sellerId")
     Long countSellerActiveProducts(@Param("sellerId") String sellerId);
 

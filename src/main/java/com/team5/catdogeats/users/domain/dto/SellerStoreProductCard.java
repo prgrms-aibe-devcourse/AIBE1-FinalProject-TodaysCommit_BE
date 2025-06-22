@@ -70,7 +70,7 @@ public record SellerStoreProductCard(
                 : 0.0;
 
         return new SellerStoreProductCard(
-                productInfo.productId().toString(),
+                productInfo.productId(),
                 productInfo.productNumber(),
                 productInfo.title(),
                 productInfo.price(),

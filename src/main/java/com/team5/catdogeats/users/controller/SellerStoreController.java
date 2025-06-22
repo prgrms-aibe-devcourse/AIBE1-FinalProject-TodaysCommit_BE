@@ -42,7 +42,7 @@ public class SellerStoreController {
                     - page: 페이지 번호 (1부터 시작, 기본값: 1)
                     - size: 페이지 크기 (기본값: 12)
                     - sort: 정렬 기준 (기본값: createdAt,desc)
-                    - category: 상품 카테고리 필터 (DOG, CAT, ALL - 선택사항)
+                    - category: 상품 카테고리 필터 (DOG, CAT - 선택사항)
                     - filter: 추가 필터 조건 (선택사항)
                     
                     **필터 옵션:**
@@ -54,7 +54,7 @@ public class SellerStoreController {
                     
                     **정렬 옵션:**
                     - createdAt,desc: 최신순 (기본값)
-                    - createdAt,asc: 오래된순  
+                    - createdAt,asc: 오래된순
                     - price,asc: 가격낮은순
                     - price,desc: 가격높은순
                     
@@ -81,7 +81,7 @@ public class SellerStoreController {
             @Parameter(description = "정렬 기준", example = "createdAt,desc")
             @RequestParam(value = "sort", defaultValue = "createdAt,desc") String sort,
 
-            @Parameter(description = "상품 카테고리 필터 (DOG: 강아지, CAT: 고양이, ALL: 전체)", example = "DOG")
+            @Parameter(description = "상품 카테고리 필터 (DOG: 강아지, CAT: 고양이)", example = "DOG")
             @RequestParam(value = "category", required = false) PetCategory category,
 
             @Parameter(description = "추가 필터 조건 (best: 베스트상품, discount: 할인상품, new: 신규상품, exclude_sold_out: 품절제외)", example = "best")
@@ -164,7 +164,7 @@ public class SellerStoreController {
             return PageRequest.of(page, size, sortObj);
         }
 
-        // 기본 정렬 로직 (기존과 동일)
+        // 기본 정렬 로직
         String[] sortParts = sort.split(",");
         String property = sortParts[0];
         Sort.Direction direction = sortParts.length > 1 && "asc".equalsIgnoreCase(sortParts[1])
@@ -183,11 +183,11 @@ public class SellerStoreController {
     }
 
     /**
-     * 필터에 따른 정렬 생성 (MyBatis에서 이미 정렬되므로 기본 정렬만 적용)
+     * 필터에 따른 상품 카드 정렬
      */
     private Sort createFilterBasedSort(String filter, String sort) {
-        // 필터별로 MyBatis에서 이미 최적 정렬이 적용되므로,
-        // 여기서는 보조 정렬만 적용 (동일 점수일 때의 정렬)
+
+        // 동일 조건일 때의 정렬
         return switch (filter.toLowerCase()) {
             case "best" -> Sort.by(Sort.Direction.DESC, "createdAt"); // 베스트 점수 동일 시 최신순
             case "discount" -> Sort.by(Sort.Direction.DESC, "createdAt"); // 할인율 동일 시 최신순
@@ -212,7 +212,7 @@ public class SellerStoreController {
     }
 
     /**
-     * 응답 데이터의 페이지 번호를 사용자 친화적(1-based)으로 조정
+     * 응답 데이터의 페이지 번호를 1 부터 시작
      */
     private SellerStorePageResponse adjustPageNumberInResponse(SellerStorePageResponse response, int adjustedPage) {
         ProductCardPageResponse originalProducts = response.products();
@@ -228,7 +228,7 @@ public class SellerStoreController {
                 adjustedPage > 0 // 이전 페이지 존재 여부 (페이지 1보다 큰 경우)
         );
 
-        // 새로운 SellerStorePageResponse 반환
+
         return new SellerStorePageResponse(
                 response.sellerInfo(),
                 adjustedProducts
