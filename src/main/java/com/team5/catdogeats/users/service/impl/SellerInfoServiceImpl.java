@@ -7,7 +7,6 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.repository.SellersRepository;
-import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.SellerInfoService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
+
 
 
 @Slf4j
@@ -28,7 +27,7 @@ import java.util.UUID;
 public class SellerInfoServiceImpl implements SellerInfoService {
 
     private final SellersRepository sellersRepository;
-    private final UserRepository userRepository;
+
 
     @Override
     @Transactional(readOnly = true)
