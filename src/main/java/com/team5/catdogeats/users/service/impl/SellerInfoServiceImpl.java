@@ -35,25 +35,14 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());
 
-        try {
-            // 1. Users 조회
-            Users user = findUserByPrincipal(userPrincipal);
+        // 1. Users 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
-            // 2. 판매자 권한 검증
-            validateSellerRole(user);
+        // 2. 판매자 권한 검증
+        validateSellerRole(user);
 
-            // 3. 판매자 정보 조회
-            return getSellerInfoInternal(user.getId());
-
-        } catch (EntityNotFoundException | AccessDeniedException e) {
-            log.warn("판매자 정보 조회 실패 - provider: {}, providerId: {}, error: {}",
-                    userPrincipal.provider(), userPrincipal.providerId(), e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("판매자 정보 조회 중 예상치 못한 오류 - provider: {}, providerId: {}",
-                    userPrincipal.provider(), userPrincipal.providerId(), e);
-            throw new RuntimeException("판매자 정보 조회 실패", e);
-        }
+        // 3. 판매자 정보 조회
+        return getSellerInfoInternal(user.getId());
     }
 
     @Override
@@ -62,35 +51,26 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 정보 등록/수정 (JWT) - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
-        try {
-            // 1. UserPrincipal로 Users 조회
-            Users user = findUserByPrincipal(userPrincipal);
+        // 1. Users 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
-            // 2. 판매자 권한 검증
-            validateSellerRole(user);
+        // 2. 판매자 권한 검증
+        validateSellerRole(user);
 
-            // 3. 유효성 검증
-            validateOperatingHours(request);
-            validateClosedDays(request.closedDays());
+        // 3. 유효성 검증
+        validateOperatingHours(request);
+        validateClosedDays(request.closedDays());
 
-            // 4. 판매자 정보 등록/수정
-            return upsertSellerInfoInternal(user, request);
-
-        } catch (EntityNotFoundException | AccessDeniedException | IllegalArgumentException | DataIntegrityViolationException e) {
-            log.warn("판매자 정보 등록/수정 실패 - provider: {}, providerId: {}, error: {}",
-                    userPrincipal.provider(), userPrincipal.providerId(), e.getMessage());
-            throw e;
-        } catch (Exception e) {
-            log.error("판매자 정보 등록/수정 중 예상치 못한 오류 - provider: {}, providerId: {}",
-                    userPrincipal.provider(), userPrincipal.providerId(), e);
-            throw new RuntimeException("판매자 정보 등록/수정 실패", e);
-        }
+        // 4. 판매자 정보 등록/수정
+        return upsertSellerInfoInternal(user, request);
     }
+
+
 
     // === 공통 헬퍼 메서드들 ===
 
     /**
-     * UserPrincipal로 Users 엔티티 조회
+     *  Users 엔티티 조회
      */
     private Users findUserByPrincipal(UserPrincipal userPrincipal) {
         return userRepository.findByProviderAndProviderId(
@@ -154,7 +134,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         Sellers savedSeller = sellersRepository.save(seller);
         return SellerInfoResponse.from(savedSeller);
     }
-
 
     /**
      * 사업자 등록번호 중복 검증

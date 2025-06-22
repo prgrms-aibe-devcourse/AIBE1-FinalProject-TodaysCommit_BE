@@ -6,14 +6,47 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestControllerAdvice(basePackages = "com.team5.catdogeats.users.controller")
 public class SellerInfoExceptionHandler {
+
+    /**
+     * 인증 정보 없음 예외 처리
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAuthentication(AuthenticationException e) {
+        log.warn("인증 실패 - Message: {}", e.getMessage());
+        return ResponseEntity.status(ResponseCode.UNAUTHORIZED.getStatus())
+                .body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
+    }
+
+    /**
+     * Spring Security 접근 권한 없음 예외 처리
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException e) {
+        log.warn("접근 권한 없음 - Message: {}", e.getMessage());
+
+        // 판매자 권한 관련인지 확인
+        if (e.getMessage() != null && e.getMessage().contains("판매자")) {
+            return ResponseEntity.status(ResponseCode.SELLER_ACCESS_DENIED.getStatus())
+                    .body(ApiResponse.error(ResponseCode.SELLER_ACCESS_DENIED));
+        }
+
+        // 일반적인 접근 권한 없음
+        return ResponseEntity.status(ResponseCode.ACCESS_DENIED.getStatus())
+                .body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
+    }
 
     /**
      * JPA 엔티티 없음 예외 처리 (Spring Data JPA 표준)
@@ -45,21 +78,21 @@ public class SellerInfoExceptionHandler {
     }
 
     /**
-     * Spring Security 접근 권한 없음 예외 처리
+     * Bean Validation 예외 처리 (@Valid 어노테이션 검증 실패)
      */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAccessDenied(AccessDeniedException e) {
-        log.warn("접근 권한 없음 - Message: {}", e.getMessage());
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidation(MethodArgumentNotValidException e) {
+        log.warn("입력값 검증 실패 - 필드 오류 개수: {}", e.getBindingResult().getFieldErrorCount());
 
-        // 판매자 권한 관련인지 확인
-        if (e.getMessage() != null && e.getMessage().contains("판매자")) {
-            return ResponseEntity.status(ResponseCode.SELLER_ACCESS_DENIED.getStatus())
-                    .body(ApiResponse.error(ResponseCode.SELLER_ACCESS_DENIED));
-        }
+        List<FieldError> fieldErrors = e.getBindingResult().getFieldErrors();
+        String errorMessage = fieldErrors.stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
 
-        // 일반적인 접근 권한 없음
-        return ResponseEntity.status(ResponseCode.ACCESS_DENIED.getStatus())
-                .body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
+        log.warn("검증 실패 상세 - {}", errorMessage);
+
+        return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
+                .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, errorMessage));
     }
 
     /**

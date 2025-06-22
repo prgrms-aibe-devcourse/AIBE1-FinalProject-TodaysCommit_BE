@@ -11,13 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -42,35 +38,20 @@ public class SellerInfoController {
     public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        // 인증 정보 확인
-        if (userPrincipal == null) {
-            log.warn("인증되지 않은 사용자의 판매자 정보 조회 시도");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
-        }
+        log.info("판매자 정보 조회 요청 - provider: {}, providerId: {}",
+                userPrincipal.provider(), userPrincipal.providerId());
 
-        try {
-            log.info("판매자 정보 조회 요청 - provider: {}, providerId: {}",
-                    userPrincipal.provider(), userPrincipal.providerId());
+        SellerInfoResponse response = sellerInfoService.getSellerInfo(userPrincipal);
 
-            SellerInfoResponse response = sellerInfoService.getSellerInfo(userPrincipal);
-
-            if (response == null) {
-                return ResponseEntity.ok(
-                        ApiResponse.success(ResponseCode.SELLER_INFO_NOT_FOUND)
-                );
-            }
-
+        if (response == null) {
             return ResponseEntity.ok(
-                    ApiResponse.success(ResponseCode.SELLER_INFO_SUCCESS, response)
+                    ApiResponse.success(ResponseCode.SELLER_INFO_NOT_FOUND)
             );
-
-        } catch (Exception e) {
-            log.error("판매자 정보 조회 중 오류 발생 - provider: {}, providerId: {}",
-                    userPrincipal.provider(), userPrincipal.providerId(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
+
+        return ResponseEntity.ok(
+                ApiResponse.success(ResponseCode.SELLER_INFO_SUCCESS, response)
+        );
     }
 
     /**
@@ -87,43 +68,15 @@ public class SellerInfoController {
     @PatchMapping("/info")
     public ResponseEntity<ApiResponse<SellerInfoResponse>> upsertSellerInfo(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @Valid @RequestBody SellerInfoRequest request,
-            BindingResult bindingResult) {
-
-        // 인증 정보 확인
-        if (userPrincipal == null) {
-            log.warn("인증되지 않은 사용자의 판매자 정보 등록/수정 시도");
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
-        }
+            @Valid @RequestBody SellerInfoRequest request) {
 
         log.info("판매자 정보 등록/수정 요청 - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
-        // 유효성 검증 오류 처리
-        if (bindingResult.hasErrors()) {
-            String errorMessage = bindingResult.getFieldErrors().stream()
-                    .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                    .collect(Collectors.joining(", "));
+        SellerInfoResponse response = sellerInfoService.upsertSellerInfo(userPrincipal, request);
 
-            log.warn("판매자 정보 유효성 검증 실패 - errors: {}", errorMessage);
-            return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, errorMessage));
-        }
-
-        try {
-            SellerInfoResponse response = sellerInfoService.upsertSellerInfo(
-                    userPrincipal, request);
-
-            return ResponseEntity.ok(
-                    ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
-            );
-
-        } catch (Exception e) {
-            log.error("판매자 정보 등록/수정 중 오류 발생 - provider: {}, providerId: {}",
-                    userPrincipal.provider(), userPrincipal.providerId(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
-        }
+        return ResponseEntity.ok(
+                ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
+        );
     }
 }
