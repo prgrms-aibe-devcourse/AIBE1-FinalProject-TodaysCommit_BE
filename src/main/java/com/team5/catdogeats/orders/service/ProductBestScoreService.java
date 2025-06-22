@@ -18,11 +18,4 @@ public interface ProductBestScoreService {
      */
     List<ProductBestScoreData> getProductBestScoreData(String sellerId);
 
-    /**
-     * 특정 상품들의 베스트 점수 계산 데이터 조회
-     *
-     * @param productIds 상품 ID 목록
-     * @return 상품별 베스트 점수 계산 데이터 목록
-     */
-    List<ProductBestScoreData> getProductBestScoreDataByProductIds(List<String> productIds);
 }

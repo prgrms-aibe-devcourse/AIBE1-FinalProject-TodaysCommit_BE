@@ -41,18 +41,17 @@ public class SellerStoreServiceImpl implements SellerStoreService {
         Sellers seller = sellersRepository.findByVendorName(vendorName)
                 .orElseThrow(() -> new EntityNotFoundException("판매자를 찾을 수 없습니다: " + vendorName));
 
-        // 2. 상품 기본 정보 조회 (Products 도메인) - bestScore 없는 ProductStoreInfo
+        // 2. 상품 기본 정보 조회 (Products 도메인)
         Long totalProducts = productService.countSellerActiveProducts(seller.getUserId());
-        Page<ProductStoreInfo> productInfoPage = productService
-                .getSellerProductsBaseInfo(seller.getUserId(), category, filter, pageable);
+        Page<ProductStoreInfo> productInfoPage = productService.getSellerProductsBaseInfo(seller.getUserId(), category, filter, pageable);
 
-        // 3. 상점 집계 정보 조회 (Orders 도메인)
+        // 3. 상점 집계 정보 조회 (Orders 도메인) - (누적 판매 수량, 평균 배송소요일 , 누적 리뷰 개수)
         SellerStoreStats storeStats = sellerStoreStatsService.getSellerStoreStats(seller.getUserId());
 
         // 4. 판매자 정보 생성 (집계 정보 포함)
         SellerStoreInfo sellerInfo = SellerStoreInfo.from(seller, totalProducts, storeStats);
 
-        // 5. 상품 카드로 변환 (bestScore 없는 ProductStoreInfo 그대로 사용)
+        // 5. 상품 카드로 변환
         Page<SellerStoreProductCard> productCardPage = productInfoPage
                 .map(SellerStoreProductCard::from);
 

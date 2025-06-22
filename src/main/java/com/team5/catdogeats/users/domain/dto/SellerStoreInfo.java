@@ -37,7 +37,7 @@ public record SellerStoreInfo(
         @Schema(description = "전체 상품 판매량", example = "1250")
         Long totalSalesQuantity,
 
-        @Schema(description = "판매량 정보 텍스트", example = "1.3K개 판매")
+        @Schema(description = "판매량 정보 텍스트", example = "1300개 판매")
         String salesInfoText,
 
         @Schema(description = "배송 정보 텍스트", example = "평균 3일 배송")

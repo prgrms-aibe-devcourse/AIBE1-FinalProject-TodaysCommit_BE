@@ -126,7 +126,7 @@ public interface ProductStoreMapper {
     );
 
     /**
-     * 판매자 상품 개수 조회 (String ID 사용)
+     * 판매자 상품 개수 조회
      */
     @Select("""
         <script>
