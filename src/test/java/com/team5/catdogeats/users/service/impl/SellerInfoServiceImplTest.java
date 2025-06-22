@@ -2,10 +2,10 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.domain.enums.Role;
-import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.enums.Role;
+import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
 import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
 import com.team5.catdogeats.users.exception.UserNotFoundException;
@@ -22,13 +22,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalTime;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class SellerInfoServiceImplTest {
@@ -129,7 +129,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 등록된 판매자 정보가 있는 경우")
         void getSellerInfo_Success() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller));
 
             // when
@@ -150,7 +150,7 @@ class SellerInfoServiceImplTest {
             assertThat(result.closedDays()).isEqualTo("월요일,화요일");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository).findByUserId(testUserId);
         }
 
@@ -158,7 +158,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 등록된 판매자 정보가 없는 경우 (null 반환)")
         void getSellerInfo_NoSellerInfo_ReturnsNull() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
 
             // when
@@ -168,7 +168,7 @@ class SellerInfoServiceImplTest {
             assertThat(result).isNull();
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository).findByUserId(testUserId);
         }
 
@@ -176,7 +176,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 존재하지 않는 사용자")
         void getSellerInfo_UserNotFound() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.empty());
+            given(userRepository.findById((testUserId))).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.getSellerInfo(testUserId))
@@ -184,7 +184,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("존재하지 않는 사용자입니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository, never()).findByUserId(any());
         }
 
@@ -192,7 +192,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 판매자 권한이 없는 사용자")
         void getSellerInfo_AccessDenied() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testBuyerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testBuyerUser));
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.getSellerInfo(testUserId))
@@ -200,7 +200,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("판매자 권한이 필요합니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository, never()).findByUserId(any());
         }
     }
@@ -213,7 +213,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 신규 판매자 정보 등록")
         void upsertSellerInfo_CreateNew_Success() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -228,7 +228,7 @@ class SellerInfoServiceImplTest {
             assertThat(result.businessNumber()).isEqualTo("123-45-67890");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository).findByBusinessNumber("123-45-67890");
             verify(sellersRepository).findByUserId(testUserId);
             verify(sellersRepository).save(any(Sellers.class));
@@ -251,7 +251,7 @@ class SellerInfoServiceImplTest {
                     testRequest.closedDays()
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(testSeller));
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller));
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -263,7 +263,7 @@ class SellerInfoServiceImplTest {
             assertThat(result).isNotNull();
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository).findByBusinessNumber("123-45-67890");
             verify(sellersRepository).findByUserId(testUserId);
             verify(sellersRepository).save(any(Sellers.class));
@@ -273,7 +273,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 자신의 사업자번호로 다시 등록 (중복이 아님)")
         void upsertSellerInfo_SameUserBusinessNumber_Success() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(testSeller)); // 자신의 정보
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller));
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -285,7 +285,7 @@ class SellerInfoServiceImplTest {
             assertThat(result).isNotNull();
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository).findByBusinessNumber("123-45-67890");
             verify(sellersRepository).findByUserId(testUserId);
             verify(sellersRepository).save(any(Sellers.class));
@@ -295,7 +295,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 다른 사용자가 사용 중인 사업자번호")
         void upsertSellerInfo_BusinessNumberDuplicate() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(otherSeller));
 
             // when & then
@@ -304,7 +304,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("이미 등록된 사업자 등록번호입니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository).findByBusinessNumber("123-45-67890");
             verify(sellersRepository, never()).findByUserId(any());
             verify(sellersRepository, never()).save(any());
@@ -314,7 +314,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 존재하지 않는 사용자")
         void upsertSellerInfo_UserNotFound() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.empty());
+            given(userRepository.findById((testUserId))).willReturn(Optional.empty());
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
@@ -322,7 +322,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("존재하지 않는 사용자입니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository, never()).findByBusinessNumber(any());
             verify(sellersRepository, never()).findByUserId(any());
             verify(sellersRepository, never()).save(any());
@@ -332,7 +332,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 판매자 권한이 없는 사용자")
         void upsertSellerInfo_AccessDenied() {
             // given
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testBuyerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testBuyerUser));
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, testRequest))
@@ -340,7 +340,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("판매자 권한이 필요합니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository, never()).findByBusinessNumber(any());
             verify(sellersRepository, never()).findByUserId(any());
             verify(sellersRepository, never()).save(any());
@@ -362,7 +362,7 @@ class SellerInfoServiceImplTest {
                     "월요일,화요일"
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, invalidRequest))
@@ -370,7 +370,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository, never()).findByBusinessNumber(any());
         }
 
@@ -390,7 +390,7 @@ class SellerInfoServiceImplTest {
                     "MON,TUE"
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, partialRequest))
@@ -398,7 +398,7 @@ class SellerInfoServiceImplTest {
                     .hasMessage("운영 시작 시간과 종료 시간은 모두 입력하거나 모두 입력하지 않아야 합니다.");
 
             // verify
-            verify(userRepository).findById(UUID.fromString(testUserId));
+            verify(userRepository).findById((testUserId));
             verify(sellersRepository, never()).findByBusinessNumber(any());
         }
     }
@@ -417,7 +417,7 @@ class SellerInfoServiceImplTest {
                     .businessNumber("123-45-67890")
                     .build();
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(sellerWithNullUserId));
 
             // when & then
@@ -436,7 +436,7 @@ class SellerInfoServiceImplTest {
                     .businessNumber("123-45-67890")
                     .build();
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(sellerWithNullBoth));
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -469,7 +469,7 @@ class SellerInfoServiceImplTest {
                     null                                   // closedDays (선택)
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("987-65-43210")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -500,7 +500,7 @@ class SellerInfoServiceImplTest {
                     ""                                     // 빈 문자열
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("987-65-43210")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -565,7 +565,7 @@ class SellerInfoServiceImplTest {
                     "토요일,일요일"
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("111-11-11111")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -594,7 +594,7 @@ class SellerInfoServiceImplTest {
                     "월요일"
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("222-22-22222")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -623,7 +623,7 @@ class SellerInfoServiceImplTest {
                     null  // 휴무일 없음
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("333-33-33333")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -652,7 +652,7 @@ class SellerInfoServiceImplTest {
                     ""  // 빈 문자열
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("444-44-44444")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -681,7 +681,7 @@ class SellerInfoServiceImplTest {
                     "월요일,화요일,수요일,목요일"  // 4일 휴무
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("555-55-55555")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
@@ -710,7 +710,7 @@ class SellerInfoServiceImplTest {
                     "잘못된요일,화요일"  // 유효하지 않은 요일명
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, invalidRequest))
@@ -738,7 +738,7 @@ class SellerInfoServiceImplTest {
                     "월요일,잘못된요일,수요일"  // 중간에 잘못된 요일
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(testUserId, partiallyInvalidRequest))
@@ -762,7 +762,7 @@ class SellerInfoServiceImplTest {
                     "월요일, 화요일, 수요일"  // 공백 포함
             );
 
-            given(userRepository.findById(UUID.fromString(testUserId))).willReturn(Optional.of(testSellerUser));
+            given(userRepository.findById((testUserId))).willReturn(Optional.of(testSellerUser));
             given(sellersRepository.findByBusinessNumber("777-77-77777")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
