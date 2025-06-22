@@ -18,7 +18,8 @@ import javax.sql.DataSource;
                 "com.team5.catdogeats.addresses.repository",
                 "com.team5.catdogeats.orders.repository",
                 "com.team5.catdogeats.products.repository",
-                "com.team5.catdogeats.pets.repository"}
+                "com.team5.catdogeats.pets.repository",
+                "com.team5.catdogeats.payments.repository"}
 )
 
 public class JpaConfig {
