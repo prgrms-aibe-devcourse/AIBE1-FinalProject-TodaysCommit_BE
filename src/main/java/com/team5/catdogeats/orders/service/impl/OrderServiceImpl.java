@@ -139,10 +139,11 @@ public class OrderServiceImpl implements OrderService {
                 throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다");
             }
 
-            // 기본 재고 존재 여부만 확인 (실제 차감은 이벤트 리스너에서)
-            if (product.getStock() <= 0) {
+            // 재고가 요청 수량보다 부족한지 확인합니다.
+            if (product.getStock() < item.getQuantity()) {
                 throw new IllegalArgumentException(
-                        String.format("재고가 없는 상품입니다: 상품=%s", product.getTitle()));
+                        String.format("재고가 부족한 상품입니다: 상품=%s, 요청수량=%d, 현재고=%d",
+                                product.getTitle(), item.getQuantity(), product.getStock()));
             }
 
             // 주문 아이템 정보 수집
