@@ -1,10 +1,12 @@
 package com.team5.catdogeats.batch.mapper;
 
 import com.team5.catdogeats.batch.dto.WithdrawBuyerDTO;
+import com.team5.catdogeats.batch.dto.WithdrawSellerDTO;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
+import com.team5.catdogeats.users.repository.UserRepository;
 import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +29,9 @@ class UserWithdrawMapperTest {
 
     @Autowired
     private UserWithdrawMapper mapper;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private TestMapper testMapper;
@@ -105,10 +110,13 @@ class UserWithdrawMapperTest {
                 deletedAt
         );
 
-        WithdrawBuyerDTO user = testMapper.findByBuyersId(user1.getId());
-        assertThat(user.role()).isEqualTo("ROLE_WITHDRAWN");
-        assertThat(user.accountDisable()).isTrue();
-        assertThat(user.deletedAt()).isNotNull();
+        WithdrawBuyerDTO buyer = testMapper.findByBuyersId(user1.getId());
+        Users user = userRepository.findById(buyer.buyerId()).orElseThrow();
+        assertThat(user.getProvider()).isEqualTo("withdrawn_google");
+        assertThat(user.getProviderId()).isEqualTo("withdrawn_google-123");
+        assertThat(buyer.role()).isEqualTo("ROLE_WITHDRAWN");
+        assertThat(buyer.accountDisable()).isTrue();
+        assertThat(buyer.deletedAt()).isNotNull();
 
     }
 
@@ -122,9 +130,12 @@ class UserWithdrawMapperTest {
                 deletedAt
         );
 
-        Users user = testMapper.findBySellerId(user2.getId());
-        assertThat(user.getRole().toString()).isEqualTo("ROLE_WITHDRAWN");
-        assertThat(user.isAccountDisable()).isTrue();
-        assertThat(user.getDeletedAt()).isNotNull();
+        WithdrawSellerDTO seller = testMapper.findBySellerId(user2.getId());
+        Users user = userRepository.findById(seller.sellerId()).orElseThrow();
+        assertThat(user.getProvider()).isEqualTo("withdrawn_kakao");
+        assertThat(user.getProviderId()).isEqualTo("withdrawn_kakao-456");
+        assertThat(seller.role()).isEqualTo("ROLE_WITHDRAWN");
+        assertThat(seller.accountDisable()).isTrue();
+        assertThat(seller.deletedAt()).isNotNull();
     }
 }

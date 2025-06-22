@@ -1,7 +1,7 @@
 package com.team5.catdogeats.batch.mapper;
 
 import com.team5.catdogeats.batch.dto.WithdrawBuyerDTO;
-import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.batch.dto.WithdrawSellerDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -22,7 +22,7 @@ public interface TestMapper {
      WHERE u.id = #{userId}
        AND u.account_disable = TRUE
 """)
-    Users findBySellerId(@Param("userId") String user_id);
+    WithdrawSellerDTO findBySellerId(@Param("userId") String user_id);
 
     @Select("""
     SELECT u.id            AS user_id,

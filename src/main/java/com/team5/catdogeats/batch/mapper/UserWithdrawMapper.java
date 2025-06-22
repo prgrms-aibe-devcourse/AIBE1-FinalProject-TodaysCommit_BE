@@ -22,7 +22,9 @@ public interface UserWithdrawMapper {
     @Update("""
         <script>
         UPDATE users
-           SET role  = 'ROLE_WITHDRAWN'
+           SET role  = 'ROLE_WITHDRAWN',
+               provider = CONCAT('withdrawn_', provider),
+               provider_id = CONCAT('withdrawn_', provider_id)
          WHERE id = #{id};
 
         <choose>
