@@ -7,13 +7,13 @@ import com.team5.catdogeats.auth.repository.RefreshTokensRedisRepository;
 import com.team5.catdogeats.auth.service.JwtService;
 import com.team5.catdogeats.auth.service.RefreshTokenService;
 import com.team5.catdogeats.auth.service.RotateRefreshTokenService;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.global.exception.ExpiredTokenException;
 import com.team5.catdogeats.global.exception.InvalidTokenException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.NoSuchElementException;
@@ -27,7 +27,7 @@ public class RotateRefreshTokenServiceImpl implements RotateRefreshTokenService 
     private final RefreshTokenService refreshTokenService;
 
     @Override
-    @Transactional
+    @JpaTransactional
     public RotateTokenDTO RotateRefreshToken(String refreshTokenId) {
         RefreshTokens token = refreshTokenRepository.findById(refreshTokenId)
                 .orElseThrow(() -> new NoSuchElementException("Refresh token not found"));

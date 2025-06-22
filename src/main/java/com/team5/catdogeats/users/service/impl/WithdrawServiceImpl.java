@@ -1,6 +1,7 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.MybatisTransactional;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.mapper.UserMapper;
 import com.team5.catdogeats.users.service.WithdrawService;
@@ -11,7 +12,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -24,7 +24,7 @@ public class WithdrawServiceImpl implements WithdrawService {
     private final UserMapper userMapper;
 
     @Override
-    @Transactional
+    @MybatisTransactional
     public void withdraw(UserPrincipal userPrincipal) {
 
         log.debug("회원 탈퇴 시작");

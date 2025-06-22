@@ -1,5 +1,6 @@
 package com.team5.catdogeats.users.service.impl;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.exception.WithdrawnAccountDomainException;
@@ -8,7 +9,6 @@ import com.team5.catdogeats.users.service.UserDuplicateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -19,7 +19,7 @@ import java.time.ZoneOffset;
 public class UserDuplicateServiceImpl implements UserDuplicateService {
     private final UserRepository userRepository;
 
-    @Transactional
+    @JpaTransactional
     public Users isDuplicate(Users users) {
             return userRepository.findByProviderAndProviderId(users.getProvider(),
                                                             users.getProviderId())
