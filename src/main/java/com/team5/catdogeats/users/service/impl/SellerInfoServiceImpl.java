@@ -36,8 +36,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 정보 조회 - userId: {}", userId);
 
         // 사용자 존재 여부 및 판매자 권한 확인
-        validateSellerUser(userId);
-
+        validateSellerUserViaSellers(userId);
         return getSellerInfoInternal(userId);
     }
 
@@ -46,9 +45,9 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.vendorName());
 
         // 사용자 존재 여부 및 판매자 권한 확인
-        Users user = validateSellerUser(userId);
+        Users user = validateSellerUserViaSellers(userId);
 
-        // 운영시간 유효성 검증
+        //운영시간 유효성 검증
         validateOperatingHours(request);
         validateClosedDays(request.closedDays());
 
@@ -99,12 +98,23 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 판매자 사용자 검증 (존재 여부 + 판매자 권한)
      */
-    private Users validateSellerUser(String userId) {
+    private Users validateSellerUserViaSellers(String userId) {
+        // 1. Sellers에서 해당 userId로 조회
+        Optional<Sellers> sellerOpt = sellersRepository.findByUserId(userId);
 
-        Users user = userRepository.findById(UUID.fromString(userId))
-                .orElseThrow(() -> new EntityNotFoundException("사용자를 찾을 수 없습니다: " + userId));
+        if (sellerOpt.isEmpty()) {
+            log.warn("판매자 정보를 찾을 수 없습니다 - userId: {}", userId);
+            throw new EntityNotFoundException("판매자 정보를 찾을 수 없습니다: " + userId);
+        }
 
+        Sellers seller = sellerOpt.get();
+        Users user = seller.getUser(); // @OneToOne 관계로 Users 가져오기
 
+        if (user == null) {
+            throw new EntityNotFoundException("사용자 정보를 찾을 수 없습니다: " + userId);
+        }
+
+        // 2. 판매자 권한 확인
         if (user.getRole() != Role.ROLE_SELLER) {
             log.warn("판매자 권한이 없는 사용자의 접근 시도 - userId: {}, role: {}", userId, user.getRole());
             throw new AccessDeniedException("판매자 권한이 필요합니다");
@@ -113,6 +123,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 권한 확인 완료 - userId: {}", userId);
         return user;
     }
+
 
     /**
      * 사업자 등록번호 중복 검증
