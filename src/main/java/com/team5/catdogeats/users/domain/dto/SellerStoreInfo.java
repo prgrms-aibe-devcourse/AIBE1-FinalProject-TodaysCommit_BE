@@ -37,11 +37,12 @@ public record SellerStoreInfo(
         @Schema(description = "전체 상품 판매량", example = "1250")
         Long totalSalesQuantity,
 
-        @Schema(description = "판매량 정보 텍스트", example = "1300개 판매")
-        String salesInfoText,
+        @Schema(description = "평균 배송 소요일", example = "3.2")
+        Double avgDeliveryDays,
 
-        @Schema(description = "배송 정보 텍스트", example = "평균 3일 배송")
-        String deliveryInfoText
+        @Schema(description = "총 리뷰 수", example = "85")
+        Long totalReviews
+
 ) {
 
     /**
@@ -60,9 +61,9 @@ public record SellerStoreInfo(
         String operationStartYear = formatOperationStartYear(seller.getCreatedAt());
 
         // Orders 도메인의 SellerStoreStats 사용
-        Long totalSalesQuantity = stats != null ? stats.totalSalesCount() : 0L;
-        String salesInfoText = stats != null ? stats.getSalesDisplayText() : "판매 실적 없음";
-        String deliveryInfoText = stats != null ? stats.getDeliveryDisplayText() : "배송 정보 없음";
+        Long totalSalesCount = stats != null ? stats.totalSalesCount() : 0L;
+        Double avgDeliveryDays = stats != null ? stats.avgDeliveryDays() : 0.0;
+        Long totalReviews = stats != null ? stats.totalReviews() : 0L;
 
         return new SellerStoreInfo(
                 seller.getUserId() != null ? seller.getUserId().toString() : null,
@@ -72,9 +73,9 @@ public record SellerStoreInfo(
                 operatingHours,
                 operationStartYear,
                 totalProducts,
-                totalSalesQuantity,
-                salesInfoText,
-                deliveryInfoText
+                totalSalesCount,
+                avgDeliveryDays,
+                totalReviews
         );
     }
 
