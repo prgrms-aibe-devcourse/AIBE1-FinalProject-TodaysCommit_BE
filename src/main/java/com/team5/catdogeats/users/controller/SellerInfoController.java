@@ -1,5 +1,6 @@
 package com.team5.catdogeats.users.controller;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
@@ -10,7 +11,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,30 +34,43 @@ public class SellerInfoController {
     @Operation(
             summary = "판매자 정보 조회",
             description = """
-                    현재 개발 단계에서는 하드코딩된 사용자 ID를 사용합니다.
-                    
-                    **개발용 사용자 ID**: 2ceb807f-586f-4450-b470-d1ece7173749
-                    
-                    JWT 구현 완료 후에는 토큰에서 사용자 ID를 추출하여 사용합니다.
+                    JWT 토큰에서 사용자 정보를 추출하여 해당 판매자의 정보를 조회합니다.
+                    판매자 권한(ROLE_SELLER)이 필요합니다.
                     """
     )
     @GetMapping("/info")
-    public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo() {
-        // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
-        String tempUserId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
-        log.info("판매자 정보 조회 요청 - 개발용 하드코딩 ID: {}", tempUserId);
+    public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
-        SellerInfoResponse response = sellerInfoService.getSellerInfo(tempUserId);
-
-        if (response == null) {
-            return ResponseEntity.ok(
-                    ApiResponse.success(ResponseCode.SELLER_INFO_NOT_FOUND)
-            );
+        // 인증 정보 확인
+        if (userPrincipal == null) {
+            log.warn("인증되지 않은 사용자의 판매자 정보 조회 시도");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
         }
 
-        return ResponseEntity.ok(
-                ApiResponse.success(ResponseCode.SELLER_INFO_SUCCESS, response)
-        );
+        try {
+            log.info("판매자 정보 조회 요청 - provider: {}, providerId: {}",
+                    userPrincipal.provider(), userPrincipal.providerId());
+
+            SellerInfoResponse response = sellerInfoService.getSellerInfo(userPrincipal);
+
+            if (response == null) {
+                return ResponseEntity.ok(
+                        ApiResponse.success(ResponseCode.SELLER_INFO_NOT_FOUND)
+                );
+            }
+
+            return ResponseEntity.ok(
+                    ApiResponse.success(ResponseCode.SELLER_INFO_SUCCESS, response)
+            );
+
+        } catch (Exception e) {
+            log.error("판매자 정보 조회 중 오류 발생 - provider: {}, providerId: {}",
+                    userPrincipal.provider(), userPrincipal.providerId(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
     }
 
     /**
@@ -63,23 +79,26 @@ public class SellerInfoController {
     @Operation(
             summary = "판매자 정보 등록/수정",
             description = """
-                    현재 개발 단계에서는 하드코딩된 사용자 ID를 사용합니다.
-                    
-                    **개발용 사용자 ID**: 2ceb807f-586f-4450-b470-d1ece7173749
-                    
+                    JWT 토큰에서 사용자 정보를 추출하여 해당 판매자의 정보를 등록하거나 수정합니다.
+                    판매자 권한(ROLE_SELLER)이 필요합니다.
                     기존 정보가 있으면 수정, 없으면 신규 등록됩니다.
-                    JWT 구현 완료 후에는 토큰에서 사용자 ID를 추출하여 사용합니다.
                     """
     )
     @PatchMapping("/info")
     public ResponseEntity<ApiResponse<SellerInfoResponse>> upsertSellerInfo(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
             @Valid @RequestBody SellerInfoRequest request,
             BindingResult bindingResult) {
 
-        // TODO: JWT 토큰에서 사용자 ID 추출하는 로직으로 교체 예정
-        String tempUserId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
-        log.info("판매자 정보 등록/수정 요청 - 개발용 하드코딩 ID: {}, vendorName: {}",
-                tempUserId, request.vendorName());
+        // 인증 정보 확인
+        if (userPrincipal == null) {
+            log.warn("인증되지 않은 사용자의 판매자 정보 등록/수정 시도");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
+        }
+
+        log.info("판매자 정보 등록/수정 요청 - provider: {}, providerId: {}, vendorName: {}",
+                userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
         // 유효성 검증 오류 처리
         if (bindingResult.hasErrors()) {
@@ -87,26 +106,24 @@ public class SellerInfoController {
                     .map(error -> error.getField() + ": " + error.getDefaultMessage())
                     .collect(Collectors.joining(", "));
 
+            log.warn("판매자 정보 유효성 검증 실패 - errors: {}", errorMessage);
             return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
                     .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, errorMessage));
         }
 
-        SellerInfoResponse response = sellerInfoService.upsertSellerInfo(tempUserId, request);
+        try {
+            SellerInfoResponse response = sellerInfoService.upsertSellerInfo(
+                    userPrincipal, request);
 
-        return ResponseEntity.ok(
-                ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
-        );
+            return ResponseEntity.ok(
+                    ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
+            );
 
-    }
-
-    // TODO: JWT 구현 후 실제 토큰 추출 로직 추가 예정
-    /*
-    private String extractTokenFromHeader(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        } catch (Exception e) {
+            log.error("판매자 정보 등록/수정 중 오류 발생 - provider: {}, providerId: {}",
+                    userPrincipal.provider(), userPrincipal.providerId(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
-        throw new IllegalArgumentException("유효하지 않은 토큰입니다.");
     }
-    */
 }
