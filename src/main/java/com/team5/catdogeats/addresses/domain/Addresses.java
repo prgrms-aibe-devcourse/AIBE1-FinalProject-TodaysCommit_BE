@@ -5,9 +5,6 @@ import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
-
-import java.util.UUID;
 
 @Entity
 @Getter
@@ -106,7 +103,7 @@ public class Addresses extends BaseEntity {
     }
 
     // 해당 사용자의 주소인지 확인
-    public boolean isOwnedBy(UUID userId) {
+    public boolean isOwnedBy(String userId) {
         return this.user != null && this.user.getId().equals(userId);
     }
 

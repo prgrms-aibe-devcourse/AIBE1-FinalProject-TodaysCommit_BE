@@ -17,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +29,7 @@ public class RotateRefreshTokenServiceImpl implements RotateRefreshTokenService 
     @Override
     @Transactional
     public RotateTokenDTO RotateRefreshToken(String refreshTokenId) {
-        RefreshTokens token = refreshTokenRepository.findById(UUID.fromString(refreshTokenId))
+        RefreshTokens token = refreshTokenRepository.findById(refreshTokenId)
                 .orElseThrow(() -> new NoSuchElementException("Refresh token not found"));
 
         validateToken(refreshTokenId, token);

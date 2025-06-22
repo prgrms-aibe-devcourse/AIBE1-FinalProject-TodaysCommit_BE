@@ -1,11 +1,11 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.users.domain.Users;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.domain.enums.DayOfWeek;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
 import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
 import com.team5.catdogeats.users.exception.UserNotFoundException;
@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -98,7 +97,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      * 판매자 사용자 검증 (존재 여부 + 판매자 권한)
      */
     private Users validateSellerUser(String userId) {
-        Users user = userRepository.findById(UUID.fromString(userId))
+        Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
 
         if (user.getRole() != Role.ROLE_SELLER) {

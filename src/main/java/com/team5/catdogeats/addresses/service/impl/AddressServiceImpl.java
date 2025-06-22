@@ -2,7 +2,10 @@ package com.team5.catdogeats.addresses.service.impl;
 
 import com.team5.catdogeats.addresses.domain.Addresses;
 import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.*;
+import com.team5.catdogeats.addresses.dto.AddressListResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressRequestDto;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressUpdateRequestDto;
 import com.team5.catdogeats.addresses.exception.AddressAccessDeniedException;
 import com.team5.catdogeats.addresses.exception.AddressNotFoundException;
 import com.team5.catdogeats.addresses.exception.UserNotFoundException;
@@ -18,7 +21,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -163,23 +165,23 @@ public class AddressServiceImpl implements AddressService {
     // Private 헬퍼 메서드
 
     private Addresses findAddressById(String addressId) {
-        return addressRepository.findById(UUID.fromString(addressId))
+        return addressRepository.findById(addressId)
                 .orElseThrow(() -> new AddressNotFoundException("주소를 찾을 수 없습니다: " + addressId));
     }
 
     private Users findUserById(String userId) {
-        return userRepository.findById(UUID.fromString(userId))
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId));
     }
 
     private void validateUserExists(String userId) {
-        if (!userRepository.existsById(UUID.fromString(userId))) {
+        if (!userRepository.existsById(userId)) {
             throw new UserNotFoundException("사용자를 찾을 수 없습니다: " + userId);
         }
     }
 
     private void validateAddressOwnership(Addresses address, String userId) {
-        if (!address.isOwnedBy(UUID.fromString(userId))) {
+        if (!address.isOwnedBy(userId)) {
             throw new AddressAccessDeniedException("해당 주소에 접근할 권한이 없습니다.");
         }
     }

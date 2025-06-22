@@ -47,4 +47,6 @@ public interface AddressRepository extends JpaRepository<Addresses, UUID> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE Addresses a SET a.isDefault = true WHERE a.id = :addressId")
     void setAsDefault(@Param("addressId") String addressId);
+
+    Optional<Addresses> findById(String id);
 }

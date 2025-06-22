@@ -61,7 +61,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .toList();
         if (tokens.size() >= MAX_TOKENS_PER_USER) {
             for (int i = 0; i < tokens.size() - (MAX_TOKENS_PER_USER - 1); i++) {
-                refreshTokenRepository.deleteById(UUID.fromString(tokens.get(i).getId()));
+                refreshTokenRepository.deleteById(tokens.get(i).getId());
                 log.debug("Deleted refresh token: {}", tokens.get(i));
             }
         }

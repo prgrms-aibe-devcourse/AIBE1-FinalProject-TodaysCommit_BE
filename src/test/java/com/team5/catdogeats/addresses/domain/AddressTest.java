@@ -151,14 +151,14 @@ class AddressesTest {
     @DisplayName("주소 소유자 확인이 올바르게 동작한다")
     void isOwnedBy_WithCorrectUserId_ReturnsTrue() {
         // when & then
-        assertThat(testAddress.isOwnedBy(UUID.fromString(testUser.getId()))).isTrue();
+        assertThat(testAddress.isOwnedBy((testUser.getId()))).isTrue();
     }
 
     @Test
     @DisplayName("다른 사용자 ID로 소유자 확인 시 false를 반환한다")
     void isOwnedBy_WithDifferentUserId_ReturnsFalse() {
         // given
-        UUID differentUserId = UUID.randomUUID();
+        String differentUserId = UUID.randomUUID().toString();
 
         // when & then
         assertThat(testAddress.isOwnedBy(differentUserId)).isFalse();
@@ -184,7 +184,7 @@ class AddressesTest {
                 .build();
 
         // when & then
-        assertThat(addressWithNullUser.isOwnedBy(UUID.randomUUID())).isFalse();
+        assertThat(addressWithNullUser.isOwnedBy(UUID.randomUUID().toString())).isFalse();
     }
 
     @Test
