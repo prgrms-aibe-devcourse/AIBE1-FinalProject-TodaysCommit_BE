@@ -34,12 +34,12 @@ public interface PaymentRepository extends JpaRepository<Payments, UUID> {
     Optional<Payments> findByTossPaymentKey(String tossPaymentKey);
 
     /**
-     * 구매자 ID로 결제 내역 조회
+     * 구매자 ID로 결제 내역 조회 (수정된 부분)
      *
-     * @param buyersId 구매자 ID
-     * @return 결제 내역 목록
+     * @param buyersUserId 구매자 ID (엔티티 필드명에 맞게 파라미터명도 수정)
+     * @return 결제 내역 (Optional)
      */
-    Optional<Payments> findByBuyersId(UUID buyersId);
+    Optional<Payments> findByBuyersUserId(UUID buyersUserId);
 
     /**
      * 결제 상태별 결제 정보 존재 여부 확인
