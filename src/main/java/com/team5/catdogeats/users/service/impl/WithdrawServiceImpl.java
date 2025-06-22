@@ -31,13 +31,13 @@ public class WithdrawServiceImpl implements WithdrawService {
     @Transactional
     public void withdraw(UserPrincipal userPrincipal) {
 
-        log.info("회원 탈퇴 시작");
+        log.debug("회원 탈퇴 시작");
         try {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String firstAuthority = validate(authentication);
             log.debug("firstAuthority: {}", firstAuthority);
 
-            trigger(userPrincipal, firstAuthority);
+            withdrawWithRoleTrigger(userPrincipal, firstAuthority);
 
         } catch (BadSqlGrammarException e) {
             log.error("sql 에러", e);
@@ -45,20 +45,16 @@ public class WithdrawServiceImpl implements WithdrawService {
         }
     }
 
-    private void trigger(UserPrincipal userPrincipal, String firstAuthority) {
+    private void withdrawWithRoleTrigger(UserPrincipal userPrincipal, String firstAuthority) {
         userMapper.softDeleteUserByProviderAndProviderId(userPrincipal.provider(),
-                userPrincipal.providerId(), Role.ROLE_WITHDRAWN.toString());
+                                                        userPrincipal.providerId(),
+                                                        OffsetDateTime.now(ZoneOffset.UTC));
+        switch (firstAuthority) {
+            case "ROLE_BUYER" -> buyerMapper.softDeleteBuyerByProviderAndProviderId(userPrincipal.provider(),
+                                                userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
 
-        if (Objects.equals(firstAuthority, Role.ROLE_SELLER.toString())) {
-            log.debug("seller 탈퇴 시작");
-            sellerMapper.softDeleteSellerByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
-        }
-
-        if (Objects.equals(firstAuthority, Role.ROLE_BUYER.toString())) {
-            log.debug("buyer 탈퇴 시작");
-            buyerMapper.softDeleteBuyerByProviderAndProviderId(userPrincipal.provider(),
-                    userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
+            case "ROLE_SELLER" -> sellerMapper.softDeleteSellerByProviderAndProviderId(userPrincipal.provider(),
+                                                userPrincipal.providerId(), OffsetDateTime.now(ZoneOffset.UTC));
         }
     }
 
@@ -68,7 +64,7 @@ public class WithdrawServiceImpl implements WithdrawService {
                 .map(GrantedAuthority::getAuthority)
                 .orElseThrow(() -> new IllegalStateException("권한 정보가 없습니다."));
 
-        if (Objects.equals(firstAuthority, Role.ROLE_TEMP.toString())) {
+        if (Objects.equals(firstAuthority, Role.ROLE_TEMP.toString()) || Objects.equals(firstAuthority, Role.ROLE_WITHDRAWN.toString())) {
             throw new IllegalStateException("잘못된 권한을 가진 유저입니다.");
         }
         return firstAuthority;

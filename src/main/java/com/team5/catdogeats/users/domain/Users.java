@@ -5,6 +5,8 @@ import com.team5.catdogeats.users.domain.enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.OffsetDateTime;
+
 @Entity
 @Builder
 @Getter
@@ -35,9 +37,17 @@ public class Users extends BaseEntity {
     @Builder.Default
     private boolean accountDisable = false;
 
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+
     public void updateRole(Role role) {
         this.role = role;
     }
 
+    public void reactivationAccount() {
+        this.accountDisable = false;
+        this.deletedAt = null;
+    }
 
 }

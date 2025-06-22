@@ -21,13 +21,14 @@ public class PreventDuplicateLoginFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String requestURI = request.getRequestURI();
+        String url = request.getContextPath() + "/?error=already_authenticated";
         if (requestURI.startsWith("/oauth2/authorization/") ||
                 requestURI.startsWith("/login/oauth2/code/")) {
 
             // 이미 인증된 사용자인지 확인
             String token = jwtUtils.extractToken(request);
             if (StringUtils.hasText(token) && jwtUtils.validateToken(token)) {
-                response.sendRedirect("/?error=already_authenticated");
+                response.sendRedirect(url);
                 return;
             }
         }

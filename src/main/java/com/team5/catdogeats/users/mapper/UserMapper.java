@@ -3,6 +3,8 @@ package com.team5.catdogeats.users.mapper;
 import com.team5.catdogeats.users.domain.Users;
 import org.apache.ibatis.annotations.*;
 
+import java.time.OffsetDateTime;
+
 @Mapper
 public interface UserMapper {
     @Select("""
@@ -12,16 +14,14 @@ public interface UserMapper {
 
     @Update("""
     UPDATE users
-       SET account_disable = true,
-           role            = #{role}
-     WHERE provider        = #{provider}
-       AND provider_id     = #{providerId}
+       SET account_disable = true , deled_at = #{now}
+       WHERE  provider = #{provider}
+       AND provider_id = #{providerId}
 """)
     int softDeleteUserByProviderAndProviderId(
             @Param("provider")   String provider,
             @Param("providerId") String providerId,
-            @Param("role")       String role   // enum → String 도 OK
-    );
+            @Param("now") OffsetDateTime now);
 
 
     @Insert("""
