@@ -42,6 +42,7 @@ public enum ResponseCode {
     SELLER_STORE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 판매자 스토어입니다."),
     SELLER_STORE_PRODUCTS_SUCCESS(HttpStatus.OK, "판매자 상품 목록 조회 성공"),
     INVALID_FILTER_VALUE(HttpStatus.BAD_REQUEST, "유효하지 않은 필터 값입니다."),
+    VENDOR_NAME_DUPLICATE(HttpStatus.CONFLICT, "이미 사용 중인 상점명입니다."),
 
     // === 상품 관련 응답 ===
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "해당 상품을 찾을 수 없습니다."),

@@ -37,6 +37,13 @@ public class SellerInfoExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(DataIntegrityViolationException e) {
         log.warn("데이터 무결성 위반 - Message: {}", e.getMessage());
 
+
+        // 벤더명 중복인지 확인
+        if (e.getMessage() != null && e.getMessage().contains("상점명")) {
+            return ResponseEntity.status(ResponseCode.VENDOR_NAME_DUPLICATE.getStatus())
+                    .body(ApiResponse.error(ResponseCode.VENDOR_NAME_DUPLICATE));
+        }
+
         // 사업자 등록번호 중복인지 확인
         if (e.getMessage() != null && e.getMessage().contains("사업자 등록번호")) {
             return ResponseEntity.status(ResponseCode.BUSINESS_NUMBER_DUPLICATE.getStatus())

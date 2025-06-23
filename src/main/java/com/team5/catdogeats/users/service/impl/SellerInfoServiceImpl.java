@@ -94,8 +94,13 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private SellerInfoResponseDTO upsertSellerInfoInternal(Users user, SellerInfoRequestDTO request) {
         String userId = user.getId();
 
+
+        // 벤더명 중복 체크
+        validateVendorNameDuplication(userId, request.vendorName());
+
         // 사업자 등록번호 중복 체크
         validateBusinessNumberDuplication(userId, request.businessNumber());
+
 
         // 기존 판매자 정보 조회
         Optional<Sellers> existingSellerOpt = sellersRepository.findByUserId(userId);
@@ -172,6 +177,31 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         } catch (IllegalArgumentException e) {
             log.warn("유효하지 않은 휴무일 입력 - closedDays: {}, error: {}", closedDays, e.getMessage());
             throw new IllegalArgumentException("유효하지 않은 요일이 포함되어 있습니다: " + closedDays, e);
+        }
+    }
+
+
+    private void validateVendorNameDuplication(String userId, String vendorName) {
+        Optional<Sellers> existingSeller = sellersRepository.findByVendorName(vendorName);
+
+        if (existingSeller.isPresent()) {
+            Sellers seller = existingSeller.get();
+
+            // Null 체크
+            String existingUserId = seller.getUserId();
+            if (existingUserId == null) {
+                // userId가 null인 경우 Users 관계에서 가져오기
+                if (seller.getUser() != null) {
+                    existingUserId = String.valueOf(seller.getUser().getId());
+                }
+            }
+
+            // 다른 사용자가 사용 중인지 확인
+            if (existingUserId != null && !existingUserId.equals(userId)) {
+                log.warn("벤더명 중복 - vendorName: {}, 요청자: {}, 기존사용자: {}",
+                        vendorName, userId, existingUserId);
+                throw new DataIntegrityViolationException("이미 사용 중인 상점명입니다: " + vendorName);
+            }
         }
     }
 
