@@ -39,7 +39,7 @@ public class CustomOAuth2UserServiceImpl implements OAuth2UserService<OAuth2User
             Users savedUsers = userFactory.createFromOAuth(dto);
             Users users = userDuplicateService.isDuplicate(savedUsers);
             return new DefaultOAuth2User(
-                    Collections.singleton(new SimpleGrantedAuthority(savedUsers.getRole().toString())),
+                    Collections.singleton(new SimpleGrantedAuthority(users.getRole().toString())),
                     oAuth2User.getAttributes(),
                     dto.userNameAttribute()
             );
