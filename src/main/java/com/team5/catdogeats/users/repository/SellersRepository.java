@@ -8,10 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
-public interface SellersRepository extends JpaRepository<Sellers, UUID> {
+public interface SellersRepository extends JpaRepository<Sellers, String> {
 
     /**
      * 사용자 ID로 판매자 정보 조회

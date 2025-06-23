@@ -7,9 +7,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
-import java.util.UUID;
 
-public interface BuyerRepository extends JpaRepository<Buyers, UUID> {
+public interface BuyerRepository extends JpaRepository<Buyers, String> {
 
     @Query("""
       SELECT new com.team5.catdogeats.users.domain.dto.BuyerDTO(
