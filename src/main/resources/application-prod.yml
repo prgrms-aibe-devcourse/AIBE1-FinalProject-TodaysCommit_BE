@@ -1,4 +1,12 @@
+batch:
+  withdrawn:
+    cron: "${WITHDRAW_CRON:0 30 2 * * ?}"
+    chunk-size: ${WITHDRAW_CHUNK:1000}
 spring:
+  batch:
+    jdbc:
+      initialize-schema: always
+
   # 데이터베이스 연결 설정
   datasource: # 여러 DBaaS에서 가져오기
     url: ${DB_URL} # 데이터베이스 URL
@@ -68,5 +76,42 @@ spring:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     open-in-view: false # OSIV 비활성화 (API 서버라면 false 추천)\
 
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: 14972
+      password: ${REDIS_PASSWORD}
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        acknowledge-mode: auto
+        retry:
+          enabled: true
+
 mybatis:
   type-aliases-package: com.team5.catdogeats.mybatis
+
+jwt:
+  secret: ${JWT_SECRET_KEY}
+  expiration: 1800000
+
+  cookie:
+    secure: true
+    same-site: Strict
+    http-only: true
+    max-age: 3600
+    domain: null
+    path: /
+
+logging:
+  level:
+    com.team5.catdogeats: debug

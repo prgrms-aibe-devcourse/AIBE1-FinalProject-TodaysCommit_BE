@@ -6,8 +6,6 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "chat_rooms", uniqueConstraints = {
         @UniqueConstraint(name = "uk_chat_rooms", columnNames = {"buyer_id", "seller_id"})
@@ -22,7 +20,7 @@ public class ChatRooms extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id", nullable = false,

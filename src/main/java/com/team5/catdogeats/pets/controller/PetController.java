@@ -1,5 +1,6 @@
 package com.team5.catdogeats.pets.controller;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.pets.domain.dto.*;
@@ -9,13 +10,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/buyers")
@@ -27,9 +28,9 @@ public class PetController {
 
     @Operation(summary = "펫 등록", description = "새로운 펫 정보를 등록합니다.")
     @PostMapping("/pet")
-    public ResponseEntity<ApiResponse<Void>> registerPet(@RequestBody @Valid @Parameter(description = "등록할 펫 정보", required = true) PetCreateRequestDto dto) {
+    public ResponseEntity<ApiResponse<Void>> registerPet(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody @Valid @Parameter(description = "등록할 펫 정보", required = true) PetCreateRequestDto dto) {
         try {
-            UUID petId = petService.registerPet(dto);
+            String petId = petService.registerPet(userPrincipal, dto);
             return ResponseEntity
                     .created(URI.create("/v1/buyers/pet/" + petId))
                     .body(ApiResponse.success(ResponseCode.CREATED));
@@ -44,12 +45,25 @@ public class PetController {
         }
     }
 
-    @Operation(summary = "내 펫 목록 조회", description = "로그인한 사용자의 펫 목록을 조회합니다.")
+    @Operation(summary = "내 펫 목록 조회 (페이징)", description = "로그인한 사용자의 펫 목록을 조회합니다.")
     @GetMapping("/pet")
-    public ResponseEntity<ApiResponse<List<PetResponseDto>>> getMyPets() {
+    public ResponseEntity<ApiResponse<PageResponseDto<PetResponseDto>>> getMyPets(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size) {
         try {
-            List<PetResponseDto> pets = petService.getMyPets();
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, pets));
+            Page<PetResponseDto> pets = petService.getMyPets(userPrincipal, page, size);
+
+            // Page 객체를 PageResponseDto로 변환
+            PageResponseDto<PetResponseDto> petPageResponse = new PageResponseDto<>(
+                    pets.getContent(),
+                    pets.getNumber(),
+                    pets.getSize(),
+                    pets.getTotalElements(),
+                    pets.getTotalPages(),
+                    pets.isLast()
+            );
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, petPageResponse));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())

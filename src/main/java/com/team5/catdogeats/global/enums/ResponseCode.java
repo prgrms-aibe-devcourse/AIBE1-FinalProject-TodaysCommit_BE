@@ -18,9 +18,11 @@ public enum ResponseCode {
     ENTITY_NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 리소스를 찾을 수 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
     INVALID_TYPE_VALUE(HttpStatus.BAD_REQUEST, "요청 값의 타입이 올바르지 않습니다."),
+    INVALID_TOKEN(HttpStatus.BAD_REQUEST, "엑세스 토큰이 만료되지 않았습니다."),
     ACCESS_DENIED(HttpStatus.FORBIDDEN, "접근 권한이 없습니다."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "인증되지 않은 사용자입니다."),
     TIMEOUT(HttpStatus.REQUEST_TIMEOUT, "요청을 기다리다 서버에서 타임아웃하였습니다."),
+    USER_SOFT_DELETE_SUCCESS(HttpStatus.OK, "유저 정보가 성공적으로 비활성화 처리 되었습니다."),
 
     // === 사용자 관련 오류 ===
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다."),

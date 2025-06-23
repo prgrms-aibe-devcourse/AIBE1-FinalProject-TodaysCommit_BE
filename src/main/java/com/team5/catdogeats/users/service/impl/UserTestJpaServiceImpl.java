@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -15,7 +14,7 @@ public class UserTestJpaServiceImpl implements UserTestJpaService {
     private final UserRepository userRepository;
 
     @Override
-    public Users JpaTest(UUID id) {
+    public Users JpaTest(String id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new NoSuchElementException("유저 없음"));
     }

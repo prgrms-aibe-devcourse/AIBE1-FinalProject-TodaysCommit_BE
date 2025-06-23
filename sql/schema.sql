@@ -50,6 +50,8 @@ CREATE TABLE addresses (
                            postal_code VARCHAR(20) NOT NULL ,                  -- 우편번호
                            detail_address VARCHAR(200) NOT NULL ,              -- 상세 주소 (빌딩명, 호수 등)
                            phone_number VARCHAR(30) NOT NULL ,
+                           address_type VARCHAR(20) NOT NULL DEFAULT 'PERSONAL',
+                           is_default BOOLEAN NOT NULL DEFAULT FALSE,
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                            CONSTRAINT fk_addresses_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE

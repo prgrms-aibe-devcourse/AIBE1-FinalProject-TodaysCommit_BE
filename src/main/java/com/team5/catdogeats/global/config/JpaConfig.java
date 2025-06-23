@@ -14,7 +14,13 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableJpaRepositories(
-        basePackages = {"com.team5.catdogeats.users.repository", "com.team5.catdogeats.pets.repository", "com.team5.catdogeats.support.domain.notice.repository", "com.team5.catdogeats.storage.domain.repository"},
+        basePackages = {"com.team5.catdogeats.users.repository",
+                "com.team5.catdogeats.addresses.repository",
+                "com.team5.catdogeats.pets.repository",
+                "com.team5.catdogeats.products.repository",
+                "com.team5.catdogeats.users.repository",
+                "com.team5.catdogeats.support.domain.notice.repository",
+                "com.team5.catdogeats.storage.domain.repository"},
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "jpaTransactionManager"
 )
@@ -54,7 +60,7 @@ public class JpaConfig {
         }
 
 
-        @Bean
+    @Bean(name = {"jpaTransactionManager", "transactionManager"})
     public PlatformTransactionManager jpaTransactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }
