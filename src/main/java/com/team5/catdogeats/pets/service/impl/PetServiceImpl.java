@@ -1,6 +1,7 @@
 package com.team5.catdogeats.pets.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.pets.domain.Pets;
 import com.team5.catdogeats.pets.domain.dto.PetCreateRequestDto;
 import com.team5.catdogeats.pets.domain.dto.PetDeleteRequestDto;
@@ -11,7 +12,6 @@ import com.team5.catdogeats.pets.service.PetService;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -55,7 +55,7 @@ public class PetServiceImpl implements PetService {
                 .toList();
     }
 
-    @Transactional
+    @JpaTransactional
     @Override
     public void updatePet(PetUpdateRequestDto dto) {
         Pets pet = petRepository.findById(dto.petId())

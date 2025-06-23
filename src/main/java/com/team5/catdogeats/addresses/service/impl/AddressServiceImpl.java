@@ -12,6 +12,7 @@ import com.team5.catdogeats.addresses.exception.UserNotFoundException;
 import com.team5.catdogeats.addresses.repository.AddressRepository;
 import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.repository.BuyerRepository;
@@ -68,7 +69,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public AddressResponseDto createAddress(AddressRequestDto requestDto, UserPrincipal userPrincipal) {
         String userId = findUserIdByPrincipal(userPrincipal);
 
@@ -105,7 +106,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public AddressResponseDto updateAddress(String addressId, AddressUpdateRequestDto updateDto, UserPrincipal userPrincipal) {
         String userId = findUserIdByPrincipal(userPrincipal);
 
@@ -137,7 +138,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public void deleteAddress(String addressId, UserPrincipal userPrincipal) {
         // UserPrincipal에서 userId 조회
         String userId = findUserIdByPrincipal(userPrincipal);
@@ -150,7 +151,7 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public AddressResponseDto setDefaultAddress(String addressId, UserPrincipal userPrincipal) {
         // UserPrincipal에서 userId 조회
         String userId = findUserIdByPrincipal(userPrincipal);
