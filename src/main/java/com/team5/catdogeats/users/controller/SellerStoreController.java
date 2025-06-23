@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Slf4j
 @RestController
-@RequestMapping("/v1/sellers")
+@RequestMapping("/v1/users")
 @RequiredArgsConstructor
 @Tag(name = "판매자 스토어", description = "판매자 스토어 페이지 조회 API")
 public class SellerStoreController {
