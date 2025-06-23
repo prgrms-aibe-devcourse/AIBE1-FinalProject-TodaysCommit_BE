@@ -1,4 +1,4 @@
-package com.team5.catdogeats.chats.repository;
+package com.team5.catdogeats.chats.mongo.repository;
 
 import com.team5.catdogeats.chats.domain.mapping.ChatMessages;
 import org.springframework.data.domain.Pageable;

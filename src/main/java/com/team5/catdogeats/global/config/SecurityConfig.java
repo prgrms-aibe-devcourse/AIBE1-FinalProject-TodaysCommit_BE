@@ -79,6 +79,7 @@ public class SecurityConfig {
                             .requestMatchers("/error").permitAll()
                             .requestMatchers("/.well-known/**").permitAll()
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                            .requestMatchers("/ws/**").permitAll()
                             .requestMatchers("/oauth2/authorization/google/**").permitAll()
                             .requestMatchers("/oauth2/authorization/kakao/**").permitAll()
                             .requestMatchers("/oauth2/authorization/naver/**").permitAll()

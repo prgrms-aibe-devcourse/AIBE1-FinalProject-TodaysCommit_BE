@@ -27,6 +27,8 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
             HttpServletRequest httpRequest = servletRequest.getServletRequest();
 
             String token = jwtUtils.extractToken(httpRequest);
+            log.debug("  – CONNECT 토큰 = {}", token);
+
             if(StringUtils.hasText(token) && jwtUtils.validateToken(token)) {
                 attributes.put("token", token);
                 return true;
