@@ -98,7 +98,8 @@ class ModifyUserRoleServiceImplTest {
         assertNotNull(newAuth);
         assertTrue(newAuth.isAuthenticated());
         assertEquals("google", ((OAuth2AuthenticationToken)newAuth).getAuthorizedClientRegistrationId());
-        String expectedAuthority = dto.toString();
+        String expectedAuthority = dto.role().toString();
+        log.info("expectedAuthority: {}", expectedAuthority);
         assertTrue(newAuth.getAuthorities().stream()
                         .anyMatch(a -> a.getAuthority().equals(expectedAuthority)),
                 () -> "Expected authority " + expectedAuthority + " but was " +
