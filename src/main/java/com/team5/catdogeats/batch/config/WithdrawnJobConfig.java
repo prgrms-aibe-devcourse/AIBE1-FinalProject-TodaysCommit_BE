@@ -114,12 +114,12 @@ public class    WithdrawnJobConfig {
     }
 
     @Bean
-    public Step cleanupRedisStep(JobRepository jobRepo, PlatformTransactionManager txManager) {
+    public Step cleanupRedisStep(JobRepository jobRepo, PlatformTransactionManager batchTransactionManager) {
         return new StepBuilder("cleanupRedisStep", jobRepo)
                 .tasklet((contribution, context) -> {
                     redisTemplate.delete("withdrawBatchTargets");
                     return RepeatStatus.FINISHED;
-                }, txManager)
+                }, batchTransactionManager)
                 .build();
     }
 
