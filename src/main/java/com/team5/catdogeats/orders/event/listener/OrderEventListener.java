@@ -63,7 +63,7 @@ public class OrderEventListener {
      * @param event 주문 생성 이벤트
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void handleStockReservation(OrderCreatedEvent event) {
         String orderId = event.getOrderId();
         log.info("재고 예약 처리 시작: orderId={}, orderNumber={}",
@@ -123,7 +123,7 @@ public class OrderEventListener {
      * @param orderId 주문 ID (String 타입)
      * @param errorMessage 오류 메시지
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void performStockReservationCompensation(String orderId, String errorMessage) {
         try {
             Orders order = orderRepository.findById(orderId)
@@ -148,7 +148,7 @@ public class OrderEventListener {
      * @param event 주문 생성 이벤트
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentInfoCreation(OrderCreatedEvent event) {
         String orderId = event.getOrderId();
         log.info("결제 정보 생성 처리 시작: orderId={}, orderNumber={}",

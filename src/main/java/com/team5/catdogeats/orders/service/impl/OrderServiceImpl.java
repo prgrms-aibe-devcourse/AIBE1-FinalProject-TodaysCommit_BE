@@ -60,7 +60,7 @@ public class OrderServiceImpl implements OrderService {
      * 4. 이벤트 리스너들이 비동기로 후속 작업 처리
      */
     @Override
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
         log.info("주문 생성 시작 (EDA + String ID 버전): provider={}, providerId={}, 상품 개수={}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());

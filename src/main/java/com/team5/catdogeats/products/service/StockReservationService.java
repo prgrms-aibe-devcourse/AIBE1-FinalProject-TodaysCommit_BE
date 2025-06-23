@@ -15,6 +15,7 @@ import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
@@ -48,7 +49,7 @@ public class StockReservationService {
      * @return 생성된 재고 예약
      * @throws IllegalArgumentException 재고 부족 시
      */
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     @Retryable(value = {OptimisticLockingFailureException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 100))
@@ -79,7 +80,7 @@ public class StockReservationService {
      * @param reservationRequests 예약 요청 목록
      * @return 생성된 예약 목록
      */
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     @Retryable(value = {OptimisticLockingFailureException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 100))
@@ -134,7 +135,7 @@ public class StockReservationService {
      * @param productId 상품 ID (String 타입)
      * @return 재고 가용성 정보
      */
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = "jpaTransactionManager", readOnly = true)
     public StockAvailabilityDto getStockAvailability(String productId) {
         // 실제 재고 조회
         Products product = productRepository.findById(productId)
@@ -159,7 +160,7 @@ public class StockReservationService {
      * @param orderId 주문 ID (String 타입)
      * @return 확정된 예약 목록
      */
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public List<StockReservation> confirmReservations(String orderId) {
         log.info("재고 예약 확정 시작: orderId={}", orderId);
 
@@ -184,7 +185,7 @@ public class StockReservationService {
      * @param orderId 주문 ID (String 타입)
      * @return 차감 처리된 예약 목록
      */
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public List<StockReservation> decrementConfirmedStock(String orderId) {
         log.info("확정된 재고 차감 시작: orderId={}", orderId);
 
@@ -231,7 +232,7 @@ public class StockReservationService {
      * @param orderId 주문 ID (String 타입)
      * @return 취소된 예약 목록
      */
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public List<StockReservation> cancelReservations(String orderId) {
         log.info("재고 예약 취소 시작: orderId={}", orderId);
 
@@ -260,7 +261,7 @@ public class StockReservationService {
      * 재고 예약 만료 처리
      * @param reservationId 예약 ID
      */
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public void expireReservation(UUID reservationId) {
         log.info("재고 예약 만료 처리 시작: reservationId={}", reservationId);
 
@@ -285,7 +286,7 @@ public class StockReservationService {
      * 만료된 예약들을 일괄 처리
      * @return 처리된 예약 개수
      */
-    @Transactional
+    @Transactional(transactionManager = "jpaTransactionManager")
     public int processExpiredReservations() {
         ZonedDateTime currentTime = ZonedDateTime.now();
         int expiredCount = stockReservationRepository.bulkExpireReservations(currentTime);
@@ -304,7 +305,7 @@ public class StockReservationService {
      * @param orderId 주문 ID (String 타입)
      * @return 활성 예약 목록
      */
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = "jpaTransactionManager", readOnly = true)
     public List<StockReservation> getActiveReservationsByOrder(String orderId) {
         return stockReservationRepository.findByOrderId(orderId).stream()
                 .filter(StockReservation::isActive)
@@ -316,7 +317,7 @@ public class StockReservationService {
      * @param productId 상품 ID (String 타입)
      * @return 활성 예약 목록
      */
-    @Transactional(readOnly = true)
+    @Transactional(transactionManager = "jpaTransactionManager", readOnly = true)
     public List<StockReservation> getActiveReservationsByProduct(String productId) {
         return stockReservationRepository.findActiveReservationsByProductId(productId);
     }

@@ -41,6 +41,7 @@ public class TossPaymentsClientConfig {
             public void apply(RequestTemplate template) {
                 // 1. Authorization 헤더 설정 (Basic Authentication)
                 String secretKey = tossPaymentsProperties.getSecretKey();
+                log.info("### Toss Payments Secret Key in use: [{}] ###", secretKey);
                 String credentials = secretKey + ":"; // 시크릿 키 뒤에 콜론 추가
                 String encodedCredentials = Base64.getEncoder()
                         .encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
