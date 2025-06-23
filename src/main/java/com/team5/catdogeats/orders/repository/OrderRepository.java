@@ -79,7 +79,4 @@ public interface OrderRepository extends JpaRepository<Orders, String> {
      */
     boolean existsByUserAndOrderNumber(Users user, Long orderNumber);
 
-    // TODO: 향후 추가될 수 있는 메서드들
-    // List<Orders> findByUserAndCreatedAtBetween(Users user, ZonedDateTime start, ZonedDateTime end);
-    // Page<Orders> findByOrderStatusIn(List<OrderStatus> statuses, Pageable pageable);
 }

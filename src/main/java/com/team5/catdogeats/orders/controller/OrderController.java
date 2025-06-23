@@ -18,7 +18,6 @@ import java.util.NoSuchElementException;
 
 /**
  * 구매자 주문 관리 컨트롤러 (보안 개선 버전)
- *
  * JWT 인증을 통한 사용자 식별로 보안성을 강화했습니다.
  * ApiResponse 컨벤션을 적용하여 일관된 응답 형식을 제공합니다.
  */
@@ -44,7 +43,7 @@ public class OrderController {
 
         try {
             // UserPrincipal에서 사용자 정보 추출 (provider + providerId로 사용자 식별)
-            String userIdentifier = userPrincipal.provider() + ":" + userPrincipal.providerId();
+            //String userIdentifier = userPrincipal.provider() + ":" + userPrincipal.providerId();
 
             log.info("주문 생성 요청: userProvider={}, providerId={}, 상품 개수={}",
                     userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());

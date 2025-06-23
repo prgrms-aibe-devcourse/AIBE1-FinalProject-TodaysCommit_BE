@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 결제 처리 컨트롤러
- *
  * Toss Payments 콜백 및 결제 관련 API를 처리합니다.
  * 주요 기능:
  * - 결제 성공 콜백 처리
@@ -32,7 +31,6 @@ public class PaymentController {
 
     /**
      * 결제 성공 콜백 처리
-     *
      * Toss Payments에서 결제 성공 시 리디렉션되는 엔드포인트입니다.
      * URL 쿼리 파라미터로 paymentKey, orderId, amount를 전달받아
      * 최종 결제 승인을 진행합니다.
@@ -86,7 +84,6 @@ public class PaymentController {
 
     /**
      * 결제 실패 콜백 처리
-     *
      * Toss Payments에서 결제 실패 시 리디렉션되는 엔드포인트입니다.
      *
      * @param code 실패 코드

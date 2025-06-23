@@ -10,7 +10,6 @@ import java.time.ZonedDateTime;
 
 /**
  * 결제 승인 응답 DTO
- *
  * 클라이언트에게 반환하는 결제 승인 완료 정보입니다.
  * Toss Payments API 응답을 가공하여 필요한 정보만 포함합니다.
  */

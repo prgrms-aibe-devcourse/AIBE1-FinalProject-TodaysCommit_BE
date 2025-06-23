@@ -4,7 +4,6 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.TossPaymentsConfig;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
-import com.team5.catdogeats.orders.domain.mapping.OrderItems;
 import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
 import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
 import com.team5.catdogeats.orders.event.OrderCreatedEvent;
@@ -33,7 +32,6 @@ import java.util.concurrent.ThreadLocalRandom;
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
- *
  * 핵심 변경사항:
  * 1. 재고 차감 로직을 이벤트 리스너로 이동
  * 2. ApplicationEventPublisher를 통한 OrderCreatedEvent 발행
@@ -81,7 +79,7 @@ public class OrderServiceImpl implements OrderService {
         Orders savedOrder = createAndSaveOrder(user, totalPrice);
 
         // 6. 주문 아이템들 생성 및 저장
-        List<OrderItems> orderItems = createAndSaveOrderItems(savedOrder, orderItemInfos);
+        //List<OrderItems> orderItems = createAndSaveOrderItems(savedOrder, orderItemInfos);
 
         // 7. 토스 페이먼츠 응답 생성
         OrderCreateResponse response = buildTossPaymentResponse(savedOrder, request.getPaymentInfo());
@@ -119,7 +117,6 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 주문 상품들 검증 및 정보 수집 (EDA 전환 + String ID 타입: 재고 차감 로직 제거)
-     *
      * 기존 validateOrderItems에서 재고 차감 부분을 제거하고,
      * 상품 존재 여부와 기본 검증만 수행합니다.
      * 실제 재고 차감은 StockEventListener에서 처리됩니다.
@@ -197,33 +194,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 아이템들 생성 및 저장 (String ID 타입 적용)
-     */
-    private List<OrderItems> createAndSaveOrderItems(Orders order, List<OrderItemInfo> orderItemInfos) {
-        List<OrderItems> orderItems = new ArrayList<>();
-
-        for (OrderItemInfo info : orderItemInfos) {
-            // Products ID는 String 타입이므로 직접 사용
-            Products product = productRepository.findById(info.getProductId())
-                    .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + info.getProductId()));
-
-            OrderItems orderItem = OrderItems.builder()
-                    .orders(order)
-                    .products(product)
-                    .quantity(info.getQuantity())
-                    .price(info.getUnitPrice())
-                    .build();
-
-            orderItems.add(orderItem);
-        }
-
-        log.debug("주문 아이템 생성 완료: 아이템 개수={}", orderItems.size());
-        return orderItems;
-    }
-
-    /**
      * OrderCreatedEvent 발행 (String ID 타입 적용)
-     *
      * 이벤트 리스너들이 다음 작업들을 비동기로 처리합니다:
      * - StockEventListener: 재고 차감
      * - PaymentEventListener: 결제 정보 생성
