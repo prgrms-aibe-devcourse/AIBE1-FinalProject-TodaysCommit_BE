@@ -182,27 +182,13 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
 
     private void validateVendorNameDuplication(String userId, String vendorName) {
-        Optional<Sellers> existingSeller = sellersRepository.findByVendorName(vendorName);
-
-        if (existingSeller.isPresent()) {
-            Sellers seller = existingSeller.get();
-
-            // Null 체크
-            String existingUserId = seller.getUserId();
-            if (existingUserId == null) {
-                // userId가 null인 경우 Users 관계에서 가져오기
-                if (seller.getUser() != null) {
-                    existingUserId = String.valueOf(seller.getUser().getId());
-                }
-            }
-
-            // 다른 사용자가 사용 중인지 확인
-            if (existingUserId != null && !existingUserId.equals(userId)) {
-                log.warn("벤더명 중복 - vendorName: {}, 요청자: {}, 기존사용자: {}",
-                        vendorName, userId, existingUserId);
-                throw new DataIntegrityViolationException("이미 사용 중인 상점명입니다: " + vendorName);
-            }
-        }
+        sellersRepository.findByVendorName(vendorName)
+                .filter(seller -> !userId.equals(seller.getUserId()))
+                .ifPresent(seller -> {
+                    log.warn("상점명 중복 시도 - vendorName: {}, 요청자: {}, 기존사용자: {}",
+                            vendorName, userId, seller.getUserId());
+                    throw new DataIntegrityViolationException("이미 사용 중인 상점명입니다: " + vendorName);
+                });
     }
 
     /**
