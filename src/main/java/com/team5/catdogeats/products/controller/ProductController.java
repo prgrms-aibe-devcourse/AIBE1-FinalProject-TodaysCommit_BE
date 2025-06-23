@@ -3,7 +3,6 @@ package com.team5.catdogeats.products.controller;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
-import com.team5.catdogeats.pets.domain.dto.PetDeleteRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductCreateRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductDeleteRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
