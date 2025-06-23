@@ -29,7 +29,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private final UserRepository userRepository;
 
     @Override
-
     public SellerInfoResponseDTO getSellerInfo(UserPrincipal userPrincipal) {
         log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());

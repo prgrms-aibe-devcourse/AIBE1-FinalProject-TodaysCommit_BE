@@ -1,6 +1,5 @@
 package com.team5.catdogeats.users.service.impl;
 
-import com.team5.catdogeats.global.config.MybatisTransactional;
 import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
