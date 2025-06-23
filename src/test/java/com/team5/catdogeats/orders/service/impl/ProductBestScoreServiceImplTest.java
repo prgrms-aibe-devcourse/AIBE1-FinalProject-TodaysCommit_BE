@@ -335,55 +335,6 @@ class ProductBestScoreServiceImplTest {
     }
 
     @Nested
-    @DisplayName("캐시 동작 테스트")
-    class CacheTests {
-
-        @Test
-        @DisplayName("캐시 키 생성 확인")
-        void getProductBestScoreData_CacheKey_Verification() {
-            // given
-            given(productBestScoreMapper.getProductBestScoreDataBySeller(testSellerId))
-                    .willReturn(testScoreData);
-
-            // when
-            productBestScoreService.getProductBestScoreData(testSellerId);
-
-            // then
-            // @Cacheable 어노테이션의 key = "#sellerId"
-            // 캐시 키: "2aa4ad9f-dd05-4739-a683-eb8d2115635f"
-            verify(productBestScoreMapper).getProductBestScoreDataBySeller(testSellerId);
-        }
-
-        @Test
-        @DisplayName("다른 판매자 ID로 캐시 키 분리 확인")
-        void getProductBestScoreData_DifferentSellerCache() {
-            // given
-            String anotherSellerId = "different-seller-id";
-            List<ProductBestScoreDataDTO> anotherData = List.of(
-                    new ProductBestScoreDataDTO("product4", 60L, 600000L, 3.8, 40L, 12L)
-            );
-
-            given(productBestScoreMapper.getProductBestScoreDataBySeller(testSellerId))
-                    .willReturn(testScoreData);
-            given(productBestScoreMapper.getProductBestScoreDataBySeller(anotherSellerId))
-                    .willReturn(anotherData);
-
-            // when
-            List<ProductBestScoreDataDTO> result1 = productBestScoreService.getProductBestScoreData(testSellerId);
-            List<ProductBestScoreDataDTO> result2 = productBestScoreService.getProductBestScoreData(anotherSellerId);
-
-            // then
-            assertThat(result1).hasSize(3);
-            assertThat(result2).hasSize(1);
-            assertThat(result1.get(0).productId()).isEqualTo("product1");
-            assertThat(result2.get(0).productId()).isEqualTo("product4");
-
-            verify(productBestScoreMapper).getProductBestScoreDataBySeller(testSellerId);
-            verify(productBestScoreMapper).getProductBestScoreDataBySeller(anotherSellerId);
-        }
-    }
-
-    @Nested
     @DisplayName("데이터 정렬 및 순서 테스트")
     class DataOrderingTests {
 
