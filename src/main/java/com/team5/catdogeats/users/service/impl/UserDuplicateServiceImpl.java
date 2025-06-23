@@ -1,41 +1,50 @@
 package com.team5.catdogeats.users.service.impl;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.repository.BuyerRepository;
+import com.team5.catdogeats.users.domain.enums.Role;
+import com.team5.catdogeats.users.exception.WithdrawnAccountDomainException;
 import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.UserDuplicateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Optional;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserDuplicateServiceImpl implements UserDuplicateService {
     private final UserRepository userRepository;
-    private final BuyerRepository buyerRepository;
 
-    @Transactional
+    @JpaTransactional
     public Users isDuplicate(Users users) {
-        try {
-            log.info("isDuplicate 확인하기 {}", users.getId());
-            Optional<Users> user = userRepository.findByProviderAndProviderId(
-                    users.getProvider(),
-                    users.getProviderId());
-            if(user.isPresent()) {
-                Users userOpt = user.get();
-                userOpt.preUpdate();
-                log.info("{}", userOpt);
-                return userRepository.save(userOpt);
+            return userRepository.findByProviderAndProviderId(users.getProvider(),
+                                                            users.getProviderId())
+                    .map(existingUser -> {
 
-            }
-            return userRepository.save(users);
-        } catch (Exception e) {
-            log.error("유저 정보 저장 중 오류 발생");
-            throw new RuntimeException(e);
-        }
+                        // 계정이 비활성화된 경우 재활성화
+                        OffsetDateTime deletedAt = existingUser.getDeletedAt();
+                        OffsetDateTime sevenDaysAgo = OffsetDateTime.now(ZoneOffset.UTC).minusDays(7);
+                        if(existingUser.getRole() == Role.ROLE_WITHDRAWN && existingUser.isAccountDisable() &&
+                        deletedAt != null && !deletedAt.isAfter(sevenDaysAgo)) {
+                            log.error("7일 이후 틸퇴한 계정 차단");
+                            throw new WithdrawnAccountDomainException("이미 탈퇴한 유저입니다.");
+                        }
+                        if (existingUser.isAccountDisable() && deletedAt != null &&
+                                deletedAt.isAfter(sevenDaysAgo)) {
+
+                            existingUser.reactivationAccount();
+                        }
+                        existingUser.preUpdate();
+                        return userRepository.save(existingUser); // 기존 유저 저장 (업데이트)
+                    })
+                    .orElseGet(() -> {
+                        log.info("신규 유저입니다: {}", users.getProviderId());
+                        return userRepository.save(users); // 신규 유저 저장
+                    });
+
     }
 }

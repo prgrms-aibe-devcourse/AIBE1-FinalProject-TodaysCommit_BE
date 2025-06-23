@@ -1,4 +1,12 @@
+batch:
+  withdrawn:
+    cron: "${WITHDRAW_CRON:0 30 2 * * ?}"
+    chunk-size: ${WITHDRAW_CHUNK:1000}
 spring:
+  batch:
+    jdbc:
+      initialize-schema: always
+
   # 데이터베이스 연결 설정
   datasource: # 여러 DBaaS에서 가져오기
     url: ${DB_URL} # 데이터베이스 URL
