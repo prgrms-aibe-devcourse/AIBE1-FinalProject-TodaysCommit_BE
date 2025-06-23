@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -53,12 +52,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .findByUserIdAndUsedIsFalse(user.getId());
 
         log.debug("토큰 리스트가 나오는지 검증 로그 Tokens: {}", tokens);
-        ZonedDateTime now = ZonedDateTime.now();
 
-        List<RefreshTokens> validTokens = tokens.stream()
-                .filter(token -> token.getExpiresAt().isAfter(now.toInstant()))
-                .sorted(Comparator.comparing(RefreshTokens::getCreatedAt))
-                .toList();
         if (tokens.size() >= MAX_TOKENS_PER_USER) {
             for (int i = 0; i < tokens.size() - (MAX_TOKENS_PER_USER - 1); i++) {
                 refreshTokenRepository.deleteById(tokens.get(i).getId());

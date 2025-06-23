@@ -5,9 +5,8 @@ import org.springframework.data.repository.CrudRepository;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
-public interface RefreshTokensRedisRepository extends CrudRepository<RefreshTokens, UUID> {
+public interface RefreshTokensRedisRepository extends CrudRepository<RefreshTokens, String> {
     List<RefreshTokens> findByUserIdAndUsedIsFalse(String userId);
     void deleteByUserId(String userId);
 

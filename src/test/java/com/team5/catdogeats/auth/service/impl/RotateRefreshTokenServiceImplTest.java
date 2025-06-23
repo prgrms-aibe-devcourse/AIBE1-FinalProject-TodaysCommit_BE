@@ -59,7 +59,7 @@ class RotateRefreshTokenServiceImplTest {
     @Test
     void rotateRefreshToken_ShouldReturnNewTokens_WhenValidToken() {
         // given
-        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.of(validToken));
+        when(refreshTokenRepository.findById((tokenId))).thenReturn(Optional.of(validToken));
         when(refreshTokenRepository.save(any(RefreshTokens.class))).thenReturn(validToken);
 
         Authentication authentication = mock(Authentication.class);
@@ -83,7 +83,7 @@ class RotateRefreshTokenServiceImplTest {
     void rotateRefreshToken_ShouldThrowExpiredTokenException_WhenTokenIsExpired() {
         // given
         validToken = validToken.toBuilder().expiresAt(Instant.now().minusSeconds(10)).build();
-        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.of(validToken));
+        when(refreshTokenRepository.findById((tokenId))).thenReturn(Optional.of(validToken));
 
         // when & then
         assertThrows(ExpiredTokenException.class, () -> rotateService.RotateRefreshToken(tokenId));
@@ -93,7 +93,7 @@ class RotateRefreshTokenServiceImplTest {
     void rotateRefreshToken_ShouldThrowInvalidTokenException_WhenTokenIsUsed() {
         // given
         validToken = validToken.toBuilder().used(true).build();
-        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.of(validToken));
+        when(refreshTokenRepository.findById((tokenId))).thenReturn(Optional.of(validToken));
 
         // when & then
         assertThrows(InvalidTokenException.class, () -> rotateService.RotateRefreshToken(tokenId));
@@ -102,7 +102,7 @@ class RotateRefreshTokenServiceImplTest {
     @Test
     void rotateRefreshToken_ShouldThrowNoSuchElementException_WhenTokenNotFound() {
         // given
-        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.empty());
+        when(refreshTokenRepository.findById((tokenId))).thenReturn(Optional.empty());
 
         // when & then
         assertThrows(NoSuchElementException.class, () -> rotateService.RotateRefreshToken(tokenId));
