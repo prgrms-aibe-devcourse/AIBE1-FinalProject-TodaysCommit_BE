@@ -3,22 +3,19 @@ package com.team5.catdogeats.pets.controller;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
-import com.team5.catdogeats.pets.domain.dto.PetCreateRequestDto;
-import com.team5.catdogeats.pets.domain.dto.PetDeleteRequestDto;
-import com.team5.catdogeats.pets.domain.dto.PetResponseDto;
-import com.team5.catdogeats.pets.domain.dto.PetUpdateRequestDto;
+import com.team5.catdogeats.pets.domain.dto.*;
 import com.team5.catdogeats.pets.service.PetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -48,12 +45,25 @@ public class PetController {
         }
     }
 
-    @Operation(summary = "내 펫 목록 조회", description = "로그인한 사용자의 펫 목록을 조회합니다.")
+    @Operation(summary = "내 펫 목록 조회 (페이징)", description = "로그인한 사용자의 펫 목록을 조회합니다.")
     @GetMapping("/pet")
-    public ResponseEntity<ApiResponse<List<PetResponseDto>>> getMyPets(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+    public ResponseEntity<ApiResponse<PageResponseDto<PetResponseDto>>> getMyPets(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "4") int size) {
         try {
-            List<PetResponseDto> pets = petService.getMyPets(userPrincipal);
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, pets));
+            Page<PetResponseDto> pets = petService.getMyPets(userPrincipal, page, size);
+
+            // Page 객체를 PageResponseDto로 변환
+            PageResponseDto<PetResponseDto> petPageResponse = new PageResponseDto<>(
+                    pets.getContent(),
+                    pets.getNumber(),
+                    pets.getSize(),
+                    pets.getTotalElements(),
+                    pets.getTotalPages(),
+                    pets.isLast()
+            );
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, petPageResponse));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
