@@ -11,20 +11,19 @@ import java.time.LocalTime;
 public record SellerInfoRequestDTO(
 
         @Schema(description = "업체명", example = "멍멍이네 수제간식", required = true)
-        @NotBlank(message = "업체명은 필수 입력 항목입니다.")
         @Size(max = 100, message = "업체명은 최대 100자까지 입력 가능합니다.")
         String vendorName,
 
-        @Schema(description = "업체 프로필 이미지 URL", example = "https://example.com/profile.jpg", required = true)
-        @NotBlank(message = "업체 프로필 이미지는 필수 입력 항목입니다.")
+
+        @Schema(description = "업체 프로필 이미지 URL", example = "https://example.com/profile.jpg" )
         @Size(max = 255, message = "이미지 URL은 최대 255자까지 입력 가능합니다.")
         String vendorProfileImage,
 
         @Schema(description = "사업자 등록번호", example = "123-45-67890", required = true)
-        @NotBlank(message = "사업자 등록번호는 필수 입력 항목입니다.")
         @Size(max = 20, message = "사업자 등록번호는 최대 20자까지 입력 가능합니다.")
         @Pattern(regexp = "^[0-9\\-]+$", message = "사업자 등록번호는 숫자와 하이픈만 입력 가능합니다.")
         String businessNumber,
+
 
         @Schema(description = "정산 은행명", example = "국민은행")
         @Size(max = 50, message = "은행명은 최대 50자까지 입력 가능합니다.")
@@ -48,4 +47,8 @@ public record SellerInfoRequestDTO(
         @Size(max = 20, message = "휴무일은 최대 20자까지 입력 가능합니다.")
         String closedDays
 
-) {}
+) {
+        public boolean isCreateRequest() {
+                return vendorName != null && !vendorName.trim().isEmpty() && businessNumber != null && !businessNumber.trim().isEmpty();
+        }
+}

@@ -94,32 +94,76 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private SellerInfoResponseDTO upsertSellerInfoInternal(Users user, SellerInfoRequestDTO request) {
         String userId = user.getId();
 
-
-        // 벤더명 중복 체크
-        validateVendorNameDuplication(userId, request.vendorName());
-
-        // 사업자 등록번호 중복 체크
-        validateBusinessNumberDuplication(userId, request.businessNumber());
-
-
         // 기존 판매자 정보 조회
         Optional<Sellers> existingSellerOpt = sellersRepository.findByUserId(userId);
 
-        Sellers seller;
-        if (existingSellerOpt.isPresent()) {
-            // 기존 정보 수정
-            seller = existingSellerOpt.get();
-            updateSellerInfo(seller, request);
-            log.info("판매자 정보 수정 완료 - userId: {}", userId);
-        } else {
-            // 신규 정보 등록
-            seller = createNewSeller(user, request);
+        if (existingSellerOpt.isEmpty()) {
+            // 신규 등록 - 필수 필드 체크 추가
+            if (!request.isCreateRequest()) {
+                throw new IllegalArgumentException("신규 등록 시 업체명,사업자 등록번호는 필수입니다.");
+            }
+
+            //이름 중복 검증
+            validateVendorNameDuplication(userId, request.vendorName());
+            //사업자 번호 중복 검증
+            validateBusinessNumberDuplication(userId, request.businessNumber());
+
+            // 신규 생성
+            Sellers seller = createNewSeller(user, request);
             log.info("판매자 정보 신규 등록 완료 - userId: {}", userId);
+            Sellers savedSeller = sellersRepository.save(seller);
+            return SellerInfoResponseDTO.from(savedSeller);
+
+        } else {
+            Sellers seller = existingSellerOpt.get();
+            updateSellerInfoPatch(seller, request, userId);
+            log.info("판매자 정보 수정 완료 - userId: {}", userId);
+            Sellers savedSeller = sellersRepository.save(seller);
+            return SellerInfoResponseDTO.from(savedSeller);
+        }
+    }
+
+
+    private void updateSellerInfoPatch(Sellers seller, SellerInfoRequestDTO request, String userId) {
+        if (request.vendorName() != null && !request.vendorName().trim().isEmpty()) {
+            validateVendorNameDuplication(userId, request.vendorName());
+            seller.updateVendorName(request.vendorName());
         }
 
-        Sellers savedSeller = sellersRepository.save(seller);
-        return SellerInfoResponseDTO.from(savedSeller);
+        if (request.vendorProfileImage() != null && !request.vendorProfileImage().trim().isEmpty()) {
+            seller.updateVendorProfileImage(request.vendorProfileImage());
+        }
+
+        if (request.businessNumber() != null && !request.businessNumber().trim().isEmpty()) {
+            validateBusinessNumberDuplication(userId, request.businessNumber());
+            seller.updateBusinessNumber(request.businessNumber());
+        }
+
+        if (request.settlementBank() != null) {
+            seller.updateSettlementBank(request.settlementBank());
+        }
+
+        if (request.settlementAcc() != null) {
+            seller.updateSettlementAcc(request.settlementAcc());
+        }
+
+        if (request.tags() != null) {
+            seller.updateTags(request.tags());
+        }
+
+        if (request.operatingStartTime() != null) {
+            seller.updateOperatingStartTime(request.operatingStartTime());
+        }
+
+        if (request.operatingEndTime() != null) {
+            seller.updateOperatingEndTime(request.operatingEndTime());
+        }
+
+        if (request.closedDays() != null) {
+            seller.updateClosedDays(request.closedDays());
+        }
     }
+
 
     /**
      * 사업자 등록번호 중복 검증

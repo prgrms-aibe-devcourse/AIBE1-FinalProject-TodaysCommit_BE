@@ -207,8 +207,9 @@ class SellerInfoServiceImplTest {
             // given
             given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
                     .willReturn(Optional.of(testSellerUser));
-            given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.empty());
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
+            given(sellersRepository.findByVendorName("펫푸드 공방")).willReturn(Optional.empty());
+            given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.empty());
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
@@ -221,8 +222,9 @@ class SellerInfoServiceImplTest {
 
             // verify
             verify(userRepository).findByProviderAndProviderId("google", "113091084348977764576");
-            verify(sellersRepository).findByBusinessNumber("123-45-67890");
             verify(sellersRepository).findByUserId(testUserId);
+            verify(sellersRepository).findByVendorName("펫푸드 공방");
+            verify(sellersRepository).findByBusinessNumber("123-45-67890");
             verify(sellersRepository).save(any(Sellers.class));
         }
 
@@ -245,8 +247,9 @@ class SellerInfoServiceImplTest {
 
             given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
                     .willReturn(Optional.of(testSellerUser));
-            given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(testSeller));
-            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller));
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller)); // 기존 정보 있음
+            given(sellersRepository.findByVendorName(newVendorName)).willReturn(Optional.empty()); // 새 상점명 중복 체크
+            given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(testSeller)); // 자신의 사업자번호
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
@@ -255,31 +258,134 @@ class SellerInfoServiceImplTest {
             // then
             assertThat(result).isNotNull();
 
-            // verify
+
             verify(userRepository).findByProviderAndProviderId("google", "113091084348977764576");
-            verify(sellersRepository).findByBusinessNumber("123-45-67890");
-            verify(sellersRepository).findByUserId(testUserId);
+            verify(sellersRepository).findByUserId(testUserId); // 먼저 기존 정보 확인
+            verify(sellersRepository).findByVendorName(newVendorName); // 상점명 중복 체크
+            verify(sellersRepository).findByBusinessNumber("123-45-67890"); // 사업자번호 중복 체크
             verify(sellersRepository).save(any(Sellers.class));
         }
 
         @Test
-        @DisplayName("실패 - JWT로 다른 사용자 사업자번호 중복")
-        void upsertSellerInfo_BusinessNumberDuplicate() {
+        @DisplayName("실패 - 상점명 중복 (신규 등록 시)")
+        void upsertSellerInfo_VendorNameDuplicate_CreateNew() {
+            // given
+            Sellers otherSellerWithSameName = Sellers.builder()
+                    .userId(otherUserId)
+                    .vendorName("펫푸드 공방") // 같은 상점명
+                    .businessNumber("999-88-77777") // 다른 사업자번호
+                    .build();
+
+            given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
+                    .willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty()); // 신규 등록
+            given(sellersRepository.findByVendorName("펫푸드 공방")).willReturn(Optional.of(otherSellerWithSameName)); // 상점명 중복
+
+            // when & then
+            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest))
+                    .isInstanceOf(DataIntegrityViolationException.class)
+                    .hasMessageContaining("이미 사용 중인 상점명입니다");
+
+            // verify
+            verify(userRepository).findByProviderAndProviderId("google", "113091084348977764576");
+            verify(sellersRepository).findByUserId(testUserId);
+            verify(sellersRepository).findByVendorName("펫푸드 공방"); // 여기서 실패
+            verify(sellersRepository, never()).findByBusinessNumber(any()); // 상점명 실패로 사업자번호 체크 안 함
+            verify(sellersRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("실패 - 신규 등록 시 필수 필드 부족")
+        void upsertSellerInfo_CreateNew_MissingRequiredFields() {
+            // given - 상점명만 있고 사업자번호 없음
+            SellerInfoRequestDTO incompleteRequest = new SellerInfoRequestDTO(
+                    "펫푸드 공방",        // 상점명만 있음
+                    "https://example.com/logo.jpg",
+                    null,               // 사업자번호 없음
+                    "신한은행",
+                    "110-123-456789",
+                    "수제간식",
+                    LocalTime.of(9, 0),
+                    LocalTime.of(18, 0),
+                    "월요일,화요일"
+            );
+
+            given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
+                    .willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty()); // 신규 등록
+
+            // when & then
+            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(sellerPrincipal, incompleteRequest))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("신규 등록 시 업체명,사업자 등록번호는 필수입니다");
+
+            // verify
+            verify(userRepository).findByProviderAndProviderId("google", "113091084348977764576");
+            verify(sellersRepository).findByUserId(testUserId);
+            verify(sellersRepository, never()).findByVendorName(any()); // 필수 필드 체크에서 실패하므로 중복 체크 안 함
+            verify(sellersRepository, never()).save(any());
+        }
+
+
+
+        @Test
+        @DisplayName("성공 - 부분 수정 (상점명만 변경)")
+        void upsertSellerInfo_PartialUpdate_OnlyVendorName() {
+            // given - 상점명만 변경하는 부분 수정
+            SellerInfoRequestDTO partialRequest = new SellerInfoRequestDTO(
+                    "새로운 상점명",      // 상점명만 변경
+                    null,               // 나머지는 null
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null
+            );
+
+            given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
+                    .willReturn(Optional.of(testSellerUser));
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller)); // 기존 정보 있음
+            given(sellersRepository.findByVendorName("새로운 상점명")).willReturn(Optional.empty()); // 새 상점명 중복 없음
+            given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
+
+            // when
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, partialRequest);
+
+            // then
+            assertThat(result).isNotNull();
+
+            // verify - 부분 수정에서는 변경된 필드만 중복 체크
+            verify(userRepository).findByProviderAndProviderId("google", "113091084348977764576");
+            verify(sellersRepository).findByUserId(testUserId);
+            verify(sellersRepository).findByVendorName("새로운 상점명"); // 상점명만 중복 체크
+            verify(sellersRepository, never()).findByBusinessNumber(any()); // 사업자번호는 변경 안 함
+            verify(sellersRepository).save(any(Sellers.class));
+        }
+
+
+        @Test
+        @DisplayName("실패 - JWT로 다른 사용자 사업자번호 중복 (신규 등록 시)")
+        void upsertSellerInfo_BusinessNumberDuplicate_CreateNew() {
             // given
             given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
                     .willReturn(Optional.of(testSellerUser));
-            given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(otherSeller));
+            given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty()); // 신규 등록
+            given(sellersRepository.findByVendorName("펫푸드 공방")).willReturn(Optional.empty()); // 상점명은 중복 없음
+            given(sellersRepository.findByBusinessNumber("123-45-67890")).willReturn(Optional.of(otherSeller)); // 다른 사용자 사업자번호
 
             // when & then
             assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest))
                     .isInstanceOf(DataIntegrityViolationException.class)
                     .hasMessageContaining("이미 등록된 사업자 등록번호입니다");
 
-            // verify
+            // verify - 새로운 호출 순서
             verify(userRepository).findByProviderAndProviderId("google", "113091084348977764576");
-            verify(sellersRepository).findByBusinessNumber("123-45-67890");
-            verify(sellersRepository, never()).findByUserId(any());
-            verify(sellersRepository, never()).save(any());
+            verify(sellersRepository).findByUserId(testUserId); // 기존 정보 확인
+            verify(sellersRepository).findByVendorName("펫푸드 공방"); // 상점명 중복 체크
+            verify(sellersRepository).findByBusinessNumber("123-45-67890"); // 사업자번호 중복 체크에서 실패
+            verify(sellersRepository, never()).save(any()); // 저장은 안 됨
         }
 
         @Test

@@ -52,7 +52,7 @@ public record SellerInfoResponseDTO(
         }
 
         return new SellerInfoResponseDTO(
-                seller.getUserId() != null ? seller.getUserId().toString() : null,
+                seller.getUserId() != null ? seller.getUserId() : null,
                 seller.getVendorName(),
                 seller.getVendorProfileImage(),
                 seller.getBusinessNumber(),
