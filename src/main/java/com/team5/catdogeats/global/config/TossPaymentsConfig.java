@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Toss Payments 설정 구성 클래스
- *
  * application-dev.yml의 toss.payments 설정을 바인딩하고 관리합니다.
  * 기존의 @Value 어노테이션 방식보다 메모리 효율적이고 관리가 용이합니다.
  */
