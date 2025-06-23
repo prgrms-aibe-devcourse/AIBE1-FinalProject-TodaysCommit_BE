@@ -29,7 +29,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private final UserRepository userRepository;
 
     @Override
-    @JpaTransactional
     public SellerInfoResponseDTO getSellerInfo(UserPrincipal userPrincipal) {
         log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());
@@ -42,7 +41,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     }
 
     @Override
-    @JpaTransactional
     public SellerInfoResponseDTO upsertSellerInfo(UserPrincipal userPrincipal, SellerInfoRequestDTO request) {
         log.info("판매자 정보 등록/수정 (JWT) - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
