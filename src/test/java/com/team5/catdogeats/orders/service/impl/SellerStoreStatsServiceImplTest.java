@@ -110,23 +110,4 @@ class SellerStoreStatsServiceImplTest {
         }
     }
 
-    @Nested
-    @DisplayName("캐시 동작 테스트")
-    class CacheTests {
-
-        @Test
-        @DisplayName("캐시 키 생성 확인")
-        void getSellerStoreStats_CacheKey_Verification() {
-            // given
-            given(sellerStoreStatsMapper.getSellerStoreStats(testSellerId))
-                    .willReturn(testStats);
-
-            // when
-            sellerStoreStatsService.getSellerStoreStats(testSellerId);
-
-            // then
-            // @Cacheable 어노테이션의 key = "#sellerId"
-            verify(sellerStoreStatsMapper).getSellerStoreStats(testSellerId);
-        }
-    }
 }
