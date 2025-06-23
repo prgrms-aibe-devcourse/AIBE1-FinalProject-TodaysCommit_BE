@@ -11,13 +11,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * 상품 엔티티 Repository (타입 수정됨)
- * Products 엔티티의 실제 ID 타입(String)에 맞게 수정되었습니다.
- * quantity 필드가 stock으로 변경됨에 따라 모든 재고 관련 쿼리를 stock 필드로 수정하였습니다.
- */
-@Repository
 public interface ProductRepository extends JpaRepository<Products, String> {
+    Optional<Products> findById(String productId);
 
     /**
      * 상품 번호로 상품 조회
@@ -55,6 +50,7 @@ public interface ProductRepository extends JpaRepository<Products, String> {
      * @return 해당 상태의 상품 목록
      */
     List<Products> findByStockStatus(StockStatus stockStatus);
+    Boolean existsByProductNumber(Long productNumber);
 
     /**
      * 재고가 특정 수량 이하인 상품 조회
@@ -100,4 +96,5 @@ public interface ProductRepository extends JpaRepository<Products, String> {
             "LEFT JOIN FETCH s.user u " +
             "WHERE p.id = :productId")
     Optional<Products> findByIdWithSeller(@Param("productId") String productId);
+    void deleteById(String productId);
 }
