@@ -2,6 +2,8 @@ package com.team5.catdogeats.products.domain;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
+import com.team5.catdogeats.products.domain.dto.ProductCreateRequestDto;
+import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
 import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
@@ -57,11 +59,10 @@ public class Products extends BaseEntity {
     @Column(nullable = false)
     private Long price;
 
-    @Column(nullable = false)
-    private Integer quantity;
-
     @Column(name = "lead_time", nullable = false)
     private Short leadTime;
+
+    @Column(nullable = false)
     private Integer stock;
 
     @Version // 동시성 제어
@@ -72,4 +73,34 @@ public class Products extends BaseEntity {
         this.stock -= qty;
     }
 
+    public static Products fromDto(ProductCreateRequestDto dto, Sellers seller, Long productNumber) {
+        return Products.builder()
+                .productNumber(productNumber)
+                .seller(seller)
+                .title(dto.title())
+                .contents(dto.contents())
+                .petCategory(dto.petCategory())
+                .productCategory(dto.productCategory())
+                .stockStatus(dto.stockStatus())
+                .isDiscounted(dto.isDiscounted())
+                .discountRate(dto.discountRate())
+                .price(dto.price())
+                .leadTime(dto.leadTime())
+                .stock(dto.stock())
+                .build();
+    }
+
+    public void updateFromDto(ProductUpdateRequestDto dto) {
+        if (dto.title() != null) this.title = dto.title();
+        if (dto.contents() != null) this.contents = dto.contents();
+        if (dto.petCategory() != null) this.petCategory = dto.petCategory();
+        if (dto.productCategory() != null) this.productCategory = dto.productCategory();
+        if (dto.stockStatus() != null) this.stockStatus = dto.stockStatus();
+        if (dto.isDiscounted() != null) this.isDiscounted = dto.isDiscounted();
+        if (dto.discountRate() != null) this.discountRate = dto.discountRate();
+        if (dto.stockStatus() != null) this.stockStatus = dto.stockStatus();
+        if (dto.price() != null) this.price = dto.price();
+        if (dto.leadTime() != null) this.leadTime = dto.leadTime();
+        if (dto.stock() != null) this.stock = dto.stock();
+    }
 }
