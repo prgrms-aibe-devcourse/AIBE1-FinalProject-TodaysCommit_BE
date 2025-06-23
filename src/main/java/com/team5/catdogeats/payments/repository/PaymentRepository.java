@@ -15,7 +15,7 @@ import java.util.UUID;
  * Orders 엔티티의 ID 타입이 String으로 수정됨에 따라 관련 메서드들도 수정되었습니다.
  */
 @Repository
-public interface PaymentRepository extends JpaRepository<Payments, UUID> {
+public interface PaymentRepository extends JpaRepository<Payments, String> {
 
     /**
      * 주문 ID로 결제 정보 조회 (타입 수정: UUID → String)
