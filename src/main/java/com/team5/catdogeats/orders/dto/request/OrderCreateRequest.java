@@ -18,7 +18,7 @@ import java.util.List;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+@Builder(toBuilder = true)
 public class OrderCreateRequest {
 
     /**
@@ -48,7 +48,7 @@ public class OrderCreateRequest {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Builder
+    @Builder(toBuilder = true)
     public static class OrderItemRequest {
 
         /**

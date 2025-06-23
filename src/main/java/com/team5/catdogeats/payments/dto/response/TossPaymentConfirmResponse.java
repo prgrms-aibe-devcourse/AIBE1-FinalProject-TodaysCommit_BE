@@ -2,6 +2,7 @@ package com.team5.catdogeats.payments.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -16,6 +17,7 @@ import java.time.ZonedDateTime;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder(toBuilder = true)
 public class TossPaymentConfirmResponse {
 
     /**
@@ -59,6 +61,7 @@ public class TossPaymentConfirmResponse {
      * 결제 승인 시간
      * ISO 8601 형식의 시간 정보
      */
+
     @JsonProperty("approvedAt")
     private ZonedDateTime approvedAt;
 
