@@ -73,7 +73,7 @@ public class ProductController {
             summary = "상품 삭제",
             description = "판매자가 특정 상품을 삭제합니다. 삭제할 상품의 ID를 요청 바디로 전달합니다."
     )
-    @DeleteMapping("/sellers/pet")
+    @DeleteMapping("/sellers/products")
     public ResponseEntity<ApiResponse<Void>> deleteProduct(@RequestBody @Valid @Parameter(description = "삭제할 상품 id", required = true) ProductDeleteRequestDto dto) {
         try {
             productService.deleteProduct(dto);
