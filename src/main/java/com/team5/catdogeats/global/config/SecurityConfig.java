@@ -91,6 +91,7 @@ public class SecurityConfig {
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-id}/list").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-number}").permitAll()
+                            .requestMatchers("/v1/users/{vendor-name}").permitAll()
                             .requestMatchers("/withdraw").permitAll()
                             .requestMatchers("/v1/users/**").hasAnyRole("BUYER", "SELLER")
                             .requestMatchers("/v1/sellers/**").hasRole("SELLER")
