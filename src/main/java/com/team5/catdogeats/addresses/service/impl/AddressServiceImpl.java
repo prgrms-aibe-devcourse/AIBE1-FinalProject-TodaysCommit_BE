@@ -2,7 +2,10 @@ package com.team5.catdogeats.addresses.service.impl;
 
 import com.team5.catdogeats.addresses.domain.Addresses;
 import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.*;
+import com.team5.catdogeats.addresses.dto.AddressListResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressRequestDto;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressUpdateRequestDto;
 import com.team5.catdogeats.addresses.exception.AddressAccessDeniedException;
 import com.team5.catdogeats.addresses.exception.AddressNotFoundException;
 import com.team5.catdogeats.addresses.exception.UserNotFoundException;
@@ -34,7 +37,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressListResponseDto getAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType, Pageable pageable) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         Page<Addresses> addressPage = addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
                 userId, addressType, pageable);
@@ -45,7 +48,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressResponseDto> getAllAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         List<Addresses> addresses = addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
                 userId, addressType);
@@ -57,9 +60,9 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressResponseDto getAddressById(String addressId, UserPrincipal userPrincipal) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
         return AddressResponseDto.from(address);
     }
@@ -67,7 +70,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public AddressResponseDto createAddress(AddressRequestDto requestDto, UserPrincipal userPrincipal) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         // 주소 개수 제한 검증
         validateAddressLimit(userId, requestDto.getAddressType());
@@ -106,7 +109,7 @@ public class AddressServiceImpl implements AddressService {
     public AddressResponseDto updateAddress(String addressId, AddressUpdateRequestDto updateDto, UserPrincipal userPrincipal) {
         String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
 
         // 주소 정보 업데이트
@@ -139,7 +142,7 @@ public class AddressServiceImpl implements AddressService {
         // UserPrincipal에서 userId 조회
         String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
 
         addressRepository.delete(address);
@@ -152,7 +155,7 @@ public class AddressServiceImpl implements AddressService {
         // UserPrincipal에서 userId 조회
         String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
 
         // 기존 기본 주소 해제
