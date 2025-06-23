@@ -14,7 +14,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * 비동기 처리 설정
- *
  * Spring의 @Async 어노테이션을 사용한 비동기 메서드 실행을 위한 설정입니다.
  * 주요 용도:
  * - 주문 생성 후 사용자 알림 발송 (OrderEventListener.handleUserNotification)
@@ -28,7 +27,6 @@ public class AsyncConfig implements AsyncConfigurer {
 
     /**
      * 비동기 작업용 ThreadPool 설정
-     *
      * 알림, 로깅 등 부가적인 작업들을 처리하기 위한 전용 스레드풀입니다.
      * 메인 비즈니스 로직(주문 생성, 결제 처리)과 분리하여 안정성을 확보합니다.
      */
@@ -70,8 +68,7 @@ public class AsyncConfig implements AsyncConfigurer {
 
     /**
      * 비동기 작업 중 발생한 예외 처리
-     *
-     * @Async 메서드에서 발생한 예외들을 중앙에서 처리합니다.
+     * 메서드에서 발생한 예외들을 중앙에서 처리합니다.
      * 알림 발송 실패 등이 메인 시스템에 영향을 주지 않도록 격리하되,
      * 로그는 남겨서 모니터링이 가능하도록 합니다.
      */
@@ -80,7 +77,7 @@ public class AsyncConfig implements AsyncConfigurer {
         return (throwable, method, params) -> {
             log.error("비동기 작업 실행 중 예외 발생: method={}, params={}, error={}",
                     method.getName(),
-                    params != null ? params.length : 0,
+                    params.length,
                     throwable.getMessage(),
                     throwable);
 
@@ -91,7 +88,6 @@ public class AsyncConfig implements AsyncConfigurer {
 
     /**
      * 커스텀 거부 작업 처리 핸들러
-     *
      * 스레드풀이 포화상태일 때 새로운 작업이 거부되는 경우를 처리합니다.
      * 알림 발송과 같은 부가 기능이므로 작업 손실을 허용하되 로그는 남깁니다.
      */
