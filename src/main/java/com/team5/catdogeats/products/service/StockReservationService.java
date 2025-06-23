@@ -203,6 +203,55 @@ public class StockReservationService {
     }
 
     /**
+     * 확정된 예약에 대한 실제 재고 차감
+     * 결제 성공 후 호출되어 확정된 예약 수량만큼 실제 재고를 차감합니다.
+     *
+     * @param orderId 주문 ID
+     * @return 차감 처리된 예약 목록
+     */
+    @Transactional
+    public List<StockReservation> decrementConfirmedStock(UUID orderId) {
+        log.info("확정된 재고 차감 시작: orderId={}", orderId);
+
+        // 확정된 예약 목록 조회
+        List<StockReservation> confirmedReservations = stockReservationRepository.findByOrderId(orderId)
+                .stream()
+                .filter(reservation -> reservation.getReservationStatus() == ReservationStatus.CONFIRMED)
+                .toList();
+
+        if (confirmedReservations.isEmpty()) {
+            throw new IllegalStateException("확정된 예약을 찾을 수 없습니다: orderId=" + orderId);
+        }
+
+        // 각 예약에 대해 실제 재고 차감
+        for (StockReservation reservation : confirmedReservations) {
+            Products product = reservation.getProduct();
+            Integer decrementQuantity = reservation.getReservedQuantity();
+
+            // 재고 부족 검증 (확정된 예약이므로 정상적으로는 발생하지 않아야 함)
+            if (product.getStock() < decrementQuantity) {
+                log.error("재고 부족으로 차감 실패: productId={}, 현재재고={}, 차감요청={}",
+                        product.getId(), product.getStock(), decrementQuantity);
+                throw new IllegalStateException(
+                        String.format("재고 부족: 상품ID=%s, 현재재고=%d, 차감요청=%d",
+                                product.getId(), product.getStock(), decrementQuantity));
+            }
+
+            // 실제 재고 차감
+            product.decreaseStock(decrementQuantity);
+            productRepository.save(product);
+
+            log.info("재고 차감 완료: productId={}, 차감수량={}, 남은재고={}",
+                    product.getId(), decrementQuantity, product.getStock());
+        }
+
+        log.info("확정된 재고 차감 완료: orderId={}, 처리된 예약 개수={}",
+                orderId, confirmedReservations.size());
+
+        return confirmedReservations;
+    }
+
+    /**
      * 재고 예약 취소 처리
      * 주문 취소 시 호출되어 예약을 취소 상태로 변경합니다.
      *
