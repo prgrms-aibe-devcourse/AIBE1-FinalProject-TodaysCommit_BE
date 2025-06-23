@@ -74,6 +74,7 @@ public class SecurityConfig {
                             -> authorize
                             .requestMatchers("/").permitAll()
                             .requestMatchers("/index.html").permitAll() // 개발할때만 사용 로그인 페이지
+                            .requestMatchers("WebSocket.html").permitAll() // 개발할때만 소켓 페이지
                             .requestMatchers("/withdraw").permitAll()
                             .requestMatchers("/error").permitAll()
                             .requestMatchers("/.well-known/**").permitAll()

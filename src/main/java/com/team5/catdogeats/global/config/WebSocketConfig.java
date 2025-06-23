@@ -1,5 +1,7 @@
 package com.team5.catdogeats.global.config;
 
+import com.team5.catdogeats.chats.interceptor.WebSocketHandshakeInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -9,7 +11,10 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+    private final WebSocketHandshakeInterceptor handshakeInterceptor;
+
     @Value("${websocket.endpoint}")
     private String wsEndpoint;
 
@@ -25,7 +30,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        registry.addEndpoint(wsEndpoint).setAllowedOrigins(allowedOrigin);
+        registry.addEndpoint(wsEndpoint)
+                .setAllowedOrigins(allowedOrigin)
+                .addInterceptors(handshakeInterceptor);
     }
 }
 

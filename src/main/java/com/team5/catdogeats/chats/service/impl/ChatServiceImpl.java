@@ -61,7 +61,7 @@ public class ChatServiceImpl implements ChatService {
         String role = authorities.stream()
                 .map(GrantedAuthority::getAuthority).findFirst().orElse(null);
 
-        if (role.equals(Role.ROLE_WITHDRAWN.toString()) || role.equals(Role.ROLE_TEMP.toString())) {
+        if (Role.ROLE_WITHDRAWN.toString().equals(role) || Role.ROLE_TEMP.toString().equals(role)) {
             throw new IllegalStateException("인증 정보가 올바르지 않은 유저입니다.");
         }
 

@@ -17,8 +17,7 @@ import javax.sql.DataSource;
         basePackages = {"com.team5.catdogeats.users.repository",
                 "com.team5.catdogeats.addresses.repository",
                 "com.team5.catdogeats.pets.repository",
-                "com.team5.catdogeats.products.repository",
-                "com.team5.catdogeats.chats.repository"},
+                "com.team5.catdogeats.products.repository"},
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "jpaTransactionManager"
 )

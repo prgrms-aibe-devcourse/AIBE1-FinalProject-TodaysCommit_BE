@@ -21,7 +21,7 @@ public class OAuth2Config {
     @Bean
     public OAuth2UserService<OAuth2UserRequest, OAuth2User> customOAuth2UserService(
             DefaultOAuth2UserService defaultOAuth2UserService,
-            UserDuplicateService userDuplicateService,  // 인터페이스가 아닌 구현체 직접 사용
+            UserDuplicateService userDuplicateService,
             OAuthDTOFactory oAuthDTOFactory,
             UserFactory userFactory) {
         return new CustomOAuth2UserServiceImpl(

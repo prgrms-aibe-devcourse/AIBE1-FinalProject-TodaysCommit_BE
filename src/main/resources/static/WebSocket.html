@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+</head>
+<body>
+<h1>웹소켓 채팅 테스트</h1>
+
+<button onclick="connect()">Connect</button>
+<button onclick="sendMessage()">Send</button>
+
+<script>
+  let client = null;
+
+  function connect() {
+    const socket = new WebSocket("ws://localhost:8080/v1/users/chat");
+    client = Stomp.over(socket);
+
+    client.connect({}, function (frame) {
+      console.log("✅ 연결됨:", frame);
+
+      const roomId = "test-room-123"; // 테스트용 채팅방 ID
+
+      client.subscribe("/sub/chat/room/" + roomId, function (message) {
+        console.log("📥 받은 메시지:", JSON.parse(message.body));
+      });
+    }, function (error) {
+      console.error("❌ 연결 실패:", error);
+    });
+  }
+
+  function sendMessage() {
+    const roomId = "test-room-123";
+
+    const payload = {
+      roomId: roomId,
+      behaviorType: "TALK",
+      message: "테스트 메시지입니다"
+    };
+
+    client.send("/pub/chat/message", {}, JSON.stringify(payload));
+  }
+</script>
+</body>
+</html>
