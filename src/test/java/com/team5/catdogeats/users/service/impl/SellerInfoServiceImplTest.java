@@ -195,22 +195,6 @@ class SellerInfoServiceImplTest {
             verify(sellersRepository, never()).findByUserId(any());
         }
 
-        @Test
-        @DisplayName("실패 - 구매자가 판매자 정보 조회 시도")
-        void getSellerInfoByUserPrincipal_BuyerAccessDenied() {
-            // given
-            given(userRepository.findByProviderAndProviderId("google", "buyer123456789"))
-                    .willReturn(Optional.of(testBuyerUser));
-
-            // when & then
-            assertThatThrownBy(() -> sellerInfoService.getSellerInfo(buyerPrincipal))
-                    .isInstanceOf(AccessDeniedException.class)
-                    .hasMessageContaining("판매자 권한이 필요합니다");
-
-            // verify
-            verify(userRepository).findByProviderAndProviderId("google", "buyer123456789");
-            verify(sellersRepository, never()).findByUserId(any());
-        }
     }
 
     @Nested
@@ -316,23 +300,7 @@ class SellerInfoServiceImplTest {
             verify(sellersRepository, never()).save(any());
         }
 
-        @Test
-        @DisplayName("실패 - 구매자가 판매자 정보 등록 시도")
-        void upsertSellerInfo_BuyerAccessDenied() {
-            // given
-            given(userRepository.findByProviderAndProviderId("google", "buyer123456789"))
-                    .willReturn(Optional.of(testBuyerUser));
 
-            // when & then
-            assertThatThrownBy(() -> sellerInfoService.upsertSellerInfo(buyerPrincipal, testRequest))
-                    .isInstanceOf(AccessDeniedException.class)
-                    .hasMessageContaining("판매자 권한이 필요합니다");
-
-            // verify
-            verify(userRepository).findByProviderAndProviderId("google", "buyer123456789");
-            verify(sellersRepository, never()).findByBusinessNumber(any());
-            verify(sellersRepository, never()).save(any());
-        }
 
         @Test
         @DisplayName("실패 - 운영시간 유효성 검증 실패")

@@ -20,14 +20,14 @@ import jakarta.persistence.EntityNotFoundException;
 public class SellerStoreExceptionHandler {
 
     /**
-     * 매자를 찾을 수 없는 경우 예외 처리
+     * 판매자를 찾을 수 없는 경우 예외 처리
      * Service의 findSellerByVendorName()에서 발생
      */
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleEntityNotFound(EntityNotFoundException e) {
         log.warn("판매자 스토어 조회 실패 - Message: {}", e.getMessage());
 
-        // 구체적인 에러 메시지로 응답
+
         return ResponseEntity.status(ResponseCode.SELLER_STORE_NOT_FOUND.getStatus())
                 .body(ApiResponse.error(ResponseCode.SELLER_STORE_NOT_FOUND, e.getMessage()));
     }
