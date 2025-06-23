@@ -206,6 +206,39 @@ CREATE TABLE orders (
                         CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- 재고 예약 테이블
+CREATE TABLE IF NOT EXISTS stock_reservations (
+                                                  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                                  order_id UUID NOT NULL,
+                                                  product_id UUID NOT NULL,
+                                                  reserved_quantity INTEGER NOT NULL CHECK (reserved_quantity > 0),
+                                                  reservation_status VARCHAR(20) NOT NULL CHECK (reservation_status IN ('RESERVED', 'CONFIRMED', 'CANCELLED', 'EXPIRED')),
+                                                  reserved_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                  confirmed_at TIMESTAMP WITH TIME ZONE,
+                                                  expired_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                                                  version BIGINT NOT NULL DEFAULT 0,
+                                                  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- 외래키 제약조건
+                                                  CONSTRAINT fk_stock_reservation_order_id
+                                                      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+                                                  CONSTRAINT fk_stock_reservation_product_id
+                                                      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);
+
+-- 성능 최적화를 위한 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_order_id ON stock_reservations(order_id);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_product_id ON stock_reservations(product_id);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_status ON stock_reservations(reservation_status);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_expired_at ON stock_reservations(expired_at);
+
+-- 복합 인덱스 (자주 사용되는 조회 패턴용)
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_product_status
+    ON stock_reservations(product_id, reservation_status);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_order_product
+    ON stock_reservations(order_id, product_id);
+
 
 -- 장바구니 헤더
 CREATE TABLE carts (
