@@ -6,22 +6,23 @@ import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 
 /**
- * 주문 생성 이벤트
+ * 주문 생성 이벤트 (String ID 타입 적용)
  * 주문이 성공적으로 생성되었을 때 발행되는 이벤트입니다.
  * 이벤트 리스너들이 이 이벤트를 구독하여 후속 작업들을 수행합니다.
  * 이벤트 기반 아키텍처(EDA)의 핵심 컴포넌트로,
  * 주문 생성과 부가 로직(재고 차감, 결제 정보 생성)을 분리합니다.
+ *
+ * 프로젝트의 모든 Entity ID가 String 타입이므로 이에 맞춰 수정되었습니다.
  */
 @Getter
 @Builder
 @RequiredArgsConstructor
 public class OrderCreatedEvent {
 
-    // 생성된 주문의 고유 식별자
-    private final UUID orderId;
+    // 생성된 주문의 고유 식별자 (String 타입)
+    private final String orderId;
 
     // 주문 번호 (사용자에게 노출되는 번호)
     private final Long orderNumber;
@@ -43,15 +44,15 @@ public class OrderCreatedEvent {
     private final LocalDateTime eventOccurredAt;
 
     /**
-     * 주문 아이템 정보를 담는 내부 클래스
+     * 주문 아이템 정보를 담는 내부 클래스 (String ID 타입 적용)
      * 이벤트 리스너에서 재고 차감 등의 작업을 수행할 때 필요한 정보를 포함합니다.
      */
     @Getter
     @Builder
     @RequiredArgsConstructor
     public static class OrderItemInfo {
-        // 상품 고유 식별자
-        private final UUID productId;
+        // 상품 고유 식별자 (String 타입)
+        private final String productId;
 
         // 상품명 (로깅 및 알림용)
         private final String productName;
@@ -67,8 +68,8 @@ public class OrderCreatedEvent {
     }
 
     /**
-     * 이벤트 생성을 위한 정적 팩토리 메서드
-     * @param orderId 주문 ID (UUID 타입)
+     * 이벤트 생성을 위한 정적 팩토리 메서드 (String ID 타입 적용)
+     * @param orderId 주문 ID (String 타입)
      * @param orderNumber 주문 번호
      * @param userId 사용자 ID (String 타입)
      * @param userProvider 사용자 인증 제공자
@@ -78,7 +79,7 @@ public class OrderCreatedEvent {
      * @return OrderCreatedEvent 인스턴스
      */
     public static OrderCreatedEvent of(
-            UUID orderId,
+            String orderId,
             Long orderNumber,
             String userId,
             String userProvider,

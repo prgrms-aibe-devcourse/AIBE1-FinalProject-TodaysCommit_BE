@@ -26,18 +26,19 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (EDA 전환 버전)
+ * 주문 관리 서비스 구현체 (EDA 전환 + String ID 타입 적용)
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
+ *
  * 핵심 변경사항:
  * 1. 재고 차감 로직을 이벤트 리스너로 이동
  * 2. ApplicationEventPublisher를 통한 OrderCreatedEvent 발행
  * 3. 트랜잭션 범위를 주문 저장까지로 축소
+ * 4. 모든 Entity ID를 String 타입으로 통일 처리
  */
 @Slf4j
 @Service
@@ -51,17 +52,17 @@ public class OrderServiceImpl implements OrderService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * UserPrincipal을 사용한 주문 생성 (EDA 전환 버전)
+     * UserPrincipal을 사용한 주문 생성 (EDA 전환 + String ID 타입 버전)
      * 변경된 처리 흐름:
      * 1. 사용자 검증 및 상품 정보 수집
      * 2. 주문 엔티티 저장 (재고 차감 제외)
-     * 3. OrderCreatedEvent 발행
+     * 3. OrderCreatedEvent 발행 (String ID 타입)
      * 4. 이벤트 리스너들이 비동기로 후속 작업 처리
      */
     @Override
     @Transactional
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
-        log.info("주문 생성 시작 (EDA 버전): provider={}, providerId={}, 상품 개수={}",
+        log.info("주문 생성 시작 (EDA + String ID 버전): provider={}, providerId={}, 상품 개수={}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());
 
         // 1. UserPrincipal로 사용자 조회 및 검증
@@ -117,7 +118,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품들 검증 및 정보 수집 (EDA 전환: 재고 차감 로직 제거)
+     * 주문 상품들 검증 및 정보 수집 (EDA 전환 + String ID 타입: 재고 차감 로직 제거)
      *
      * 기존 validateOrderItems에서 재고 차감 부분을 제거하고,
      * 상품 존재 여부와 기본 검증만 수행합니다.
@@ -129,8 +130,8 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
         for (OrderCreateRequest.OrderItemRequest item : orderItems) {
-            // 상품 존재 여부 확인
-            Products product = productRepository.findById(UUID.fromString(item.getProductId()))
+            // 상품 존재 여부 확인 (String ID 직접 사용)
+            Products product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new NoSuchElementException(
                             "상품을 찾을 수 없습니다: " + item.getProductId()));
 
@@ -148,7 +149,7 @@ public class OrderServiceImpl implements OrderService {
 
             // 주문 아이템 정보 수집
             OrderItemInfo itemInfo = OrderItemInfo.builder()
-                    .productId(item.getProductId())
+                    .productId(item.getProductId()) // String 타입 직접 사용
                     .productName(product.getTitle())
                     .quantity(item.getQuantity())
                     .unitPrice(product.getPrice())
@@ -196,13 +197,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 아이템들 생성 및 저장
+     * 주문 아이템들 생성 및 저장 (String ID 타입 적용)
      */
     private List<OrderItems> createAndSaveOrderItems(Orders order, List<OrderItemInfo> orderItemInfos) {
         List<OrderItems> orderItems = new ArrayList<>();
 
         for (OrderItemInfo info : orderItemInfos) {
-            Products product = productRepository.findById(UUID.fromString(info.getProductId()))
+            // Products ID는 String 타입이므로 직접 사용
+            Products product = productRepository.findById(info.getProductId())
                     .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + info.getProductId()));
 
             OrderItems orderItem = OrderItems.builder()
@@ -220,7 +222,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * OrderCreatedEvent 발행
+     * OrderCreatedEvent 발행 (String ID 타입 적용)
      *
      * 이벤트 리스너들이 다음 작업들을 비동기로 처리합니다:
      * - StockEventListener: 재고 차감
@@ -230,10 +232,10 @@ public class OrderServiceImpl implements OrderService {
     private void publishOrderCreatedEvent(Orders order, Users user, UserPrincipal userPrincipal,
                                           List<OrderItemInfo> orderItemInfos) {
 
-        // OrderCreatedEvent용 OrderItemInfo 리스트 변환
+        // OrderCreatedEvent용 OrderItemInfo 리스트 변환 (String ID 타입)
         List<OrderCreatedEvent.OrderItemInfo> eventOrderItems = orderItemInfos.stream()
                 .map(info -> OrderCreatedEvent.OrderItemInfo.builder()
-                        .productId(UUID.fromString(info.getProductId()))
+                        .productId(info.getProductId()) // String 타입 직접 사용
                         .productName(info.getProductName())
                         .quantity(info.getQuantity())
                         .unitPrice(info.getUnitPrice())
@@ -241,9 +243,9 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .toList();
 
-        // OrderCreatedEvent 생성 및 발행
+        // OrderCreatedEvent 생성 및 발행 (String ID 타입)
         OrderCreatedEvent event = OrderCreatedEvent.of(
-                order.getId(),
+                order.getId(), // String 타입 직접 사용
                 order.getOrderNumber(),
                 user.getId(),
                 userPrincipal.provider(),
@@ -257,12 +259,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 토스 페이먼츠 응답 생성
+     * 토스 페이먼츠 응답 생성 (String ID 타입 적용)
      */
     private OrderCreateResponse buildTossPaymentResponse(Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo) {
         // TossPaymentInfo 생성
         OrderCreateResponse.TossPaymentInfo tossPaymentInfo = OrderCreateResponse.TossPaymentInfo.builder()
-                .tossOrderId(order.getId().toString())
+                .tossOrderId(order.getId()) // String 타입 직접 사용 (toString() 제거)
                 .orderName(generateOrderName(order))
                 .amount(order.getTotalPrice())
                 .customerName(paymentInfo.getCustomerName())
@@ -277,7 +279,7 @@ public class OrderServiceImpl implements OrderService {
         return OrderCreateResponse.builder()
                 .orderNumber(order.getOrderNumber())
                 .totalPrice(order.getTotalPrice())
-                .orderId(order.getId().toString())
+                .orderId(order.getId()) // String 타입 직접 사용 (toString() 제거)
                 .orderStatus(order.getOrderStatus())
                 .createdAt(order.getCreatedAt())
                 .tossPaymentInfo(tossPaymentInfo)
@@ -310,14 +312,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품 정보를 담는 내부 클래스 (기존 유지)
+     * 주문 상품 정보를 담는 내부 클래스 (String ID 타입 적용)
      */
     @lombok.Data
     @lombok.Builder
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     private static class OrderItemInfo {
-        private String productId;
+        private String productId; // String 타입으로 변경
         private String productName;
         private Integer quantity;
         private Long unitPrice;

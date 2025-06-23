@@ -65,7 +65,7 @@ public class OrderEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleStockReservation(OrderCreatedEvent event) {
-        String orderId = event.getOrderId().toString();
+        String orderId = event.getOrderId();
         log.info("재고 예약 처리 시작: orderId={}, orderNumber={}",
                 orderId, event.getOrderNumber());
 
@@ -150,7 +150,7 @@ public class OrderEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentInfoCreation(OrderCreatedEvent event) {
-        String orderId = event.getOrderId().toString();
+        String orderId = event.getOrderId();
         log.info("결제 정보 생성 처리 시작: orderId={}, orderNumber={}",
                 orderId, event.getOrderNumber());
 
@@ -208,7 +208,7 @@ public class OrderEventListener {
     @Async
     @EventListener
     public void handleUserNotification(OrderCreatedEvent event) {
-        String orderId = event.getOrderId().toString();
+        String orderId = event.getOrderId();
         String userId = event.getUserId();
         log.info("사용자 알림 처리 시작: orderId={}, userId={}",
                 orderId, userId);
@@ -248,7 +248,7 @@ public class OrderEventListener {
      */
     @EventListener
     public void handleOrderProcessingComplete(OrderCreatedEvent event) {
-        String orderId = event.getOrderId().toString();
+        String orderId = event.getOrderId();
         String userId = event.getUserId();
         log.info("주문 처리 감사 로그: orderId={}, orderNumber={}, userId={}, amount={}, itemCount={}, timestamp={}",
                 orderId,

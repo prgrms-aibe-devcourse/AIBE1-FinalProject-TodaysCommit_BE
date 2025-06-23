@@ -79,7 +79,7 @@ public class PaymentService {
                 orderId, payment.getId(), tossResponse.getPaymentKey());
 
         return PaymentConfirmResponse.builder()
-                .paymentId(payment.getId().)
+                .paymentId(payment.getId())
                 .orderId(orderId)
                 .orderNumber(order.getOrderNumber())
                 .amount(amount)

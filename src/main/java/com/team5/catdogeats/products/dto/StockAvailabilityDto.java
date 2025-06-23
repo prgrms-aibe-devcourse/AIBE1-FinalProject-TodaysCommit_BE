@@ -3,22 +3,22 @@ package com.team5.catdogeats.products.dto;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.util.UUID;
-
 /**
- * 재고 가용성 정보 DTO
+ * 재고 가용성 정보 DTO (String ID 타입 적용)
  *
  * 상품의 실제 재고, 예약된 재고, 가용 재고 정보를 담는 데이터 전송 객체입니다.
  * 재고 예약 시스템에서 재고 상태를 확인하고 검증할 때 사용됩니다.
+ *
+ * 프로젝트의 모든 Entity ID가 String 타입이므로 이에 맞춰 수정되었습니다.
  */
 @Getter
 @Builder
 public class StockAvailabilityDto {
 
     /**
-     * 상품 ID
+     * 상품 ID (String 타입)
      */
-    private final UUID productId;
+    private final String productId;
 
     /**
      * 실제 재고 수량
