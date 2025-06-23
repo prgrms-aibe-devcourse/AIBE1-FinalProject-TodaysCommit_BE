@@ -13,9 +13,11 @@ import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Service
@@ -40,7 +42,7 @@ public class PetServiceImpl implements PetService {
     }
 
     @Override
-    public List<PetResponseDto> getMyPets(UserPrincipal userPrincipal) {
+    public Page<PetResponseDto> getMyPets(UserPrincipal userPrincipal, int page, int size) {
         BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
 
@@ -49,10 +51,10 @@ public class PetServiceImpl implements PetService {
                 .nameMaskingStatus(buyerDTO.nameMaskingStatus())
                 .build();
 
-        return petRepository.findByBuyer(buyer)
-                .stream()
-                .map(PetResponseDto::fromEntity)
-                .toList();
+        Pageable pageable = PageRequest.of(page, size);
+
+        return petRepository.findByBuyer(buyer, pageable)
+                .map(PetResponseDto::fromEntity);
     }
 
     @JpaTransactional
