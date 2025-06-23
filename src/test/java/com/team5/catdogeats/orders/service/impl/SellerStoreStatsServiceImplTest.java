@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SellerStoreStatsService 단위 테스트")
-class SellerStoreStatsDTOServiceImplTest {
+class SellerStoreStatsServiceImplTest {
 
     @InjectMocks
     private SellerStoreStatsServiceImpl sellerStoreStatsService;
