@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.service;
 
-import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 
 import java.util.List;
 
@@ -16,6 +16,6 @@ public interface ProductBestScoreService {
      * @param sellerId 판매자 ID
      * @return 상품별 베스트 점수 계산 데이터 목록
      */
-    List<ProductBestScoreData> getProductBestScoreData(String sellerId);
+    List<ProductBestScoreDataDTO> getProductBestScoreData(String sellerId);
 
 }

@@ -1,7 +1,7 @@
 package com.team5.catdogeats.products.service;
 
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,7 +21,7 @@ public interface SellerStoreProductService {
      * @param pageable 페이징 정보
      * @return 상품 기본 정보 페이지
      */
-    Page<ProductStoreInfo> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable);
+    Page<ProductStoreInfoDTO> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable);
 
     /**
      * 판매자의 활성 상품 총 개수 조회 (재고 있는것)

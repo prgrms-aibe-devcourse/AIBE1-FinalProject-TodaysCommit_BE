@@ -8,13 +8,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 @Schema(description = "판매자 스토어 페이지 응답")
 public record SellerStorePageResponse(
         @Schema(description = "판매자 정보")
-        SellerStoreInfo sellerInfo,
+        SellerStoreInfoDTO sellerInfo,
 
         @Schema(description = "상품 목록 (페이징)")
-        ProductCardPageResponse products
+        ProductCardPageResponseDTO products
 ) {
 
-    public static SellerStorePageResponse of(SellerStoreInfo sellerInfo, ProductCardPageResponse products) {
+    public static SellerStorePageResponse of(SellerStoreInfoDTO sellerInfo, ProductCardPageResponseDTO products) {
         return new SellerStorePageResponse(sellerInfo, products);
     }
 }

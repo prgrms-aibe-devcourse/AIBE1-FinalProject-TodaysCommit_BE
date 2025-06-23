@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.mapper;
 
-import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -62,5 +62,5 @@ public interface ProductBestScoreMapper {
         WHERE p.seller_id = #{sellerId}
         ORDER BY p.id
         """)
-    List<ProductBestScoreData> getProductBestScoreDataBySeller(@Param("sellerId") String sellerId);
+    List<ProductBestScoreDataDTO> getProductBestScoreDataBySeller(@Param("sellerId") String sellerId);
 }

@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.mapper.SellerStoreStatsMapper;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler;
@@ -23,18 +23,18 @@ public class SellerStoreStatsServiceImpl implements SellerStoreStatsService {
 
     @Override
     @Cacheable(value = "sellerStoreStats", key = "#sellerId")
-    public SellerStoreStats getSellerStoreStats(String sellerId) {
+    public SellerStoreStatsDTO getSellerStoreStats(String sellerId) {
         log.debug("판매자 상점 집계 정보 조회 - sellerId: {}", sellerId);
         try {
             // 1. 파라미터 검증
             validateSellerId(sellerId);
 
             // 2. MyBatis 매퍼를 통한 집계 정보 조회
-            SellerStoreStats stats = sellerStoreStatsMapper.getSellerStoreStats(sellerId);
+            SellerStoreStatsDTO stats = sellerStoreStatsMapper.getSellerStoreStats(sellerId);
 
             if (stats == null) {
                 log.debug("집계 정보가 없어 기본값 반환 - sellerId: {}", sellerId);
-                return SellerStoreStats.empty();
+                return SellerStoreStatsDTO.empty();
             }
 
             log.debug("집계 정보 조회 완료 - sellerId: {}, totalSales: {}, avgDelivery: {}, totalReviews: {}",

@@ -3,8 +3,8 @@ package com.team5.catdogeats.users.controller;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
-import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequestDTO;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponseDTO;
 import com.team5.catdogeats.users.service.SellerInfoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,13 +35,13 @@ public class SellerInfoController {
                     """
     )
     @GetMapping("/info")
-    public ResponseEntity<ApiResponse<SellerInfoResponse>> getSellerInfo(
+    public ResponseEntity<ApiResponse<SellerInfoResponseDTO>> getSellerInfo(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
 
         log.info("판매자 정보 조회 요청 - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());
 
-        SellerInfoResponse response = sellerInfoService.getSellerInfo(userPrincipal);
+        SellerInfoResponseDTO response = sellerInfoService.getSellerInfo(userPrincipal);
 
         if (response == null) {
             return ResponseEntity.ok(
@@ -66,14 +66,14 @@ public class SellerInfoController {
                     """
     )
     @PatchMapping("/info")
-    public ResponseEntity<ApiResponse<SellerInfoResponse>> upsertSellerInfo(
+    public ResponseEntity<ApiResponse<SellerInfoResponseDTO>> upsertSellerInfo(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @Valid @RequestBody SellerInfoRequest request) {
+            @Valid @RequestBody SellerInfoRequestDTO request) {
 
         log.info("판매자 정보 등록/수정 요청 - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
-        SellerInfoResponse response = sellerInfoService.upsertSellerInfo(userPrincipal, request);
+        SellerInfoResponseDTO response = sellerInfoService.upsertSellerInfo(userPrincipal, request);
 
         return ResponseEntity.ok(
                 ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)

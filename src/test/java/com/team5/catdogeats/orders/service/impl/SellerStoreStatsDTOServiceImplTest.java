@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.mapper.SellerStoreStatsMapper;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler.OrderStatsRetrievalException;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SellerStoreStatsService 단위 테스트")
-class SellerStoreStatsServiceImplTest {
+class SellerStoreStatsDTOServiceImplTest {
 
     @InjectMocks
     private SellerStoreStatsServiceImpl sellerStoreStatsService;
@@ -28,12 +28,12 @@ class SellerStoreStatsServiceImplTest {
     private SellerStoreStatsMapper sellerStoreStatsMapper;
 
     private String testSellerId;
-    private SellerStoreStats testStats;
+    private SellerStoreStatsDTO testStats;
 
     @BeforeEach
     void setUp() {
         testSellerId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
-        testStats = new SellerStoreStats(150L, 2.5, 200L);
+        testStats = new SellerStoreStatsDTO(150L, 2.5, 200L);
     }
 
     @Nested
@@ -48,7 +48,7 @@ class SellerStoreStatsServiceImplTest {
                     .willReturn(testStats);
 
             // when
-            SellerStoreStats result = sellerStoreStatsService.getSellerStoreStats(testSellerId);
+            SellerStoreStatsDTO result = sellerStoreStatsService.getSellerStoreStats(testSellerId);
 
             // then
             assertThat(result).isNotNull();
@@ -67,7 +67,7 @@ class SellerStoreStatsServiceImplTest {
                     .willReturn(null);
 
             // when
-            SellerStoreStats result = sellerStoreStatsService.getSellerStoreStats(testSellerId);
+            SellerStoreStatsDTO result = sellerStoreStatsService.getSellerStoreStats(testSellerId);
 
             // then
             assertThat(result).isNotNull();

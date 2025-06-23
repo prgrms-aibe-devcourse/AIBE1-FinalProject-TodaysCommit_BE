@@ -4,7 +4,7 @@ package com.team5.catdogeats.products.domain.dto;
  * 베스트 점수 계산을 위한 상품별 통계 데이터 DTO
  * Orders 도메인에서 Products 도메인으로 전달되는 데이터
  */
-public record ProductBestScoreData(
+public record ProductBestScoreDataDTO(
         String productId,
         Long salesQuantity,      // 판매량
         Long totalRevenue,       // 매출액
@@ -54,7 +54,7 @@ public record ProductBestScoreData(
     /**
      * 기본값으로 생성 (데이터가 없는 경우)
      */
-    public static ProductBestScoreData empty(String productId) {
-        return new ProductBestScoreData(productId, 0L, 0L, 0.0, 0L, 0L);
+    public static ProductBestScoreDataDTO empty(String productId) {
+        return new ProductBestScoreDataDTO(productId, 0L, 0L, 0.0, 0L, 0L);
     }
 }

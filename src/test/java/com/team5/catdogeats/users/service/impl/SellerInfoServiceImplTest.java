@@ -4,8 +4,8 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequestDTO;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponseDTO;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -48,7 +48,7 @@ class SellerInfoServiceImplTest {
     private Users testBuyerUser;
     private Sellers testSeller;
     private Sellers otherSeller;
-    private SellerInfoRequest testRequest;
+    private SellerInfoRequestDTO testRequest;
 
     // JWT 테스트용 데이터
     private UserPrincipal sellerPrincipal;
@@ -118,7 +118,7 @@ class SellerInfoServiceImplTest {
                 .businessNumber("123-45-67890") // 같은 사업자번호
                 .build();
 
-        testRequest = new SellerInfoRequest(
+        testRequest = new SellerInfoRequestDTO(
                 "펫푸드 공방",
                 "https://example.com/logo.jpg",
                 "123-45-67890",
@@ -144,7 +144,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.of(testSeller));
 
             // when
-            SellerInfoResponse result = sellerInfoService.getSellerInfo(sellerPrincipal);
+            SellerInfoResponseDTO result = sellerInfoService.getSellerInfo(sellerPrincipal);
 
             // then
             assertThat(result).isNotNull();
@@ -166,7 +166,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.findByUserId(testUserId)).willReturn(Optional.empty());
 
             // when
-            SellerInfoResponse result = sellerInfoService.getSellerInfo(sellerPrincipal);
+            SellerInfoResponseDTO result = sellerInfoService.getSellerInfo(sellerPrincipal);
 
             // then
             assertThat(result).isNull();
@@ -228,7 +228,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -247,7 +247,7 @@ class SellerInfoServiceImplTest {
         void upsertSellerInfo_UpdateExisting_Success() {
             // given
             String newVendorName = "수정된 Vendor_name";
-            SellerInfoRequest updateRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO updateRequest = new SellerInfoRequestDTO(
                     newVendorName,
                     testRequest.vendorProfileImage(),
                     testRequest.businessNumber(),
@@ -266,7 +266,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, updateRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, updateRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -338,7 +338,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 운영시간 유효성 검증 실패")
         void upsertSellerInfo_InvalidOperatingHours() {
             // given
-            SellerInfoRequest invalidRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO invalidRequest = new SellerInfoRequestDTO(
                     "펫푸드 공방",
                     "https://example.com/logo.jpg",
                     "987-65-43210",
@@ -367,7 +367,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 잘못된 휴무일")
         void upsertSellerInfo_InvalidClosedDays() {
             // given
-            SellerInfoRequest invalidRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO invalidRequest = new SellerInfoRequestDTO(
                     "펫푸드 공방",
                     "https://example.com/logo.jpg",
                     "987-65-43210",
@@ -434,7 +434,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest);
 
             // then
             assertThat(result).isNotNull(); // 예외가 발생하지 않고 정상 처리됨
@@ -449,7 +449,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 선택 필드가 null인 요청")
         void upsertSellerInfo_OptionalFieldsNull_Success() {
             // given - Record 생성자로 null 값들 포함
-            SellerInfoRequest requestWithNulls = new SellerInfoRequest(
+            SellerInfoRequestDTO requestWithNulls = new SellerInfoRequestDTO(
                     "펫푸드 공방",                          // 필수
                     "https://example.com/logo.jpg",        // 필수
                     "987-65-43210",                        // 필수 (다른 사업자번호)
@@ -468,7 +468,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, requestWithNulls);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, requestWithNulls);
 
             // then
             assertThat(result).isNotNull();
@@ -481,7 +481,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 빈 문자열 필드 처리")
         void upsertSellerInfo_EmptyStringFields_Success() {
             // given
-            SellerInfoRequest requestWithEmptyStrings = new SellerInfoRequest(
+            SellerInfoRequestDTO requestWithEmptyStrings = new SellerInfoRequestDTO(
                     "펫푸드 공방",                          // 필수
                     "https://example.com/logo.jpg",        // 필수
                     "987-65-43210",                        // 필수
@@ -500,7 +500,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, requestWithEmptyStrings);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, requestWithEmptyStrings);
 
             // then
             assertThat(result).isNotNull();
@@ -518,7 +518,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 다양한 휴무일 패턴 처리")
         void upsertSellerInfo_VariousClosedDaysPatterns() {
             // given - 주말 휴무
-            SellerInfoRequest weekendRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO weekendRequest = new SellerInfoRequestDTO(
                     "주말휴무 펫샵",
                     "https://example.com/logo.jpg",
                     "111-11-11111",
@@ -537,7 +537,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, weekendRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, weekendRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -548,7 +548,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 단일 휴무일 처리")
         void upsertSellerInfo_SingleClosedDay() {
             // given
-            SellerInfoRequest singleDayRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO singleDayRequest = new SellerInfoRequestDTO(
                     "월요일만 휴무",
                     "https://example.com/logo.jpg",
                     "222-22-22222",
@@ -567,7 +567,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, singleDayRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, singleDayRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -578,7 +578,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 휴무일 없음 (null)")
         void upsertSellerInfo_NoClosedDays_Null() {
             // given
-            SellerInfoRequest noClosedDaysRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO noClosedDaysRequest = new SellerInfoRequestDTO(
                     "무휴 펫샵",
                     "https://example.com/logo.jpg",
                     "333-33-33333",
@@ -597,7 +597,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, noClosedDaysRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, noClosedDaysRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -608,7 +608,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 휴무일 없음 (빈 문자열)")
         void upsertSellerInfo_NoClosedDays_EmptyString() {
             // given
-            SellerInfoRequest emptyClosedDaysRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO emptyClosedDaysRequest = new SellerInfoRequestDTO(
                     "무휴 펫샵2",
                     "https://example.com/logo.jpg",
                     "444-44-44444",
@@ -627,7 +627,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, emptyClosedDaysRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, emptyClosedDaysRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -638,7 +638,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 많은 휴무일 처리")
         void upsertSellerInfo_ManyClosedDays() {
             // given
-            SellerInfoRequest manyClosedDaysRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO manyClosedDaysRequest = new SellerInfoRequestDTO(
                     "주 3일만 운영",
                     "https://example.com/logo.jpg",
                     "555-55-55555",
@@ -657,7 +657,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, manyClosedDaysRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, manyClosedDaysRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -668,7 +668,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 잘못된 요일명")
         void validateClosedDays_InvalidDayName_ThrowsException() {
             // given
-            SellerInfoRequest invalidRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO invalidRequest = new SellerInfoRequestDTO(
                     "잘못된 요일",
                     "https://example.com/logo.jpg",
                     "333-33-33333",
@@ -697,7 +697,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 부분적으로 잘못된 요일명")
         void validateClosedDays_PartiallyInvalid_ThrowsException() {
             // given
-            SellerInfoRequest partiallyInvalidRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO partiallyInvalidRequest = new SellerInfoRequestDTO(
                     "부분 잘못",
                     "https://example.com/logo.jpg",
                     "444-44-44444",
@@ -722,7 +722,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 공백이 포함된 휴무일 처리")
         void upsertSellerInfo_ClosedDaysWithSpaces() {
             // given
-            SellerInfoRequest spacedDaysRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO spacedDaysRequest = new SellerInfoRequestDTO(
                     "공백 포함 요일",
                     "https://example.com/logo.jpg",
                     "777-77-77777",
@@ -741,7 +741,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, spacedDaysRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, spacedDaysRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -757,7 +757,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 운영 시간 중 시작시간만 설정")
         void upsertSellerInfo_OnlyStartTimeSet() {
             // given
-            SellerInfoRequest onlyStartTimeRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO onlyStartTimeRequest = new SellerInfoRequestDTO(
                     "시작시간만 설정",
                     "https://example.com/logo.jpg",
                     "888-88-88888",
@@ -786,7 +786,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("실패 - 운영 시간 중 종료시간만 설정")
         void upsertSellerInfo_OnlyEndTimeSet() {
             // given
-            SellerInfoRequest onlyEndTimeRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO onlyEndTimeRequest = new SellerInfoRequestDTO(
                     "종료시간만 설정",
                     "https://example.com/logo.jpg",
                     "999-99-99999",
@@ -811,7 +811,7 @@ class SellerInfoServiceImplTest {
         @DisplayName("성공 - 운영시간 모두 null")
         void upsertSellerInfo_BothTimesNull_Success() {
             // given
-            SellerInfoRequest bothTimesNullRequest = new SellerInfoRequest(
+            SellerInfoRequestDTO bothTimesNullRequest = new SellerInfoRequestDTO(
                     "시간 미설정",
                     "https://example.com/logo.jpg",
                     "000-00-00000",
@@ -830,7 +830,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, bothTimesNullRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, bothTimesNullRequest);
 
             // then
             assertThat(result).isNotNull();
@@ -848,7 +848,7 @@ class SellerInfoServiceImplTest {
             given(sellersRepository.save(any(Sellers.class))).willReturn(testSeller);
 
             // when
-            SellerInfoResponse result = sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest);
+            SellerInfoResponseDTO result = sellerInfoService.upsertSellerInfo(sellerPrincipal, testRequest);
 
             // then
             assertThat(result).isNotNull();

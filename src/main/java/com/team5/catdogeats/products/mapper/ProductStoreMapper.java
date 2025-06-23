@@ -1,6 +1,6 @@
 package com.team5.catdogeats.products.mapper;
 
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import org.apache.ibatis.annotations.*;
 import java.util.List;
 
@@ -58,7 +58,7 @@ public interface ProductStoreMapper {
         ORDER BY p.created_at DESC
         </script>
         """)
-    List<ProductStoreInfo> findProductsByIds(
+    List<ProductStoreInfoDTO> findProductsByIds(
             @Param("productIds") List<String> productIds,
             @Param("category") String category
     );
@@ -117,7 +117,7 @@ public interface ProductStoreMapper {
         LIMIT #{limit} OFFSET #{offset}
         </script>
         """)
-    List<ProductStoreInfo> findSellerProductsBaseInfo(
+    List<ProductStoreInfoDTO> findSellerProductsBaseInfo(
             @Param("sellerId") String sellerId,
             @Param("category") String category,
             @Param("filter") String filter,

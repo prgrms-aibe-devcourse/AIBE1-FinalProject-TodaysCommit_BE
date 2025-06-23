@@ -2,8 +2,8 @@ package com.team5.catdogeats.products.service.impl;
 
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler.ProductDataRetrievalException;
@@ -43,15 +43,15 @@ class SellerStoreProductServiceImplTest {
     private ProductBestScoreService productBestScoreService;
 
     private String testSellerId;
-    private List<ProductStoreInfo> testProducts;
-    private List<ProductBestScoreData> testBestScoreData;
+    private List<ProductStoreInfoDTO> testProducts;
+    private List<ProductBestScoreDataDTO> testBestScoreData;
 
     @BeforeEach
     void setUp() {
         testSellerId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
 
         testProducts = Arrays.asList(
-                new ProductStoreInfo(
+                new ProductStoreInfoDTO(
                         "product1",
                         1001L,
                         "상품1",
@@ -65,7 +65,7 @@ class SellerStoreProductServiceImplTest {
                         100L,
                         85.5
                 ),
-                new ProductStoreInfo(
+                new ProductStoreInfoDTO(
                         "product2",
                         1002L,
                         "상품2",
@@ -82,8 +82,8 @@ class SellerStoreProductServiceImplTest {
         );
 
         testBestScoreData = Arrays.asList(
-                new ProductBestScoreData("product1", 100L, 1000000L, 4.5, 100L, 30L),
-                new ProductBestScoreData("product2", 80L, 800000L, 4.0, 50L, 20L)
+                new ProductBestScoreDataDTO("product1", 100L, 1000000L, 4.5, 100L, 30L),
+                new ProductBestScoreDataDTO("product2", 80L, 800000L, 4.0, 50L, 20L)
         );
     }
 
@@ -102,7 +102,7 @@ class SellerStoreProductServiceImplTest {
                     .willReturn(50L);
 
             // when
-            Page<ProductStoreInfo> result = sellerStoreProductService
+            Page<ProductStoreInfoDTO> result = sellerStoreProductService
                     .getSellerProductsBaseInfo(testSellerId, null, null, pageable);
 
             // then
@@ -128,7 +128,7 @@ class SellerStoreProductServiceImplTest {
                     .willReturn(25L);
 
             // when
-            Page<ProductStoreInfo> result = sellerStoreProductService
+            Page<ProductStoreInfoDTO> result = sellerStoreProductService
                     .getSellerProductsBaseInfo(testSellerId, category, null, pageable);
 
             // then
@@ -151,7 +151,7 @@ class SellerStoreProductServiceImplTest {
                     .willReturn(10L);
 
             // when
-            Page<ProductStoreInfo> result = sellerStoreProductService
+            Page<ProductStoreInfoDTO> result = sellerStoreProductService
                     .getSellerProductsBaseInfo(testSellerId, null, filter, pageable);
 
             // then
@@ -233,7 +233,7 @@ class SellerStoreProductServiceImplTest {
                     .willReturn(testProducts);
 
             // when
-            Page<ProductStoreInfo> result = sellerStoreProductService
+            Page<ProductStoreInfoDTO> result = sellerStoreProductService
                     .getSellerProductsBaseInfo(testSellerId, null, "best", pageable);
 
             // then
@@ -249,7 +249,7 @@ class SellerStoreProductServiceImplTest {
         @DisplayName("베스트 점수 계산 - 빈 데이터")
         void calculateBestScore_EmptyData() {
             // given
-            ProductBestScoreData emptyData = ProductBestScoreData.empty("product1");
+            ProductBestScoreDataDTO emptyData = ProductBestScoreDataDTO.empty("product1");
 
             // when
             Double bestScore = emptyData.calculateBestScore();
@@ -262,7 +262,7 @@ class SellerStoreProductServiceImplTest {
         @DisplayName("베스트 점수 계산 - 높은 성과 상품")
         void calculateBestScore_HighPerformanceProduct() {
             // given
-            ProductBestScoreData highPerformanceData = new ProductBestScoreData(
+            ProductBestScoreDataDTO highPerformanceData = new ProductBestScoreDataDTO(
                     "product1",
                     100L,    // 최대 기준치
                     1000000L, // 100만원 (최대 기준치)

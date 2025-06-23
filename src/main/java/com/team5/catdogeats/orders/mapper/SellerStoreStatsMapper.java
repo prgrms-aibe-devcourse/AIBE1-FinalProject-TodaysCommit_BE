@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.mapper;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -47,5 +47,5 @@ public interface SellerStoreStatsMapper {
         LEFT JOIN sales_data sd ON 1=1
         LEFT JOIN delivery_data dd ON 1=1
         """)
-    SellerStoreStats getSellerStoreStats(@Param("sellerId") String sellerId);
+    SellerStoreStatsDTO getSellerStoreStats(@Param("sellerId") String sellerId);
 }

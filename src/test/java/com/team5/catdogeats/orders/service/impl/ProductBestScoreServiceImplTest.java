@@ -1,8 +1,7 @@
 package com.team5.catdogeats.orders.service.impl;
 
 import com.team5.catdogeats.orders.mapper.ProductBestScoreMapper;
-import com.team5.catdogeats.orders.service.ProductBestScoreService;
-import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler.OrderStatsRetrievalException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,15 +32,15 @@ class ProductBestScoreServiceImplTest {
     private ProductBestScoreMapper productBestScoreMapper;
 
     private String testSellerId;
-    private List<ProductBestScoreData> testScoreData;
+    private List<ProductBestScoreDataDTO> testScoreData;
 
     @BeforeEach
     void setUp() {
         testSellerId = "2aa4ad9f-dd05-4739-a683-eb8d2115635f";
         testScoreData = Arrays.asList(
-                new ProductBestScoreData("product1", 100L, 1000000L, 4.5, 100L, 30L),
-                new ProductBestScoreData("product2", 80L, 800000L, 4.0, 50L, 20L),
-                new ProductBestScoreData("product3", 120L, 1200000L, 4.8, 120L, 40L)
+                new ProductBestScoreDataDTO("product1", 100L, 1000000L, 4.5, 100L, 30L),
+                new ProductBestScoreDataDTO("product2", 80L, 800000L, 4.0, 50L, 20L),
+                new ProductBestScoreDataDTO("product3", 120L, 1200000L, 4.8, 120L, 40L)
         );
     }
 
@@ -57,7 +56,7 @@ class ProductBestScoreServiceImplTest {
                     .willReturn(testScoreData);
 
             // when
-            List<ProductBestScoreData> result = productBestScoreService.getProductBestScoreData(testSellerId);
+            List<ProductBestScoreDataDTO> result = productBestScoreService.getProductBestScoreData(testSellerId);
 
             // then
             assertThat(result).isNotNull();
@@ -80,7 +79,7 @@ class ProductBestScoreServiceImplTest {
                     .willReturn(Collections.emptyList());
 
             // when
-            List<ProductBestScoreData> result = productBestScoreService.getProductBestScoreData(testSellerId);
+            List<ProductBestScoreDataDTO> result = productBestScoreService.getProductBestScoreData(testSellerId);
 
             // then
             assertThat(result).isNotNull();
@@ -93,14 +92,14 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("성공 - 단일 상품 데이터")
         void getProductBestScoreData_SingleProduct_Success() {
             // given
-            List<ProductBestScoreData> singleProductData = List.of(
-                    new ProductBestScoreData("product1", 50L, 500000L, 4.2, 75L, 15L)
+            List<ProductBestScoreDataDTO> singleProductData = List.of(
+                    new ProductBestScoreDataDTO("product1", 50L, 500000L, 4.2, 75L, 15L)
             );
             given(productBestScoreMapper.getProductBestScoreDataBySeller(testSellerId))
                     .willReturn(singleProductData);
 
             // when
-            List<ProductBestScoreData> result = productBestScoreService.getProductBestScoreData(testSellerId);
+            List<ProductBestScoreDataDTO> result = productBestScoreService.getProductBestScoreData(testSellerId);
 
             // then
             assertThat(result).hasSize(1);
@@ -171,7 +170,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 검증 - 표준 케이스")
         void calculateBestScore_StandardCase_Verification() {
             // given
-            ProductBestScoreData scoreData = new ProductBestScoreData(
+            ProductBestScoreDataDTO scoreData = new ProductBestScoreDataDTO(
                     "product1",
                     100L,    // 판매량 (기준: 100 = 100점)
                     1000000L, // 매출액 (기준: 100만원 = 100점)
@@ -197,7 +196,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - 최고 성과 상품")
         void calculateBestScore_HighPerformanceProduct() {
             // given - 모든 지표가 최대 기준치
-            ProductBestScoreData highPerformanceData = new ProductBestScoreData(
+            ProductBestScoreDataDTO highPerformanceData = new ProductBestScoreDataDTO(
                     "product1",
                     100L,    // 최대 기준치
                     1000000L, // 100만원 (최대 기준치)
@@ -217,7 +216,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - 최저 성과 상품")
         void calculateBestScore_LowPerformanceProduct() {
             // given - 모든 지표가 0
-            ProductBestScoreData lowPerformanceData = new ProductBestScoreData(
+            ProductBestScoreDataDTO lowPerformanceData = new ProductBestScoreDataDTO(
                     "product1",
                     0L,      // 판매량 0
                     0L,      // 매출액 0
@@ -237,7 +236,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - 부분적 높은 성과")
         void calculateBestScore_PartialHighPerformance() {
             // given - 판매량은 높지만 다른 지표는 낮음
-            ProductBestScoreData partialData = new ProductBestScoreData(
+            ProductBestScoreDataDTO partialData = new ProductBestScoreDataDTO(
                     "product1",
                     200L,    // 기준치의 2배 (100점으로 제한됨)
                     500000L, // 기준치의 절반 (50점)
@@ -258,7 +257,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - null 값 처리")
         void calculateBestScore_NullValues() {
             // given - null 값들이 포함된 데이터
-            ProductBestScoreData nullData = new ProductBestScoreData(
+            ProductBestScoreDataDTO nullData = new ProductBestScoreDataDTO(
                     "product1",
                     null,    // null 판매량
                     null,    // null 매출액
@@ -278,7 +277,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - 소수점 처리")
         void calculateBestScore_DecimalHandling() {
             // given
-            ProductBestScoreData decimalData = new ProductBestScoreData(
+            ProductBestScoreDataDTO decimalData = new ProductBestScoreDataDTO(
                     "product1",
                     75L,     // 75점
                     750000L, // 75점
@@ -299,7 +298,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - 기준치 초과값 처리")
         void calculateBestScore_ExceedsMaxReference() {
             // given - 모든 값이 기준치를 크게 초과
-            ProductBestScoreData exceedsData = new ProductBestScoreData(
+            ProductBestScoreDataDTO exceedsData = new ProductBestScoreDataDTO(
                     "product1",
                     500L,     // 기준치(100)의 5배
                     5000000L, // 기준치(100만)의 5배
@@ -319,7 +318,7 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 계산 - 빈 데이터 객체")
         void calculateBestScore_EmptyData() {
             // given
-            ProductBestScoreData emptyData = ProductBestScoreData.empty("product1");
+            ProductBestScoreDataDTO emptyData = ProductBestScoreDataDTO.empty("product1");
 
             // when
             Double bestScore = emptyData.calculateBestScore();
@@ -360,8 +359,8 @@ class ProductBestScoreServiceImplTest {
         void getProductBestScoreData_DifferentSellerCache() {
             // given
             String anotherSellerId = "different-seller-id";
-            List<ProductBestScoreData> anotherData = List.of(
-                    new ProductBestScoreData("product4", 60L, 600000L, 3.8, 40L, 12L)
+            List<ProductBestScoreDataDTO> anotherData = List.of(
+                    new ProductBestScoreDataDTO("product4", 60L, 600000L, 3.8, 40L, 12L)
             );
 
             given(productBestScoreMapper.getProductBestScoreDataBySeller(testSellerId))
@@ -370,8 +369,8 @@ class ProductBestScoreServiceImplTest {
                     .willReturn(anotherData);
 
             // when
-            List<ProductBestScoreData> result1 = productBestScoreService.getProductBestScoreData(testSellerId);
-            List<ProductBestScoreData> result2 = productBestScoreService.getProductBestScoreData(anotherSellerId);
+            List<ProductBestScoreDataDTO> result1 = productBestScoreService.getProductBestScoreData(testSellerId);
+            List<ProductBestScoreDataDTO> result2 = productBestScoreService.getProductBestScoreData(anotherSellerId);
 
             // then
             assertThat(result1).hasSize(3);
@@ -392,17 +391,17 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("베스트 점수 기준 정렬 확인")
         void getProductBestScoreData_SortingByBestScore() {
             // given
-            List<ProductBestScoreData> unsortedData = Arrays.asList(
-                    new ProductBestScoreData("product1", 50L, 500000L, 3.0, 30L, 10L),   // 낮은 점수
-                    new ProductBestScoreData("product2", 100L, 1000000L, 5.0, 50L, 20L), // 높은 점수
-                    new ProductBestScoreData("product3", 75L, 750000L, 4.0, 40L, 15L)    // 중간 점수
+            List<ProductBestScoreDataDTO> unsortedData = Arrays.asList(
+                    new ProductBestScoreDataDTO("product1", 50L, 500000L, 3.0, 30L, 10L),   // 낮은 점수
+                    new ProductBestScoreDataDTO("product2", 100L, 1000000L, 5.0, 50L, 20L), // 높은 점수
+                    new ProductBestScoreDataDTO("product3", 75L, 750000L, 4.0, 40L, 15L)    // 중간 점수
             );
 
             given(productBestScoreMapper.getProductBestScoreDataBySeller(testSellerId))
                     .willReturn(unsortedData);
 
             // when
-            List<ProductBestScoreData> result = productBestScoreService.getProductBestScoreData(testSellerId);
+            List<ProductBestScoreDataDTO> result = productBestScoreService.getProductBestScoreData(testSellerId);
 
             // then
             assertThat(result).hasSize(3);
@@ -425,19 +424,19 @@ class ProductBestScoreServiceImplTest {
         @DisplayName("대량 데이터 처리 확인")
         void getProductBestScoreData_LargeDataSet() {
             // given - 많은 상품 데이터
-            List<ProductBestScoreData> largeDataSet = Arrays.asList(
-                    new ProductBestScoreData("product1", 10L, 100000L, 4.1, 20L, 5L),
-                    new ProductBestScoreData("product2", 20L, 200000L, 4.2, 25L, 8L),
-                    new ProductBestScoreData("product3", 30L, 300000L, 4.3, 30L, 10L),
-                    new ProductBestScoreData("product4", 40L, 400000L, 4.4, 35L, 12L),
-                    new ProductBestScoreData("product5", 50L, 500000L, 4.5, 40L, 15L)
+            List<ProductBestScoreDataDTO> largeDataSet = Arrays.asList(
+                    new ProductBestScoreDataDTO("product1", 10L, 100000L, 4.1, 20L, 5L),
+                    new ProductBestScoreDataDTO("product2", 20L, 200000L, 4.2, 25L, 8L),
+                    new ProductBestScoreDataDTO("product3", 30L, 300000L, 4.3, 30L, 10L),
+                    new ProductBestScoreDataDTO("product4", 40L, 400000L, 4.4, 35L, 12L),
+                    new ProductBestScoreDataDTO("product5", 50L, 500000L, 4.5, 40L, 15L)
             );
 
             given(productBestScoreMapper.getProductBestScoreDataBySeller(testSellerId))
                     .willReturn(largeDataSet);
 
             // when
-            List<ProductBestScoreData> result = productBestScoreService.getProductBestScoreData(testSellerId);
+            List<ProductBestScoreDataDTO> result = productBestScoreService.getProductBestScoreData(testSellerId);
 
             // then
             assertThat(result).hasSize(5);
@@ -446,7 +445,7 @@ class ProductBestScoreServiceImplTest {
 
             // 모든 데이터가 올바르게 반환되는지 확인
             for (int i = 0; i < result.size(); i++) {
-                ProductBestScoreData data = result.get(i);
+                ProductBestScoreDataDTO data = result.get(i);
                 assertThat(data.productId()).isEqualTo("product" + (i + 1));
                 assertThat(data.calculateBestScore()).isGreaterThanOrEqualTo(0.0);
             }

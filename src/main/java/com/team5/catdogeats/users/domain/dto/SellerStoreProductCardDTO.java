@@ -1,7 +1,7 @@
 package com.team5.catdogeats.users.domain.dto;
 
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -12,7 +12,7 @@ import java.math.RoundingMode;
  * 판매자 스토어 페이지 상품 카드 DTO
  */
 @Schema(description = "스토어 상품 카드 정보")
-public record SellerStoreProductCard(
+public record SellerStoreProductCardDTO(
         @Schema(description = "상품 ID", example = "product-uuid")
         String productId,
 
@@ -50,7 +50,7 @@ public record SellerStoreProductCard(
         Double bestScore
 ) {
 
-    public static SellerStoreProductCard from(ProductStoreInfo productInfo) {
+    public static SellerStoreProductCardDTO from(ProductStoreInfoDTO productInfo) {
         if (productInfo == null) {
             return null;
         }
@@ -69,7 +69,7 @@ public record SellerStoreProductCard(
                 ? BigDecimal.valueOf(productInfo.bestScore()).setScale(1, RoundingMode.HALF_UP).doubleValue()
                 : 0.0;
 
-        return new SellerStoreProductCard(
+        return new SellerStoreProductCardDTO(
                 productInfo.productId(),
                 productInfo.productNumber(),
                 productInfo.title(),

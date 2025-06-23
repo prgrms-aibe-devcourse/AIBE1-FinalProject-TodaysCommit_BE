@@ -1,9 +1,9 @@
 package com.team5.catdogeats.users.service.impl;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
 import com.team5.catdogeats.users.domain.dto.*;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
@@ -56,11 +56,11 @@ public class SellerStoreServiceImpl implements SellerStoreService {
 
         // 4. 상품 기본 정보 조회 (Products 도메인)
         Long totalProducts = productService.countSellerActiveProducts(seller.getUserId());
-        Page<ProductStoreInfo> productInfoPage = productService
+        Page<ProductStoreInfoDTO> productInfoPage = productService
                 .getSellerProductsBaseInfo(seller.getUserId(), category, filter, pageable);
 
         // 5. 상점 집계 정보 조회 (Orders 도메인)
-        SellerStoreStats storeStats = sellerStoreStatsService.getSellerStoreStats(seller.getUserId());
+        SellerStoreStatsDTO storeStats = sellerStoreStatsService.getSellerStoreStats(seller.getUserId());
 
         // 6. 응답 데이터 생성
         SellerStorePageResponse response = buildResponse(seller, totalProducts, storeStats, productInfoPage);
@@ -186,18 +186,18 @@ public class SellerStoreServiceImpl implements SellerStoreService {
     private SellerStorePageResponse buildResponse(
             Sellers seller,
             Long totalProducts,
-            SellerStoreStats storeStats,
-            Page<ProductStoreInfo> productInfoPage) {
+            SellerStoreStatsDTO storeStats,
+            Page<ProductStoreInfoDTO> productInfoPage) {
 
         // 판매자 정보 생성 (집계 정보 포함)
-        SellerStoreInfo sellerInfo = SellerStoreInfo.from(seller, totalProducts, storeStats);
+        SellerStoreInfoDTO sellerInfo = SellerStoreInfoDTO.from(seller, totalProducts, storeStats);
 
         // 상품 카드로 변환
-        Page<SellerStoreProductCard> productCardPage = productInfoPage
-                .map(SellerStoreProductCard::from);
+        Page<SellerStoreProductCardDTO> productCardPage = productInfoPage
+                .map(SellerStoreProductCardDTO::from);
 
         // 페이징 응답 생성
-        ProductCardPageResponse productResponse = ProductCardPageResponse.from(productCardPage);
+        ProductCardPageResponseDTO productResponse = ProductCardPageResponseDTO.from(productCardPage);
 
         return SellerStorePageResponse.of(sellerInfo, productResponse);
     }
@@ -206,9 +206,9 @@ public class SellerStoreServiceImpl implements SellerStoreService {
      * 응답 데이터의 페이지 번호를 1-based로 조정
      */
     private SellerStorePageResponse adjustPageNumberInResponse(SellerStorePageResponse response, int adjustedPage) {
-        ProductCardPageResponse originalProducts = response.products();
+        ProductCardPageResponseDTO originalProducts = response.products();
 
-        ProductCardPageResponse adjustedProducts = new ProductCardPageResponse(
+        ProductCardPageResponseDTO adjustedProducts = new ProductCardPageResponseDTO(
                 originalProducts.content(),
                 originalProducts.totalElements(),
                 originalProducts.totalPages(),

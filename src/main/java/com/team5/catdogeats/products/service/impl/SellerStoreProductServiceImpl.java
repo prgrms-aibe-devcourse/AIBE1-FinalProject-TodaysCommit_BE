@@ -2,8 +2,8 @@ package com.team5.catdogeats.products.service.impl;
 
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
 import com.team5.catdogeats.products.repository.ProductsRepository;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
@@ -37,7 +37,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
 
     @Override
     @Cacheable(value = "sellerProductsBaseInfo", key = "#sellerId + '_' + #category + '_' + #filter + '_' + #pageable.pageNumber")
-    public Page<ProductStoreInfo> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable) {
+    public Page<ProductStoreInfoDTO> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable) {
         log.debug("판매자 상품 정보 조회 - sellerId: {}, category: {}, filter: {}, page: {}",
                 sellerId, category, filter, pageable.getPageNumber());
         try {
@@ -56,7 +56,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
             int limit = pageable.getPageSize();
             int offset = (int) pageable.getOffset();
 
-            List<ProductStoreInfo> products = productStoreMapper.findSellerProductsBaseInfo(
+            List<ProductStoreInfoDTO> products = productStoreMapper.findSellerProductsBaseInfo(
                     sellerId, categoryStr, normalizedFilter, limit, offset
             );
 
@@ -145,12 +145,12 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
     /**
      * 베스트 상품 조회 (예외 처리 적용)
      */
-    private Page<ProductStoreInfo> getBestProducts(String sellerId, String categoryStr) {
+    private Page<ProductStoreInfoDTO> getBestProducts(String sellerId, String categoryStr) {
         log.debug("베스트 상품 조회 시작 - sellerId: {}, category: {}", sellerId, categoryStr);
 
         try {
             // 1. Orders 도메인에서 베스트 점수 계산 데이터 조회
-            List<ProductBestScoreData> bestScoreDataList = productBestScoreService.getProductBestScoreData(sellerId);
+            List<ProductBestScoreDataDTO> bestScoreDataList = productBestScoreService.getProductBestScoreData(sellerId);
 
             if (bestScoreDataList.isEmpty()) {
                 log.debug("베스트 점수 데이터가 없음 - sellerId: {}", sellerId);
@@ -163,7 +163,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
                             data.productId(), data.calculateBestScore()))
                     .sorted((a, b) -> Double.compare(b.calculateBestScore(), a.calculateBestScore()))
                     .limit(10)
-                    .map(ProductBestScoreData::productId)
+                    .map(ProductBestScoreDataDTO::productId)
                     .collect(Collectors.toList());
 
             if (topProductIds.isEmpty()) {
@@ -172,18 +172,18 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
             }
 
             // 3. 상위 상품들의 기본 정보 조회
-            List<ProductStoreInfo> bestProducts = productStoreMapper.findProductsByIds(topProductIds, categoryStr);
+            List<ProductStoreInfoDTO> bestProducts = productStoreMapper.findProductsByIds(topProductIds, categoryStr);
 
             // 4. 베스트 점수를 ProductStoreInfo에 매핑
             Map<String, Double> bestScoreMap = bestScoreDataList.stream()
                     .collect(Collectors.toMap(
-                            ProductBestScoreData::productId,
-                            ProductBestScoreData::calculateBestScore
+                            ProductBestScoreDataDTO::productId,
+                            ProductBestScoreDataDTO::calculateBestScore
                     ));
 
             // 5. 베스트 점수 순으로 정렬된 최종 결과
-            List<ProductStoreInfo> sortedBestProducts = bestProducts.stream()
-                    .map(product -> new ProductStoreInfo(
+            List<ProductStoreInfoDTO> sortedBestProducts = bestProducts.stream()
+                    .map(product -> new ProductStoreInfoDTO(
                             product.productId(),
                             product.productNumber(),
                             product.title(),

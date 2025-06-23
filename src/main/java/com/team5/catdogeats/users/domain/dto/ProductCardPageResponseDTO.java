@@ -9,9 +9,9 @@ import java.util.List;
  * 상품 카드 페이징 응답 DTO
  */
 @Schema(description = "상품 카드 페이징 응답")
-public record ProductCardPageResponse(
+public record ProductCardPageResponseDTO(
         @Schema(description = "상품 카드 목록")
-        List<SellerStoreProductCard> content,
+        List<SellerStoreProductCardDTO> content,
 
         @Schema(description = "전체 요소 수", example = "100")
         long totalElements,
@@ -32,8 +32,8 @@ public record ProductCardPageResponse(
         boolean hasPrevious
 ) {
 
-    public static ProductCardPageResponse from(Page<SellerStoreProductCard> page) {
-        return new ProductCardPageResponse(
+    public static ProductCardPageResponseDTO from(Page<SellerStoreProductCardDTO> page) {
+        return new ProductCardPageResponseDTO(
                 page.getContent(),
                 page.getTotalElements(),
                 page.getTotalPages(),

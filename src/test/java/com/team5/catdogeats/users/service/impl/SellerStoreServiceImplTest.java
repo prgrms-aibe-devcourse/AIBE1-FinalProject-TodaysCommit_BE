@@ -1,9 +1,9 @@
 package com.team5.catdogeats.users.service.impl;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
-import com.team5.catdogeats.products.domain.dto.ProductStoreInfo;
+import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
 import com.team5.catdogeats.users.domain.dto.SellerStorePageResponse;
@@ -51,9 +51,9 @@ class SellerStoreServiceImplTest {
     private SellerStoreStatsService sellerStoreStatsService;
 
     private Sellers testSeller;
-    private SellerStoreStats testStats;
-    private List<ProductStoreInfo> testProducts;
-    private Page<ProductStoreInfo> testProductPage;
+    private SellerStoreStatsDTO testStats;
+    private List<ProductStoreInfoDTO> testProducts;
+    private Page<ProductStoreInfoDTO> testProductPage;
 
     @BeforeEach
     void setUp() {
@@ -78,11 +78,11 @@ class SellerStoreServiceImplTest {
                 .build();
 
         // 통계 데이터
-        testStats = new SellerStoreStats(15L, 3.15, 1061L);
+        testStats = new SellerStoreStatsDTO(15L, 3.15, 1061L);
 
         // 상품 데이터
         testProducts = Arrays.asList(
-                new ProductStoreInfo(
+                new ProductStoreInfoDTO(
                         "d5a2b984-3d37-4ba3-a502-f2060ab48d55",
                         2000000016L,
                         "멍멍이 수제간식 16",
@@ -96,7 +96,7 @@ class SellerStoreServiceImplTest {
                         36L,
                         21.1
                 ),
-                new ProductStoreInfo(
+                new ProductStoreInfoDTO(
                         "e680cf66-d400-4669-b16d-d09d4df5fd0a",
                         2000000028L,
                         "멍멍이 수제간식 28",
@@ -440,7 +440,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_SecondPage() {
             // given
             String vendorName = "멍멍이네 수제간식";
-            Page<ProductStoreInfo> secondPageResult = new PageImpl<>(
+            Page<ProductStoreInfoDTO> secondPageResult = new PageImpl<>(
                     testProducts, PageRequest.of(1, 12), 30L
             );
 
@@ -469,7 +469,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_LastPage() {
             // given
             String vendorName = "멍멍이네 수제간식";
-            Page<ProductStoreInfo> lastPageResult = new PageImpl<>(
+            Page<ProductStoreInfoDTO> lastPageResult = new PageImpl<>(
                     List.of(testProducts.get(0)), PageRequest.of(2, 12), 25L
             );
 
@@ -560,7 +560,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_OrdersStatsService_Collaboration() {
             // given
             String vendorName = "멍멍이네 수제간식";
-            SellerStoreStats emptyStats = SellerStoreStats.empty();
+            SellerStoreStatsDTO emptyStats = SellerStoreStatsDTO.empty();
 
             given(sellersRepository.findByVendorName(vendorName))
                     .willReturn(Optional.of(testSeller));

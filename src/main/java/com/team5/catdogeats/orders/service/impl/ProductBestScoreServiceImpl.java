@@ -2,7 +2,7 @@ package com.team5.catdogeats.orders.service.impl;
 
 import com.team5.catdogeats.orders.mapper.ProductBestScoreMapper;
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
-import com.team5.catdogeats.products.domain.dto.ProductBestScoreData;
+import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,14 +25,14 @@ public class ProductBestScoreServiceImpl implements ProductBestScoreService {
 
     @Override
     @Cacheable(value = "productBestScoreData", key = "#sellerId")
-    public List<ProductBestScoreData> getProductBestScoreData(String sellerId) {
+    public List<ProductBestScoreDataDTO> getProductBestScoreData(String sellerId) {
         log.debug("판매자 상품 베스트 점수 데이터 조회 - sellerId: {}", sellerId);
         try {
             // 1. 파라미터 검증
             validateSellerId(sellerId);
 
             // 2. 베스트 점수 데이터 조회
-            List<ProductBestScoreData> scoreData = productBestScoreMapper.getProductBestScoreDataBySeller(sellerId);
+            List<ProductBestScoreDataDTO> scoreData = productBestScoreMapper.getProductBestScoreDataBySeller(sellerId);
 
             log.debug("베스트 점수 데이터 조회 완료 - sellerId: {}, 상품 수: {}", sellerId, scoreData.size());
 

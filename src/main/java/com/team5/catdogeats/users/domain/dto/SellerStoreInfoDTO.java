@@ -1,6 +1,6 @@
 package com.team5.catdogeats.users.domain.dto;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -9,10 +9,10 @@ import java.time.format.DateTimeFormatter;
 
 /**
  * 판매자 스토어 페이지 정보 DTO
- * Orders 도메인의 SellerStoreStats 사용
+ * Orders 도메인의 SellerStoreStatsDTO 사용
  */
 @Schema(description = "판매자 스토어 정보")
-public record SellerStoreInfo(
+public record SellerStoreInfoDTO(
         @Schema(description = "판매자 ID", example = "2ceb807f-586f-4450-b470-d1ece7173749")
         String sellerId,
 
@@ -51,7 +51,7 @@ public record SellerStoreInfo(
     /**
      * Orders 도메인의 SellerStoreStats를 사용하여 생성
      */
-    public static SellerStoreInfo from(Sellers seller, Long totalProducts, SellerStoreStats stats) {
+    public static SellerStoreInfoDTO from(Sellers seller, Long totalProducts, SellerStoreStatsDTO stats) {
         if (seller == null) {
             return null;
         }
@@ -62,12 +62,12 @@ public record SellerStoreInfo(
 
 
 
-        // Orders 도메인의 SellerStoreStats 사용
+        // Orders 도메인의 SellerStoreStatsDTO 사용
         Long totalSalesCount = stats != null ? stats.totalSalesCount() : 0L;
         Double avgDeliveryDays = stats != null ? stats.avgDeliveryDays() : 0.0;
         Long totalReviews = stats != null ? stats.totalReviews() : 0L;
 
-        return new SellerStoreInfo(
+        return new SellerStoreInfoDTO(
                 seller.getUserId(),
                 seller.getVendorName(),
                 seller.getVendorProfileImage(),

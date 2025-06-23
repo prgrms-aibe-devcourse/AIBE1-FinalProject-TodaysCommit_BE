@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalTime;
 
 @Schema(description = "판매자 정보 등록/수정 요청 DTO")
-public record SellerInfoRequest(
+public record SellerInfoRequestDTO(
 
         @Schema(description = "업체명", example = "멍멍이네 수제간식", required = true)
         @NotBlank(message = "업체명은 필수 입력 항목입니다.")

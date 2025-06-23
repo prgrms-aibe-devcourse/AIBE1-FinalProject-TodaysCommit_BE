@@ -5,8 +5,8 @@ import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.DayOfWeek;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequestDTO;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponseDTO;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.SellerInfoService;
@@ -31,7 +31,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
     @Override
     @Transactional(readOnly = true)
-    public SellerInfoResponse getSellerInfo(UserPrincipal userPrincipal) {
+    public SellerInfoResponseDTO getSellerInfo(UserPrincipal userPrincipal) {
         log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());
 
@@ -47,7 +47,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
     @Override
     @Transactional
-    public SellerInfoResponse upsertSellerInfo(UserPrincipal userPrincipal, SellerInfoRequest request) {
+    public SellerInfoResponseDTO upsertSellerInfo(UserPrincipal userPrincipal, SellerInfoRequestDTO request) {
         log.info("판매자 정보 등록/수정 (JWT) - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
@@ -96,7 +96,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 판매자 정보 조회 로직 (권한 검증 분리)
      */
-    private SellerInfoResponse getSellerInfoInternal(String userId) {
+    private SellerInfoResponseDTO getSellerInfoInternal(String userId) {
         Optional<Sellers> sellerOpt = sellersRepository.findByUserId(userId);
 
         if (sellerOpt.isEmpty()) {
@@ -104,13 +104,13 @@ public class SellerInfoServiceImpl implements SellerInfoService {
             return null;
         }
 
-        return SellerInfoResponse.from(sellerOpt.get());
+        return SellerInfoResponseDTO.from(sellerOpt.get());
     }
 
     /**
      * 판매자 정보 등록/수정 로직
      */
-    private SellerInfoResponse upsertSellerInfoInternal(Users user, SellerInfoRequest request) {
+    private SellerInfoResponseDTO upsertSellerInfoInternal(Users user, SellerInfoRequestDTO request) {
         String userId = user.getId();
 
         // 사업자 등록번호 중복 체크
@@ -132,7 +132,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         }
 
         Sellers savedSeller = sellersRepository.save(seller);
-        return SellerInfoResponse.from(savedSeller);
+        return SellerInfoResponseDTO.from(savedSeller);
     }
 
     /**
@@ -160,7 +160,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 운영시간 유효성 검증
      */
-    private void validateOperatingHours(SellerInfoRequest request) {
+    private void validateOperatingHours(SellerInfoRequestDTO request) {
         if (request.operatingStartTime() != null && request.operatingEndTime() != null) {
             if (request.operatingStartTime().isAfter(request.operatingEndTime())) {
                 throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다");
@@ -197,7 +197,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 기존 판매자 정보 업데이트
      */
-    private void updateSellerInfo(Sellers seller, SellerInfoRequest request) {
+    private void updateSellerInfo(Sellers seller, SellerInfoRequestDTO request) {
         seller.updateVendorName(request.vendorName());
         seller.updateVendorProfileImage(request.vendorProfileImage());
         seller.updateBusinessNumber(request.businessNumber());
@@ -212,7 +212,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 새 판매자 정보 생성
      */
-    private Sellers createNewSeller(Users user, SellerInfoRequest request) {
+    private Sellers createNewSeller(Users user, SellerInfoRequestDTO request) {
         return Sellers.builder()
                 .user(user)
                 .vendorName(request.vendorName())

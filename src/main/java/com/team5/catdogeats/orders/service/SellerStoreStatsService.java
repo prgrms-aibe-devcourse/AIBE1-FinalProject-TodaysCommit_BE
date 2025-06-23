@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.service;
 
-import com.team5.catdogeats.orders.domain.dto.SellerStoreStats;
+import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 
 
 /**
@@ -14,5 +14,5 @@ public interface SellerStoreStatsService {
      * @param sellerId 판매자 ID
      * @return 상점 표시용 집계 정보 (총 판매량, 평균 배송일, 총 리뷰 수)
      */
-    SellerStoreStats getSellerStoreStats(String sellerId);
+    SellerStoreStatsDTO getSellerStoreStats(String sellerId);
 }
