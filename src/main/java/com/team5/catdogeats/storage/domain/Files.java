@@ -4,8 +4,6 @@ import com.team5.catdogeats.baseEntity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "files")
 @Getter
@@ -16,7 +14,7 @@ public class Files extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @Column(name = "file_url", length = 255, nullable = false)
     private String fileUrl;

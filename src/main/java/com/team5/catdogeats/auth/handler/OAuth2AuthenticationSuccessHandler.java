@@ -15,7 +15,6 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -32,9 +31,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                                         Authentication authentication) throws ServletException, IOException {
 
         String token = jwtService.createAccessToken(authentication);
-        UUID refreshTokenId = refreshTokenService.createRefreshToken(authentication);
+        String refreshTokenId = refreshTokenService.createRefreshToken(authentication);
         log.debug("Created refresh token: {}", refreshTokenId);
-
+        String url = request.getContextPath() + "/";
         ResponseCookie cookie = cookieUtils.createCookie("token", cookieProperties.getMaxAge(), token);
         ResponseCookie refreshIdCookie = cookieUtils.createCookie("refreshTokenId", cookieProperties.getMaxAge(), refreshTokenId.toString());
             response.setContentType("application/json");
@@ -42,6 +41,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             response.setStatus(HttpServletResponse.SC_OK);
             response.addHeader("Set-Cookie", cookie.toString());
             response.addHeader("Set-Cookie", refreshIdCookie.toString());
-            response.sendRedirect("/");
+            response.sendRedirect(url);
     }
 }

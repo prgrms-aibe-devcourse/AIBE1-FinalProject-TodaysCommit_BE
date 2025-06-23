@@ -6,8 +6,6 @@ import com.team5.catdogeats.storage.domain.Images;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "reviews_images")
 @Getter
@@ -18,7 +16,7 @@ public class ReviewsImages extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;  // 이 id는 reviews 테이블의 id를 FK로 참조
+    private String id;  // 이 id는 reviews 테이블의 id를 FK로 참조
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId

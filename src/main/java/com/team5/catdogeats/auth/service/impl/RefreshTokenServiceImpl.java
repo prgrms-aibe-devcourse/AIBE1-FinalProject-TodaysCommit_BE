@@ -6,6 +6,7 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.auth.redis.RefreshTokens;
 import com.team5.catdogeats.auth.repository.RefreshTokensRedisRepository;
 import com.team5.catdogeats.auth.service.RefreshTokenService;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -33,8 +33,8 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     private static final int MAX_TOKENS_PER_USER = 3;
     
     @Override
-    @Transactional
-    public UUID createRefreshToken(Authentication authentication) {
+    @JpaTransactional
+    public String createRefreshToken(Authentication authentication) {
         UserPrincipal principal = getUserPrincipal(authentication);
         log.debug("로그가 나가는지 테스트입니다");
         Users user = userRepository.findByProviderAndProviderId(principal.provider(), principal.providerId())
@@ -68,7 +68,7 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
     }
 
     private RefreshTokens buildRefreshTokens(UserPrincipal principal, Users user) {
-        UUID id = UUID.randomUUID();
+        String id = UUID.randomUUID().toString();
         ZonedDateTime now = ZonedDateTime.now(ZoneOffset.UTC);
         ZonedDateTime expiresAt = now.plusDays(1);
 

@@ -6,8 +6,6 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "admins")
 @Getter
@@ -20,7 +18,7 @@ public class Admins {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @Enumerated(EnumType.STRING)
     private AdminRole adminRole;

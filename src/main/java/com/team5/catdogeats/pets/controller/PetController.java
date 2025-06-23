@@ -3,7 +3,10 @@ package com.team5.catdogeats.pets.controller;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
-import com.team5.catdogeats.pets.domain.dto.*;
+import com.team5.catdogeats.pets.domain.dto.PetCreateRequestDto;
+import com.team5.catdogeats.pets.domain.dto.PetDeleteRequestDto;
+import com.team5.catdogeats.pets.domain.dto.PetResponseDto;
+import com.team5.catdogeats.pets.domain.dto.PetUpdateRequestDto;
 import com.team5.catdogeats.pets.service.PetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -17,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/buyers")
@@ -31,7 +33,7 @@ public class PetController {
     @PostMapping("/pet")
     public ResponseEntity<ApiResponse<Void>> registerPet(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody @Valid @Parameter(description = "등록할 펫 정보", required = true) PetCreateRequestDto dto) {
         try {
-            UUID petId = petService.registerPet(userPrincipal, dto);
+            String petId = petService.registerPet(userPrincipal, dto);
             return ResponseEntity
                     .created(URI.create("/v1/buyers/pet/" + petId))
                     .body(ApiResponse.success(ResponseCode.CREATED));

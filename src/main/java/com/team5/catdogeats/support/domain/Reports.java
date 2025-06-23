@@ -1,14 +1,13 @@
 package com.team5.catdogeats.support.domain;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
-import com.team5.catdogeats.support.domain.enums.ReportType;
 import com.team5.catdogeats.support.domain.enums.ReportStatus;
+import com.team5.catdogeats.support.domain.enums.ReportType;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "reports")
@@ -22,7 +21,7 @@ public class Reports extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "report_type", nullable = false, length = 10)

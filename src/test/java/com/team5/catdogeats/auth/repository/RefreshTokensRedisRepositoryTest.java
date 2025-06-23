@@ -20,14 +20,14 @@ class RefreshTokensRedisRepositoryTest {
     @Autowired
     private RefreshTokensRedisRepository refreshTokensRedisRepository;
 
-    private UUID userId;
+    private String userId;
     private RefreshTokens token;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
+        userId = UUID.randomUUID().toString();
         token = RefreshTokens.builder()
-                .id(UUID.randomUUID())
+                .id(UUID.randomUUID().toString())
                 .userId(userId)
                 .provider("google")
                 .providerId("12345")

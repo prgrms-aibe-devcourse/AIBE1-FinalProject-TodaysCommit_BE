@@ -3,7 +3,7 @@ package com.team5.catdogeats.global.config;
 import com.team5.catdogeats.auth.filter.JwtAuthenticationFilter;
 import com.team5.catdogeats.auth.filter.PreventDuplicateLoginFilter;
 import com.team5.catdogeats.auth.handler.CustomLogoutSuccessHandler;
-import com.team5.catdogeats.auth.handler.OAuth2AuthenticationEntryPointHandler;
+import com.team5.catdogeats.auth.handler.OAuth2AuthenticationFailureHandler;
 import com.team5.catdogeats.auth.handler.OAuth2AuthenticationSuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +40,7 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final PreventDuplicateLoginFilter preventDuplicateLoginFilter;
     private final CustomLogoutSuccessHandler customLogoutSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oAuth2AuthenticationFailureHandler;
 
     @Bean
     @Order(value = 1)
@@ -73,6 +74,9 @@ public class SecurityConfig {
                             -> authorize
                             .requestMatchers("/").permitAll()
                             .requestMatchers("/index.html").permitAll() // 개발할때만 사용 로그인 페이지
+                            .requestMatchers("/withdraw").permitAll()
+                            .requestMatchers("/error").permitAll()
+                            .requestMatchers("/.well-known/**").permitAll()
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                             .requestMatchers("/oauth2/authorization/google/**").permitAll()
                             .requestMatchers("/oauth2/authorization/kakao/**").permitAll()
@@ -87,6 +91,7 @@ public class SecurityConfig {
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-id}/list").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-number}").permitAll()
+                            .requestMatchers("/withdraw").permitAll()
                             .requestMatchers("/v1/users/**").hasAnyRole("BUYER", "SELLER")
                             .requestMatchers("/v1/sellers/**").hasRole("SELLER")
                             .requestMatchers("/v1/buyers/**").hasRole("BUYER")
@@ -95,14 +100,15 @@ public class SecurityConfig {
 
                     .oauth2Login(oauth2 -> oauth2
                             .successHandler(oAuth2AuthenticationSuccessHandler)
+                            .failureHandler(oAuth2AuthenticationFailureHandler)
                             .userInfoEndpoint(userInfo -> userInfo
                                     .userService(customOAuth2UserService) // 여기에 커스텀 서비스 주입
                             )
                     )
                     .httpBasic(AbstractHttpConfigurer::disable)
                     .formLogin(AbstractHttpConfigurer::disable)
-                    .exceptionHandling(exception ->
-                            exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
+//                    .exceptionHandling(exception ->
+//                            exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
                     .logout(logout -> logout
                             .logoutUrl("/v1/auth/logout")
                             .logoutSuccessHandler(customLogoutSuccessHandler)
