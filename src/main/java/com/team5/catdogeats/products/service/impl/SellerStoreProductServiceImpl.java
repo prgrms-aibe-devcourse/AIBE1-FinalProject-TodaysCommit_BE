@@ -10,7 +10,6 @@ import com.team5.catdogeats.products.service.SellerStoreProductService;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler.ProductDataRetrievalException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
