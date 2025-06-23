@@ -32,16 +32,16 @@ public class NoticeAdminController {
     @GetMapping
     @Operation(
             summary = "공지사항 목록 조회",
-            description = "관리자 페이지에서 공지사항 목록을 조회합니다."
+            description = "관리자 페이지에서 공지사항 목록을 조회합니다. " +
+                    "sortBy: latest(최신순, 기본값), oldest(오래된순), views(조회순)"
     )
     public ResponseEntity<ApiResponse<NoticeListResponseDTO>> getNotices(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "latest") String sortBy) {  // 👈 추가
 
-        log.info("[관리자] 공지사항 목록 조회 요청 - page: {}, size: {}, search: {}", page, size, search);
-
-        NoticeListResponseDTO response = noticeService.getNotices(page, size, search);
+        NoticeListResponseDTO response = noticeService.getNotices(page, size, search, sortBy);  // 👈 수정
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
@@ -52,7 +52,6 @@ public class NoticeAdminController {
             description = "관리자 페이지에서 공지사항 상세 내용을 조회합니다."
     )
     public ResponseEntity<ApiResponse<NoticeResponseDTO>> getNotice(@PathVariable String noticeId) {
-        log.info("공지사항 상세 조회 요청 - ID: {}", noticeId);
 
         try {
             NoticeResponseDTO response = noticeService.getNotice(noticeId);
@@ -134,8 +133,6 @@ public class NoticeAdminController {
             @PathVariable String noticeId,
             @RequestParam("file") MultipartFile file) {
 
-        log.info("[관리자] 파일 업로드 요청 - ID: {}, 파일명: {}", noticeId, file.getOriginalFilename());
-
         // 파일 검증
         if (file.isEmpty()) {
             return ResponseEntity.badRequest()
@@ -174,8 +171,6 @@ public class NoticeAdminController {
     )
     public ResponseEntity<Resource> downloadFile(@PathVariable String noticeId, @PathVariable String fileId) {
 
-        log.info("[관리자] 파일 다운로드 요청 - 공지사항 ID: {}, 파일 ID: {}", noticeId, fileId);
-
         try {
             Resource resource = noticeService.downloadFile(fileId);
 
@@ -187,9 +182,6 @@ public class NoticeAdminController {
 
             // MIME 타입 결정
             String contentType = determineContentType(originalFilename);
-
-            log.info("[관리자] 파일 다운로드 성공 - 원본명: {}, 다운로드명: {}, 타입: {}",
-                    originalFilename, smartFilename, contentType);
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
@@ -293,8 +285,6 @@ public class NoticeAdminController {
             @PathVariable String noticeId,
             @PathVariable String fileId) {
 
-        log.info("[관리자] 파일 삭제 요청 - 공지사항 ID: {}, 파일 ID: {}", noticeId, fileId);
-
         try {
             noticeService.deleteFile(noticeId, fileId);
             return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS));
@@ -323,9 +313,6 @@ public class NoticeAdminController {
             @PathVariable String noticeId,
             @PathVariable String fileId,
             @RequestParam("file") MultipartFile newFile) {
-
-        log.info("[관리자] 파일 수정(교체) 요청 - 공지사항 ID: {}, 파일 ID: {}, 새파일: {}",
-                noticeId, fileId, newFile.getOriginalFilename());
 
         // 파일 검증
         if (newFile.isEmpty()) {

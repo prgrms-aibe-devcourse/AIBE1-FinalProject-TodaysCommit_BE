@@ -30,16 +30,16 @@ public class NoticeController {
     @GetMapping
     @Operation(
             summary = "공지사항 목록 조회",
-            description = "모든 사용자(판매자, 구매자, 관리자)가 공지사항 목록을 조회할 수 있습니다."
+            description = "모든 사용자(판매자, 구매자, 관리자)가 공지사항 목록을 조회할 수 있습니다. " +
+                    "sortBy: latest(최신순, 기본값), oldest(오래된순), views(조회순)"
     )
     public ResponseEntity<ApiResponse<NoticeListResponseDTO>> getNotices(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "latest") String sortBy) {
 
-        log.info("공지사항 목록 조회 요청 - page: {}, size: {}, search: {}", page, size, search);
-
-        NoticeListResponseDTO response = noticeService.getNotices(page, size, search);
+        NoticeListResponseDTO response = noticeService.getNotices(page, size, search, sortBy);
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
@@ -50,7 +50,6 @@ public class NoticeController {
             description = "모든 사용자(판매자, 구매자, 관리자)가 공지사항 상세 내용을 조회할 수 있습니다."
     )
     public ResponseEntity<ApiResponse<NoticeResponseDTO>> getNotice(@PathVariable String noticeId) {
-        log.info("공지사항 상세 조회 요청 - ID: {}", noticeId);
 
         try {
             NoticeResponseDTO response = noticeService.getNotice(noticeId);
@@ -74,8 +73,6 @@ public class NoticeController {
     )
     public ResponseEntity<Resource> downloadFile(@PathVariable String noticeId, @PathVariable String fileId) {
 
-        log.info("파일 다운로드 요청 - 공지사항 ID: {}, 파일 ID: {}", noticeId, fileId);
-
         try {
             Resource resource = noticeService.downloadFile(fileId);
 
@@ -88,9 +85,6 @@ public class NoticeController {
             // MIME 타입 결정
             String contentType = determineContentType(originalFilename);
 
-            log.info("파일 다운로드 성공 - 원본명: {}, 다운로드명: {}, 타입: {}",
-                    originalFilename, smartFilename, contentType);
-
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -101,7 +95,7 @@ public class NoticeController {
                     .body(resource);
 
         } catch (Exception e) {
-            log.error("[관리자] 파일 다운로드 실패 - 파일 ID: {}, 오류: {}", fileId, e.getMessage());
+            log.error("파일 다운로드 실패 - 파일 ID: {}, 오류: {}", fileId, e.getMessage());
             return ResponseEntity.notFound().build();
         }
     }

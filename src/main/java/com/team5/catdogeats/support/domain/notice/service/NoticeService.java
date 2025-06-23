@@ -7,14 +7,12 @@ import com.team5.catdogeats.support.domain.notice.dto.NoticeUpdateRequestDTO;
 import org.springframework.core.io.Resource;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.UUID;
-
 public interface NoticeService {
 
-    // 공지사항 목록 조회 (페이징, 검색)
-    NoticeListResponseDTO getNotices(int page, int size, String search);
+    // 공지사항 목록 조회 (페이징, 검색, 정렬) - sortBy 파라미터 추가
+    NoticeListResponseDTO getNotices(int page, int size, String search, String sortBy);
 
-    // 공지사항 상세 조회
+    // 공지사항 상세 조회 (조회수 증가 포함)
     NoticeResponseDTO getNotice(String noticeId);
 
     // 공지사항 생성

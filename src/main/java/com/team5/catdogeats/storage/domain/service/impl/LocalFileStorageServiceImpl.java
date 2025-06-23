@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter;
 @Service
 @Primary // 현재 기본 구현체로 사용
 @Slf4j
-public class LocalFileStorageService implements FileStorageService {
+public class LocalFileStorageServiceImpl implements FileStorageService {
 
     @Value("${app.upload.dir:uploads/notices}")
     private String uploadDir;
@@ -34,7 +34,6 @@ public class LocalFileStorageService implements FileStorageService {
         Path uploadPath = Paths.get(uploadDir);
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
-            log.info("업로드 디렉토리 생성: {}", uploadPath.toAbsolutePath());
         }
 
         // 2. 파일명 생성 (중복 방지)
@@ -50,8 +49,6 @@ public class LocalFileStorageService implements FileStorageService {
         // 3. 파일 저장
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-        log.info("파일 업로드 완료: {} -> {}", originalFileName, filePath.toAbsolutePath());
-
         // 4. 파일 경로 반환 (절대 경로)
         return filePath.toAbsolutePath().toString();
     }
@@ -63,12 +60,13 @@ public class LocalFileStorageService implements FileStorageService {
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists() && resource.isReadable()) {
-                log.info("파일 다운로드 준비 완료: {}", fileUrl);
                 return resource;
             } else {
                 throw new IOException("파일을 찾을 수 없거나 읽을 수 없습니다: " + fileUrl);
             }
         } catch (MalformedURLException e) {
+            throw new IOException("잘못된 파일 경로입니다: " + fileUrl, e);
+        } catch (java.nio.file.InvalidPathException e) {  // 이 부분 추가
             throw new IOException("잘못된 파일 경로입니다: " + fileUrl, e);
         }
     }
@@ -79,11 +77,6 @@ public class LocalFileStorageService implements FileStorageService {
             Path filePath = Paths.get(fileUrl);
             boolean deleted = Files.deleteIfExists(filePath);
 
-            if (deleted) {
-                log.info("파일 삭제 완료: {}", fileUrl);
-            } else {
-                log.warn("삭제할 파일이 존재하지 않습니다: {}", fileUrl);
-            }
         } catch (Exception e) {
             throw new IOException("파일 삭제 실패: " + fileUrl, e);
         }
@@ -92,7 +85,18 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public String extractFileName(String fileUrl) {
         try {
+            // 1. null이나 빈 문자열 체크 추가
+            if (fileUrl == null || fileUrl.trim().isEmpty()) {
+                return "파일명 불명";
+            }
+
             String fileName = Paths.get(fileUrl).getFileName().toString();
+
+            // 2. fileName이 빈 문자열인 경우도 체크
+            if (fileName.isEmpty()) {
+                return "파일명 불명";
+            }
+
             // 타임스탬프_원본파일명 형태에서 원본파일명만 추출
             if (fileName.matches("\\d{8}_\\d{6}_.*")) {
                 return fileName.substring(fileName.indexOf('_', fileName.indexOf('_') + 1) + 1);
@@ -102,5 +106,21 @@ public class LocalFileStorageService implements FileStorageService {
             log.warn("파일명 추출 실패: {}", fileUrl);
             return "파일명 불명";
         }
+    }
+
+    @Override
+    public String replaceFile(String oldFileUrl, MultipartFile newFile) throws IOException {
+        // 1. 새 파일 업로드
+        String newFileUrl = uploadFile(newFile);
+
+        // 2. 기존 파일 삭제 (실패해도 새 파일은 정상 업로드된 상태)
+        try {
+            deleteFile(oldFileUrl);
+        } catch (IOException e) {
+            log.warn("기존 파일 삭제 실패 (무시 가능): {}", e.getMessage());
+        }
+
+        // 3. 새 파일 URL 반환
+        return newFileUrl;
     }
 }

@@ -11,15 +11,17 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NoticeRepository extends JpaRepository<Notices, String> {
 
-//    제목으로 검색 (대소문자 구분 X)
-    Page<Notices> findByTitleContainingIgnoreCase(String title, Pageable pageable);
+    // 전체 목록 조회 (N+1 쿼리 해결)
+    @Query("SELECT DISTINCT n FROM Notices n " +
+            "LEFT JOIN FETCH n.noticeFiles nf " +
+            "LEFT JOIN FETCH nf.files")
+    Page<Notices> findAllWithFiles(Pageable pageable);
 
-//    최신순 정렬
-    @Query("SELECT n FROM Notices n ORDER BY n.createdAt DESC")
-    Page<Notices> findAllOrderByCreatedAtDesc(Pageable pageable);
-
-//    제목 검색 + 최신순 정렬
-    @Query("SELECT n FROM Notices n WHERE lower(n.title) LIKE lower(CONCAT('%', :title, '%')) ORDER BY n.createdAt DESC")
-    Page<Notices> findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(@Param("title") String title, Pageable pageable);
-
+    // 검색 조회 (N+1 쿼리 해결)
+    @Query("SELECT DISTINCT n FROM Notices n " +
+            "LEFT JOIN FETCH n.noticeFiles nf " +
+            "LEFT JOIN FETCH nf.files " +
+            "WHERE lower(n.title) LIKE lower(CONCAT('%', :keyword, '%')) OR " +
+            "lower(n.content) LIKE lower(CONCAT('%', :keyword, '%'))")
+    Page<Notices> findByTitleOrContentContainingWithFiles(@Param("keyword") String keyword, Pageable pageable);
 }

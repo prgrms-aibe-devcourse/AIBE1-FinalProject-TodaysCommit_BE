@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.*;
 
 @DataJpaTest
 @ActiveProfiles("test")
-@DisplayName("공지사항-파일 매핑 Repository 조회 테스트")
-class NoticeFilesRepositoryQueryTest {
+@DisplayName("공지사항-파일 매핑 Repository 삭제 테스트")
+class NoticeFilesRepositoryDeleteTest {
 
     @Autowired
     private TestEntityManager entityManager;
@@ -100,77 +100,40 @@ class NoticeFilesRepositoryQueryTest {
     }
 
     @Test
-    @DisplayName("공지사항에 연결된 파일 목록 조회 - findByNoticesId 성공")
-    void findByNoticesId_Success() {
+    @DisplayName("공지사항에 연결된 모든 파일 매핑 삭제 - deleteByNoticesId 성공")
+    void deleteByNoticesId_Success() {
+        // given
+        String noticeId = notice1.getId();
+
+        // 삭제 전 매핑 관계 확인
+        List<NoticeFiles> beforeDelete = noticeFilesRepository.findByNoticesId(noticeId);
+        assertThat(beforeDelete).hasSize(2);
+
         // when
-        List<NoticeFiles> result = noticeFilesRepository.findByNoticesId(notice1.getId());
+        noticeFilesRepository.deleteByNoticesId(noticeId);
+        entityManager.flush(); // 즉시 DB 반영
 
         // then
-        assertThat(result).hasSize(2);
-        assertThat(result)
-                .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactlyInAnyOrder("/uploads/file1.txt", "/uploads/file2.pdf");
+        List<NoticeFiles> afterDelete = noticeFilesRepository.findByNoticesId(noticeId);
+        assertThat(afterDelete).isEmpty();
+
+        // 다른 공지사항의 매핑 관계는 유지되는지 확인
+        List<NoticeFiles> otherNoticeFiles = noticeFilesRepository.findByNoticesId(notice2.getId());
+        assertThat(otherNoticeFiles).hasSize(1);
     }
 
     @Test
-    @DisplayName("공지사항에 연결된 파일 목록 조회 - findByNoticesId 결과 없음")
-    void findByNoticesId_NoResult() {
+    @DisplayName("공지사항에 연결된 파일 매핑 삭제 - 존재하지 않는 공지사항")
+    void deleteByNoticesId_NotFound() {
+        // given
+        long beforeCount = noticeFilesRepository.count();
+
         // when
-        List<NoticeFiles> result = noticeFilesRepository.findByNoticesId("non-existing-notice-id");
+        noticeFilesRepository.deleteByNoticesId("non-existing-notice-id");
+        entityManager.flush();
 
         // then
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("공지사항에 연결된 파일 목록 조회 with JOIN FETCH - findByNoticeIdWithFiles 성공")
-    void findByNoticeIdWithFiles_Success() {
-        // when
-        List<NoticeFiles> result = noticeFilesRepository.findByNoticeIdWithFiles(notice1.getId());
-
-        // then
-        assertThat(result).hasSize(2);
-
-        // FETCH JOIN으로 파일 정보가 즉시 로딩되었는지 확인
-        result.forEach(noticeFile -> {
-            assertThat(noticeFile.getFiles()).isNotNull();
-            assertThat(noticeFile.getFiles().getFileUrl()).isNotNull();
-        });
-
-        // 파일 URL 확인
-        assertThat(result)
-                .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactlyInAnyOrder("/uploads/file1.txt", "/uploads/file2.pdf");
-    }
-
-    @Test
-    @DisplayName("공지사항에 연결된 파일 목록 조회 with JOIN FETCH - findByNoticeIdWithFiles 결과 없음")
-    void findByNoticeIdWithFiles_NoResult() {
-        // when
-        List<NoticeFiles> result = noticeFilesRepository.findByNoticeIdWithFiles("non-existing-notice-id");
-
-        // then
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("여러 공지사항의 파일 매핑 조회")
-    void findByNoticesId_MultipleNotices() {
-        // when
-        List<NoticeFiles> notice1Files = noticeFilesRepository.findByNoticesId(notice1.getId());
-        List<NoticeFiles> notice2Files = noticeFilesRepository.findByNoticesId(notice2.getId());
-
-        // then
-        assertThat(notice1Files).hasSize(2);
-        assertThat(notice2Files).hasSize(1);
-
-        // 각 공지사항에 올바른 파일들이 연결되어 있는지 확인
-        assertThat(notice1Files)
-                .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactlyInAnyOrder("/uploads/file1.txt", "/uploads/file2.pdf");
-
-        assertThat(notice2Files)
-                .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactly("/uploads/file3.docx");
+        long afterCount = noticeFilesRepository.count();
+        assertThat(afterCount).isEqualTo(beforeCount); // 변화 없음
     }
 }

@@ -453,6 +453,7 @@ CREATE TABLE notices (
                          id VARCHAR(36) PRIMARY KEY,
                          title VARCHAR(255) NOT NULL,
                          content TEXT NOT NULL,
+                         view_count BIGINT NOT NULL DEFAULT 0,  -- view_count 추가
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

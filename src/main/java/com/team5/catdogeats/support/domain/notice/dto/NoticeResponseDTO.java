@@ -20,6 +20,7 @@ public class NoticeResponseDTO {
     private String content;
     private String createdAt;
     private String updatedAt;
+    private Long viewCount;
     private List<NoticeAttachmentDTO> attachments;
 
     public static NoticeResponseDTO from(Notices notices) {
@@ -33,6 +34,7 @@ public class NoticeResponseDTO {
                 .content(notices.getContent())
                 .createdAt(notices.getCreatedAt().withZoneSameInstant(koreaZone).format(formatter))
                 .updatedAt(notices.getUpdatedAt().withZoneSameInstant(koreaZone).format(formatter))
+                .viewCount(notices.getViewCount())
                 .attachments(new ArrayList<>())
                 .build();
     }
@@ -53,7 +55,8 @@ public class NoticeResponseDTO {
                 .content(notices.getContent())
                 .createdAt(notices.getCreatedAt().withZoneSameInstant(koreaZone).format(formatter))
                 .updatedAt(notices.getUpdatedAt().withZoneSameInstant(koreaZone).format(formatter))
-                .attachments(attachments)  // 👈 실제 첨부파일 목록
+                .viewCount(notices.getViewCount())
+                .attachments(attachments)  // 실제 첨부파일 목록
                 .build();
     }
 }

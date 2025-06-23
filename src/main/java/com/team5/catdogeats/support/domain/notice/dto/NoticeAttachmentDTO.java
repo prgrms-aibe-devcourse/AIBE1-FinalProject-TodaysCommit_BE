@@ -34,7 +34,6 @@ public class NoticeAttachmentDTO {
     // 파일명 추출 (정적 메소드) - Windows/Linux 경로 모두 처리
     private static String extractFileName(String fileUrl) {
         try {
-            log.debug("원본 파일 URL: {}", fileUrl);
 
             // 1. 파일명 추출 (Windows와 Linux 경로 모두 처리)
             String fileName = fileUrl;
@@ -51,8 +50,6 @@ public class NoticeAttachmentDTO {
                 fileName = fileName.substring(unixIndex + 1);
             }
 
-            log.debug("경로 제거 후 파일명: {}", fileName);
-
             // 2. 타임스탬프 패턴 제거
 
             // 패턴 1: YYYYMMDD_HHMMSS_원본파일명.확장자 (예: 20250620_164240_멤버쉽 아이콘.png)
@@ -60,8 +57,7 @@ public class NoticeAttachmentDTO {
                 String[] parts = fileName.split("_", 3);
                 if (parts.length == 3) {
                     String originalName = parts[2];
-                    log.debug("YYYYMMDD_HHMMSS 패턴 제거 - 원본명: {}", originalName);
-                    return originalName;
+                    return parts[2];
                 }
             }
 
@@ -69,9 +65,7 @@ public class NoticeAttachmentDTO {
             if (fileName.matches("\\d{13,}_.*")) {
                 int underscoreIndex = fileName.indexOf('_');
                 if (underscoreIndex != -1) {
-                    String originalName = fileName.substring(underscoreIndex + 1);
-                    log.debug("밀리초 타임스탬프 패턴 제거 - 원본명: {}", originalName);
-                    return originalName;
+                    return fileName.substring(underscoreIndex + 1);
                 }
             }
 
@@ -79,18 +73,15 @@ public class NoticeAttachmentDTO {
             if (fileName.matches("\\d+_.*")) {
                 int underscoreIndex = fileName.indexOf('_');
                 if (underscoreIndex != -1) {
-                    String originalName = fileName.substring(underscoreIndex + 1);
-                    log.debug("일반 타임스탬프 패턴 제거 - 원본명: {}", originalName);
-                    return originalName;
+                    return fileName.substring(underscoreIndex + 1);
                 }
             }
 
             // 3. 타임스탬프가 없는 경우 그대로 반환
-            log.debug("타임스탬프 패턴 없음 - 파일명 그대로 반환: {}", fileName);
             return fileName;
 
         } catch (Exception e) {
-            log.warn("파일명 추출 중 오류 발생 - URL: {}, 오류: {}", fileUrl, e.getMessage());
+            log.warn("파일명 추출 실패: {},", e.getMessage());
             return "첨부파일";
         }
     }

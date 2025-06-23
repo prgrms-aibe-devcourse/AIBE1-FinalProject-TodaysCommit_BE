@@ -19,8 +19,12 @@ public interface FileStorageService {
     Resource downloadFile(String fileUrl) throws IOException;
 
 
-    // 파일 삭제 (향후 구현 예정)
+    // 파일 삭제
     void deleteFile(String fileUrl) throws IOException;
+
+
+    // 파일 교체(수정)
+    String replaceFile(String oldFileUrl, MultipartFile newFile) throws IOException;
 
 
     // 파일명 추출
