@@ -25,11 +25,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
     @Override
     public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
         try {
-            String token = jwtUtils.extractToken(request);
-            //        if(StringUtils.hasText(token) && jwtUtils.validateToken(token)) {
-//
-//        }
-
+            String url = request.getContextPath() + "/";
             ResponseCookie cookie = cookieUtils.createCookie("token", 0, null);
             ResponseCookie refreshIdCookie = cookieUtils.createCookie("refreshTokenId", 0, null);
             response.setContentType("application/json");
@@ -37,7 +33,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
             response.setStatus(HttpServletResponse.SC_OK);
             response.addHeader("Set-Cookie", cookie.toString());
             response.addHeader("Set-Cookie", refreshIdCookie.toString());
-            response.sendRedirect("/");
+            response.sendRedirect(url);
         } catch (TokenErrorException e) {
             log.error("Error during logout: {}", e.getMessage());
             response.sendRedirect("/?logout-error=true");

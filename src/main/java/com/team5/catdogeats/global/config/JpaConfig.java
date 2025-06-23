@@ -57,7 +57,7 @@ public class JpaConfig {
         }
 
 
-        @Bean
+    @Bean(name = {"jpaTransactionManager", "transactionManager"})
     public PlatformTransactionManager jpaTransactionManager(EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
     }

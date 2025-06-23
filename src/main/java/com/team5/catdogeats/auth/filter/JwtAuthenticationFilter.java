@@ -55,9 +55,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // UserPrincipal 생성
                 UserPrincipal userPrincipal = new UserPrincipal(provider, providerId);
-
-//                Authentication authentication = jwtService.getAuthentication(userPrincipal);
-
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userPrincipal, token, grantedAuthorities);
 

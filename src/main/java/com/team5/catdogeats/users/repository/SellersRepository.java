@@ -16,7 +16,7 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
     /**
      * 사용자 ID로 판매자 정보 조회
      */
-    Optional<Sellers> findByUserId(UUID userId);
+    Optional<Sellers> findByUserId(String userId);
 
     /**
      * 사업자 등록번호로 판매자 정보 조회 - 사업자 중복등록 검증용
@@ -36,7 +36,9 @@ public interface SellersRepository extends JpaRepository<Sellers, UUID> {
             s.tags,
             s.operatingStartTime,
             s.operatingEndTime,
-            s.closedDays
+            s.closedDays,
+            s.isDeleted,
+            s.deledAt
         )
         FROM Sellers s
         JOIN s.user u

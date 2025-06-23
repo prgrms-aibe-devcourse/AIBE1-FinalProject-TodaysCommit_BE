@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 @Getter
 @Builder
@@ -16,7 +15,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AddressResponseDto {
 
-    private UUID id;
+    private String id;
     private String title;
     private String city;
     private String district;
@@ -32,7 +31,7 @@ public class AddressResponseDto {
 
     public static AddressResponseDto from(Addresses address) {
         return AddressResponseDto.builder()
-                .id(address.getId())
+                .id((address.getId()))
                 .title(address.getTitle())
                 .city(address.getCity())
                 .district(address.getDistrict())

@@ -1,7 +1,9 @@
 package com.team5.catdogeats.users.service.impl;
 
+import com.team5.catdogeats.global.exception.WithdrawnAccountException;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.OAuthDTO;
+import com.team5.catdogeats.users.exception.WithdrawnAccountDomainException;
 import com.team5.catdogeats.users.service.UserDuplicateService;
 import com.team5.catdogeats.users.util.OAuthDTOFactory;
 import com.team5.catdogeats.users.util.UserFactory;
@@ -35,14 +37,16 @@ public class CustomOAuth2UserServiceImpl implements OAuth2UserService<OAuth2User
             validateOAuthInfo(dto);
 
             Users savedUsers = userFactory.createFromOAuth(dto);
-            userDuplicateService.isDuplicate(savedUsers);
-
+            Users users = userDuplicateService.isDuplicate(savedUsers);
             return new DefaultOAuth2User(
                     Collections.singleton(new SimpleGrantedAuthority(savedUsers.getRole().toString())),
                     oAuth2User.getAttributes(),
                     dto.userNameAttribute()
             );
-        } catch (OAuth2AuthenticationException e) {
+
+        } catch (WithdrawnAccountDomainException e) {   // 도메인 예외 -> runtime error
+            throw new WithdrawnAccountException(); // 스프링 시큐리티 핸들러에 잡히는 예외
+        }  catch (OAuth2AuthenticationException e) {
             log.error("OAuth2User loadUser error", e);
             throw e;
         }

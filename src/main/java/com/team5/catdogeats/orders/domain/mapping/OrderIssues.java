@@ -11,7 +11,6 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
-import java.util.UUID;
 
 @Entity
 @Table(name = "order_issues")
@@ -25,7 +24,7 @@ public class OrderIssues extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", nullable = false,
@@ -46,6 +45,7 @@ public class OrderIssues extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "issue_status", nullable = false, length = 10)
+    @Builder.Default
     private IssueStatus issueStatus = IssueStatus.REQUESTED;
 
     @Column(name = "issue_request_date", nullable = false)
@@ -58,9 +58,11 @@ public class OrderIssues extends BaseEntity {
     private Long totalAmount;
 
     @Column(name = "delivery_fee", nullable = false)
+    @Builder.Default
     private Long deliveryFee = 0L;
 
     @Column(name = "discount_amount", nullable = false)
+    @Builder.Default
     private Long discountAmount = 0L;
 
     @OneToMany(mappedBy = "orderIssues", cascade = CascadeType.ALL, orphanRemoval = true)

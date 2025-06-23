@@ -4,10 +4,8 @@ import com.team5.catdogeats.pets.domain.Pets;
 import com.team5.catdogeats.pets.domain.enums.Gender;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 
-import java.util.UUID;
-
 public record PetResponseDto(
-        UUID id,
+        String id,
         String name,
         PetCategory petCategory,
         Gender gender,

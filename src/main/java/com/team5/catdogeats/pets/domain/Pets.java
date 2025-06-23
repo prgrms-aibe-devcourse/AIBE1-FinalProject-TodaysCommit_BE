@@ -9,8 +9,6 @@ import com.team5.catdogeats.users.domain.mapping.Buyers;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Getter
 @Builder
@@ -21,7 +19,7 @@ public class Pets extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "buyer_id", referencedColumnName = "user_id", nullable = false,

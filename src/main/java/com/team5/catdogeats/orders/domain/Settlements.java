@@ -9,7 +9,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "settlements")
@@ -22,7 +21,7 @@ public class Settlements extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "seller_id", nullable = false,
