@@ -2,7 +2,10 @@ package com.team5.catdogeats.chats.domain.mapping;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.chats.domain.ChatRooms;
+import com.team5.catdogeats.chats.domain.enums.BehaviorType;
+import com.team5.catdogeats.users.domain.enums.Role;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.ZonedDateTime;
@@ -31,8 +34,17 @@ public class ChatMessages extends BaseEntity {
     private ChatRooms chatRoom;
 
     @Column(name = "sender_id", length = 36, nullable = false)
-    private String senderId;  // buyers 또는 sellers 중 어느 쪽인지 구분하려면 별도 로직 필요
+    private String senderId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sender_type", nullable = false, length = 11)
+    private Role senderType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "behavior_type", nullable = false, length = 6)
+    private BehaviorType behaviorType;
+
+    @Size(max = 1000)
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
