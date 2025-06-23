@@ -2,7 +2,10 @@ package com.team5.catdogeats.addresses.service.impl;
 
 import com.team5.catdogeats.addresses.domain.Addresses;
 import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.*;
+import com.team5.catdogeats.addresses.dto.AddressListResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressRequestDto;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressUpdateRequestDto;
 import com.team5.catdogeats.addresses.exception.AddressAccessDeniedException;
 import com.team5.catdogeats.addresses.exception.AddressNotFoundException;
 import com.team5.catdogeats.addresses.exception.UserNotFoundException;
@@ -25,6 +28,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,10 +38,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.then;
-import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AddressService 테스트")
@@ -58,19 +60,19 @@ class AddressServiceImplTest {
     private Addresses testAddress;
     private UserPrincipal userPrincipal;
     private BuyerDTO buyerDTO;
-    private UUID userId;
-    private UUID addressId;
+    private String userId;
+    private String addressId;
 
     @BeforeEach
     void setUp() {
-        userId = UUID.randomUUID();
-        addressId = UUID.randomUUID();
+        userId = UUID.randomUUID().toString();
+        addressId = UUID.randomUUID().toString();
 
         // UserPrincipal 설정
         userPrincipal = new UserPrincipal("test", "test123");
 
         // BuyerDTO 설정
-        buyerDTO = new BuyerDTO(userId, false);
+        buyerDTO = new BuyerDTO(userId, false,  false, OffsetDateTime.now(ZoneOffset.UTC));
 
         testUser = Users.builder()
                 .id(userId)
@@ -164,7 +166,7 @@ class AddressServiceImplTest {
         given(addressRepository.findById(addressId)).willReturn(Optional.of(testAddress));
 
         // when
-        AddressResponseDto result = addressService.getAddressById(addressId.toString(), userPrincipal);
+        AddressResponseDto result = addressService.getAddressById(addressId, userPrincipal);
 
         // then
         assertThat(result.getId()).isEqualTo(addressId);
@@ -189,8 +191,8 @@ class AddressServiceImplTest {
     @DisplayName("주소 상세 조회 - 다른 사용자의 주소에 접근 시 예외 발생")
     void getAddressById_AccessDenied() {
         // given
-        UUID otherUserId = UUID.randomUUID();
-        BuyerDTO otherBuyerDTO = new BuyerDTO(otherUserId, false);
+        String otherUserId = UUID.randomUUID().toString();
+        BuyerDTO otherBuyerDTO = new BuyerDTO(otherUserId, false, false, OffsetDateTime.now(ZoneOffset.UTC));
 
         given(buyerRepository.findOnlyBuyerByProviderAndProviderId("test", "test123"))
                 .willReturn(Optional.of(otherBuyerDTO));
