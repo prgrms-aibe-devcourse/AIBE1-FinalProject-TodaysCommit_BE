@@ -6,7 +6,7 @@ import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
-import com.team5.catdogeats.products.repository.ProductsRepository;
+import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler.ProductDataRetrievalException;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @MybatisTransactional
 public class SellerStoreProductServiceImpl implements SellerStoreProductService {
 
-    private final ProductsRepository productsRepository;
+    private final ProductRepository productsRepository;
     private final ProductStoreMapper productStoreMapper;
     private final ProductBestScoreService productBestScoreService;
 

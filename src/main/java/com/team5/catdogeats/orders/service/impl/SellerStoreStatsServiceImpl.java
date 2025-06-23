@@ -17,13 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@MybatisTransactional
 public class SellerStoreStatsServiceImpl implements SellerStoreStatsService {
 
     private final SellerStoreStatsMapper sellerStoreStatsMapper;
 
     @Override
-    @Cacheable(value = "sellerStoreStats", key = "#sellerId")
     public SellerStoreStatsDTO getSellerStoreStats(String sellerId) {
         log.debug("판매자 상점 집계 정보 조회 - sellerId: {}", sellerId);
         try {

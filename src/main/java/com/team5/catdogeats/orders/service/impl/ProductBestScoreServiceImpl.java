@@ -1,6 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
-import com.team5.catdogeats.global.config.MybatisTransactional;
+
 import com.team5.catdogeats.orders.mapper.ProductBestScoreMapper;
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -19,13 +18,11 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@MybatisTransactional
 public class ProductBestScoreServiceImpl implements ProductBestScoreService {
 
     private final ProductBestScoreMapper productBestScoreMapper;
 
     @Override
-    @Cacheable(value = "productBestScoreData", key = "#sellerId")
     public List<ProductBestScoreDataDTO> getProductBestScoreData(String sellerId) {
         log.debug("판매자 상품 베스트 점수 데이터 조회 - sellerId: {}", sellerId);
         try {

@@ -2,6 +2,7 @@ package com.team5.catdogeats.users.controller;
 
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
+import com.team5.catdogeats.users.service.SellerStoreService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,7 +16,7 @@ import jakarta.persistence.EntityNotFoundException;
  * - 로깅과 에러 응답 표준화
  */
 @Slf4j
-@RestControllerAdvice(basePackages = "com.team5.catdogeats.users.controller")
+@RestControllerAdvice(assignableTypes = SellerStoreController.class)
 public class SellerStoreExceptionHandler {
 
     /**
@@ -48,51 +49,6 @@ public class SellerStoreExceptionHandler {
                 .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
     }
 
-    /**
-     * 데이터베이스 접근 오류 처리
-     * Repository나 Mapper에서 DB 오류 발생 시
-     */
-    @ExceptionHandler(org.springframework.dao.DataAccessException.class)
-    public ResponseEntity<ApiResponse<Object>> handleDataAccessException(
-            org.springframework.dao.DataAccessException e) {
-        log.error("데이터베이스 접근 오류 - Message: {}", e.getMessage(), e);
-
-        return ResponseEntity.status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
-                .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR,
-                        "데이터 조회 중 오류가 발생했습니다."));
-    }
-
-    /**
-     * 캐시 관련 오류 처리
-     * @Cacheable 어노테이션에서 Redis 오류 발생 시
-     */
-    @ExceptionHandler({
-            org.springframework.cache.Cache.ValueRetrievalException.class,
-            org.springframework.data.redis.RedisConnectionFailureException.class,
-            org.springframework.data.redis.serializer.SerializationException.class
-    })
-    public ResponseEntity<ApiResponse<Object>> handleCacheException(Exception e) {
-        log.error("캐시 처리 오류 - Message: {}", e.getMessage(), e);
-
-        // 캐시 오류는 서비스 동작에 영향을 주지 않도록 내부 오류로 처리
-        return ResponseEntity.status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
-                .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR,
-                        "일시적인 서비스 오류가 발생했습니다."));
-    }
-
-    /**
-     * 트랜잭션 관련 오류 처리
-     * @Transactional에서 발생하는 오류
-     */
-    @ExceptionHandler(org.springframework.transaction.TransactionException.class)
-    public ResponseEntity<ApiResponse<Object>> handleTransactionException(
-            org.springframework.transaction.TransactionException e) {
-        log.error("트랜잭션 처리 오류 - Message: {}", e.getMessage(), e);
-
-        return ResponseEntity.status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
-                .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR,
-                        "데이터 처리 중 오류가 발생했습니다."));
-    }
 
     /**
      * 페이징 관련 오류 처리

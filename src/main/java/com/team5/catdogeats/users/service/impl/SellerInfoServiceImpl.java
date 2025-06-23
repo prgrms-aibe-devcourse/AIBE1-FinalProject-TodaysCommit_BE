@@ -4,7 +4,6 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.DayOfWeek;
-import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequestDTO;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponseDTO;
@@ -15,9 +14,8 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -36,13 +34,10 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());
 
-        // 1. Users 조회
+        // Users 조회
         Users user = findUserByPrincipal(userPrincipal);
 
-        // 2. 판매자 권한 검증
-        validateSellerRole(user);
-
-        // 3. 판매자 정보 조회
+        // 판매자 정보 조회
         return getSellerInfoInternal(user.getId());
     }
 
@@ -52,17 +47,15 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         log.info("판매자 정보 등록/수정 (JWT) - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
-        // 1. Users 조회
+        // Users 조회
         Users user = findUserByPrincipal(userPrincipal);
 
-        // 2. 판매자 권한 검증
-        validateSellerRole(user);
 
-        // 3. 유효성 검증
+        // 운영시간, 휴무일 유효성 검증
         validateOperatingHours(request);
         validateClosedDays(request.closedDays());
 
-        // 4. 판매자 정보 등록/수정
+        // 판매자 정보 등록/수정
         return upsertSellerInfoInternal(user, request);
     }
 
@@ -82,17 +75,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
                         userPrincipal.provider(), userPrincipal.providerId())));
     }
 
-    /**
-     * 판매자 권한 검증
-     */
-    private void validateSellerRole(Users user) {
-        if (user.getRole() != Role.ROLE_SELLER) {
-            log.warn("판매자 권한이 없는 사용자의 접근 시도 - userId: {}, role: {}",
-                    user.getId(), user.getRole());
-            throw new AccessDeniedException("판매자 권한이 필요합니다");
-        }
-        log.debug("판매자 권한 확인 완료 - userId: {}", user.getId());
-    }
 
     /**
      * 판매자 정보 조회 로직 (권한 검증 분리)
