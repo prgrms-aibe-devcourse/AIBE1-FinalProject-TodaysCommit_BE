@@ -1,5 +1,6 @@
 package com.team5.catdogeats.support.domain.notice.service.impl;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
@@ -19,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import java.util.concurrent.CompletableFuture;
 import org.springframework.data.domain.Sort;
 
 
@@ -33,7 +33,7 @@ import java.util.NoSuchElementException;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
+@Transactional(value = "jpaTransactionManager", readOnly = true)
 public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
@@ -76,7 +76,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 공지사항 상세 조회 ==========
     @Override
-    @Transactional
+    @JpaTransactional
     public NoticeResponseDTO getNotice(String noticeId) {
         Notices notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
@@ -92,7 +92,6 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 공지사항 생성 ==========
     @Override
-    @Transactional
     public NoticeResponseDTO createNotice(NoticeCreateRequestDTO requestDTO) {
         Notices notice = Notices.builder()
                 .title(requestDTO.getTitle())
@@ -107,7 +106,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 공지사항 수정 ==========
     @Override
-    @Transactional
+    @JpaTransactional
     public NoticeResponseDTO updateNotice(String noticeId, NoticeUpdateRequestDTO requestDTO) {
         Notices notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
@@ -123,7 +122,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 공지사항 삭제 ==========
     @Override
-    @Transactional
+    @JpaTransactional
     public void deleteNotice(String noticeId) {
         if (!noticeRepository.existsById(noticeId)) {
             throw new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId);
@@ -136,7 +135,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 파일 업로드 ==========
     @Override
-    @Transactional
+    @JpaTransactional
     public NoticeResponseDTO uploadFile(String noticeId, MultipartFile file) {
 
         try {
@@ -222,7 +221,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 파일 삭제 ==========
     @Override
-    @Transactional
+    @JpaTransactional
     public void deleteFile(String noticeId, String fileId) {
 
         try {
@@ -272,7 +271,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 파일 수정(교체) ==========
     @Override
-    @Transactional
+    @JpaTransactional
     public NoticeResponseDTO replaceFile(String noticeId, String fileId, MultipartFile newFile) {
         try {
             // 1. 공지사항 존재 확인

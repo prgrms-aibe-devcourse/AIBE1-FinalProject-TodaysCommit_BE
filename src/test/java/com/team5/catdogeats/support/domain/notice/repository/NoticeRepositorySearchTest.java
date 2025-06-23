@@ -67,7 +67,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -82,7 +82,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -97,7 +97,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -112,7 +112,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2); // notice1, notice2
@@ -127,7 +127,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).isEmpty();
@@ -142,7 +142,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "viewCount"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -160,7 +160,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3); // 모든 공지사항이 "내용" 포함
@@ -181,7 +181,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.ASC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(3); // 모든 공지사항이 "내용" 포함
@@ -202,7 +202,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 2, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(2);
@@ -220,7 +220,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -235,7 +235,7 @@ class NoticeRepositorySearchTest {
         Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "createdAt"));
 
         // when
-        Page<Notices> result = noticeRepository.findByTitleOrContentContaining(keyword, pageable);
+        Page<Notices> result = noticeRepository.findByTitleOrContentContainingWithFiles(keyword, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);

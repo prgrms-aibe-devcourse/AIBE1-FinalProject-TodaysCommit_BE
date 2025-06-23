@@ -20,7 +20,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
@@ -68,8 +67,7 @@ class NoticeServiceImplSearchTest {
         List<Notices> noticeList = List.of(testNotice);
         Page<Notices> noticePage = new PageImpl<>(noticeList, pageable, 1);
 
-        given(noticeRepository.findAll(pageable)).willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
+        given(noticeRepository.findAllWithFiles(pageable)).willReturn(noticePage);
 
         // when
         NoticeListResponseDTO result = noticeService.getNotices(0, 10, null, "latest");
@@ -80,7 +78,7 @@ class NoticeServiceImplSearchTest {
         assertThat(result.getTotalElements()).isEqualTo(1);
         assertThat(result.getCurrentPage()).isEqualTo(0);
         assertThat(result.getNotices().get(0).getViewCount()).isEqualTo(5L);
-        verify(noticeRepository).findAll(pageable);
+        verify(noticeRepository).findAllWithFiles(pageable);
     }
 
     @Test
@@ -92,8 +90,7 @@ class NoticeServiceImplSearchTest {
         List<Notices> noticeList = List.of(testNotice);
         Page<Notices> noticePage = new PageImpl<>(noticeList, pageable, 1);
 
-        given(noticeRepository.findAll(pageable)).willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
+        given(noticeRepository.findAllWithFiles(pageable)).willReturn(noticePage);
 
         // when
         NoticeListResponseDTO result = noticeService.getNotices(0, 10, null, "oldest");
@@ -101,7 +98,7 @@ class NoticeServiceImplSearchTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getNotices()).hasSize(1);
-        verify(noticeRepository).findAll(pageable);
+        verify(noticeRepository).findAllWithFiles(pageable);
     }
 
     @Test
@@ -113,8 +110,7 @@ class NoticeServiceImplSearchTest {
         List<Notices> noticeList = List.of(testNotice);
         Page<Notices> noticePage = new PageImpl<>(noticeList, pageable, 1);
 
-        given(noticeRepository.findAll(pageable)).willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
+        given(noticeRepository.findAllWithFiles(pageable)).willReturn(noticePage);
 
         // when
         NoticeListResponseDTO result = noticeService.getNotices(0, 10, null, "views");
@@ -122,7 +118,7 @@ class NoticeServiceImplSearchTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getNotices()).hasSize(1);
-        verify(noticeRepository).findAll(pageable);
+        verify(noticeRepository).findAllWithFiles(pageable);
     }
 
     @Test
@@ -135,9 +131,8 @@ class NoticeServiceImplSearchTest {
         List<Notices> noticeList = List.of(testNotice);
         Page<Notices> noticePage = new PageImpl<>(noticeList, pageable, 1);
 
-        given(noticeRepository.findByTitleOrContentContaining(searchKeyword, pageable))
+        given(noticeRepository.findByTitleOrContentContainingWithFiles(searchKeyword, pageable))
                 .willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
 
         // when
         NoticeListResponseDTO result = noticeService.getNotices(0, 10, searchKeyword, "latest");
@@ -145,7 +140,7 @@ class NoticeServiceImplSearchTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getNotices()).hasSize(1);
-        verify(noticeRepository).findByTitleOrContentContaining(searchKeyword, pageable);
+        verify(noticeRepository).findByTitleOrContentContainingWithFiles(searchKeyword, pageable);
     }
 
     @Test
@@ -158,9 +153,8 @@ class NoticeServiceImplSearchTest {
         List<Notices> noticeList = List.of(testNotice);
         Page<Notices> noticePage = new PageImpl<>(noticeList, pageable, 1);
 
-        given(noticeRepository.findByTitleOrContentContaining(searchKeyword, pageable))
+        given(noticeRepository.findByTitleOrContentContainingWithFiles(searchKeyword, pageable))
                 .willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
 
         // when
         NoticeListResponseDTO result = noticeService.getNotices(0, 10, searchKeyword, "oldest");
@@ -168,7 +162,7 @@ class NoticeServiceImplSearchTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getNotices()).hasSize(1);
-        verify(noticeRepository).findByTitleOrContentContaining(searchKeyword, pageable);
+        verify(noticeRepository).findByTitleOrContentContainingWithFiles(searchKeyword, pageable);
     }
 
     @Test
@@ -181,9 +175,8 @@ class NoticeServiceImplSearchTest {
         List<Notices> noticeList = List.of(testNotice);
         Page<Notices> noticePage = new PageImpl<>(noticeList, pageable, 1);
 
-        given(noticeRepository.findByTitleOrContentContaining(searchKeyword, pageable))
+        given(noticeRepository.findByTitleOrContentContainingWithFiles(searchKeyword, pageable))
                 .willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
 
         // when
         NoticeListResponseDTO result = noticeService.getNotices(0, 10, searchKeyword, "views");
@@ -191,7 +184,7 @@ class NoticeServiceImplSearchTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getNotices()).hasSize(1);
-        verify(noticeRepository).findByTitleOrContentContaining(searchKeyword, pageable);
+        verify(noticeRepository).findByTitleOrContentContainingWithFiles(searchKeyword, pageable);
     }
 
     @Test
@@ -202,14 +195,13 @@ class NoticeServiceImplSearchTest {
         Pageable expectedPageable = PageRequest.of(0, 10, expectedSort);
         Page<Notices> noticePage = new PageImpl<>(List.of(testNotice), expectedPageable, 1);
 
-        given(noticeRepository.findAll(expectedPageable)).willReturn(noticePage);
-        given(noticeFilesRepository.findByNoticesId(testNotice.getId())).willReturn(new ArrayList<>());
+        given(noticeRepository.findAllWithFiles(expectedPageable)).willReturn(noticePage);
 
         // when
         noticeService.getNotices(0, 10, null, "invalidSort");
 
         // then
-        verify(noticeRepository).findAll(expectedPageable);
+        verify(noticeRepository).findAllWithFiles(expectedPageable);
     }
 
     // ========== 헬퍼 메서드 ==========
