@@ -26,7 +26,6 @@ import jakarta.persistence.EntityNotFoundException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@MybatisTransactional
 public class SellerStoreServiceImpl implements SellerStoreService {
 
     private final SellersRepository sellersRepository;
