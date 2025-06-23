@@ -1,15 +1,13 @@
 package com.team5.catdogeats.orders.service.impl;
 
-import com.team5.catdogeats.global.config.MybatisTransactional;
 import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.mapper.SellerStoreStatsMapper;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 /**
  * 판매자 상점 집계 정보 서비스 구현체

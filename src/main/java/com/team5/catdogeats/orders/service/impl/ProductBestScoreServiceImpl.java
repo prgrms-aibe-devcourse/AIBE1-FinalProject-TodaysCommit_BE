@@ -7,7 +7,6 @@ import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

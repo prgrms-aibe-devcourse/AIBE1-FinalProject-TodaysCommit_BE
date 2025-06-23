@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@MybatisTransactional
 public class SellerStoreProductServiceImpl implements SellerStoreProductService {
 
     private final ProductRepository productsRepository;
