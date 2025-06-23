@@ -36,7 +36,6 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
     private final ProductBestScoreService productBestScoreService;
 
     @Override
-    @Cacheable(value = "sellerProductsBaseInfo", key = "#sellerId + '_' + #category + '_' + #filter + '_' + #pageable.pageNumber")
     public Page<ProductStoreInfoDTO> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable) {
         log.debug("판매자 상품 정보 조회 - sellerId: {}, category: {}, filter: {}, page: {}",
                 sellerId, category, filter, pageable.getPageNumber());
@@ -81,7 +80,6 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
      * 품절 제외 필터용
      */
     @Override
-    @Cacheable(value = "sellerActiveProductCount", key = "#sellerId")
     public Long countSellerActiveProducts(String sellerId) {
         log.debug("판매자 활성 상품 수 조회 - sellerId: {}", sellerId);
 
