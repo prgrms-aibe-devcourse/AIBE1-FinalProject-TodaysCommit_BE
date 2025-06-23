@@ -1,5 +1,6 @@
 package com.team5.catdogeats.products.service.impl;
 
+import com.team5.catdogeats.global.config.MybatisTransactional;
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@MybatisTransactional
 public class SellerStoreProductServiceImpl implements SellerStoreProductService {
 
     private final ProductsRepository productsRepository;

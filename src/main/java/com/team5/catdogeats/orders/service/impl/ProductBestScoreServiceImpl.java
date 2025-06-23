@@ -1,5 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
+import com.team5.catdogeats.global.config.MybatisTransactional;
 import com.team5.catdogeats.orders.mapper.ProductBestScoreMapper;
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
@@ -18,7 +19,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@MybatisTransactional
 public class ProductBestScoreServiceImpl implements ProductBestScoreService {
 
     private final ProductBestScoreMapper productBestScoreMapper;

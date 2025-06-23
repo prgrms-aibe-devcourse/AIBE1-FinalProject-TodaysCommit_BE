@@ -14,10 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * 판매자 스토어 페이지 컨트롤러 (리팩토링 완료)
- * - 비즈니스 로직은 Service에서 처리
- * - 예외 처리는 ExceptionHandler에서 처리
- * - Controller는 HTTP 요청/응답 처리에만 집중
+ * 판매자 스토어 페이지 컨트롤러
  */
 @Slf4j
 @RestController

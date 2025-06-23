@@ -1,5 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
+import com.team5.catdogeats.global.config.MybatisTransactional;
 import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.mapper.SellerStoreStatsMapper;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
@@ -16,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@MybatisTransactional
 public class SellerStoreStatsServiceImpl implements SellerStoreStatsService {
 
     private final SellerStoreStatsMapper sellerStoreStatsMapper;

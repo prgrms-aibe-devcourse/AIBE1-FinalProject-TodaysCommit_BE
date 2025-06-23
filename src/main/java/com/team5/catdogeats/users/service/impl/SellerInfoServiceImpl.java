@@ -1,6 +1,7 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.DayOfWeek;
 import com.team5.catdogeats.users.domain.enums.Role;
@@ -30,7 +31,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     private final UserRepository userRepository;
 
     @Override
-    @Transactional(readOnly = true)
+    @JpaTransactional
     public SellerInfoResponseDTO getSellerInfo(UserPrincipal userPrincipal) {
         log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
                 userPrincipal.provider(), userPrincipal.providerId());
@@ -46,7 +47,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public SellerInfoResponseDTO upsertSellerInfo(UserPrincipal userPrincipal, SellerInfoRequestDTO request) {
         log.info("판매자 정보 등록/수정 (JWT) - provider: {}, providerId: {}, vendorName: {}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
