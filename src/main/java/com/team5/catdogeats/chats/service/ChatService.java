@@ -2,10 +2,12 @@ package com.team5.catdogeats.chats.service;
 
 import com.team5.catdogeats.chats.domain.dto.ChatMessageDTO;
 import com.team5.catdogeats.chats.domain.mapping.ChatMessages;
-import org.springframework.data.domain.Page;
+
+import java.security.Principal;
+import java.util.List;
 
 public interface ChatService {
-    ChatMessages save(ChatMessageDTO chatMessageDTO);
+    ChatMessages save(ChatMessageDTO chatMessageDTO, Principal principal);
 
-    Page<ChatMessages> getRecentMessages(String roomId, int page, int size);
+    List<ChatMessages> getRecentMessages(String roomId, int page, int size);
 }
