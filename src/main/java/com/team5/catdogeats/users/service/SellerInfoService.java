@@ -3,8 +3,6 @@ package com.team5.catdogeats.users.service;
 import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
 import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 
-import java.util.UUID;
-
 public interface SellerInfoService {
 
     /**
@@ -14,7 +12,7 @@ public interface SellerInfoService {
      * @param userId 현재 로그인한 판매자의 사용자 ID (UUID)
      * @return 판매자 정보 응답 DTO (없으면 null)
      */
-    SellerInfoResponse getSellerInfo(UUID userId);
+    SellerInfoResponse getSellerInfo(String userId);
 
 
 
@@ -26,6 +24,6 @@ public interface SellerInfoService {
      * @param request 판매자 정보 요청 DTO
      * @return 저장된 판매자 정보 응답 DTO
      */
-    SellerInfoResponse upsertSellerInfo(UUID userId, SellerInfoRequest request);
+    SellerInfoResponse upsertSellerInfo(String userId, SellerInfoRequest request);
 
 }

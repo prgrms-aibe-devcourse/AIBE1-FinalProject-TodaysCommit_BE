@@ -1,9 +1,9 @@
 package com.team5.catdogeats.users.domain.dto;
 
 import java.time.LocalTime;
-import java.util.UUID;
+import java.time.OffsetDateTime;
 
-public record SellerDTO(UUID userId,
+public record SellerDTO(String userId,
                         String vendorName,
                         String vendorProfileImage,
                         String businessNumber,
@@ -12,5 +12,7 @@ public record SellerDTO(UUID userId,
                         String tags,
                         LocalTime operatingStartTime,
                         LocalTime operatingEndTime,
-                        String closedDays) {
+                        String closedDays,
+                        boolean isDeleted,
+                        OffsetDateTime deletedAt) {
 }

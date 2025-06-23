@@ -5,8 +5,6 @@ import com.team5.catdogeats.support.domain.Notices;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Table(name = "notice_files")
 @Getter
@@ -17,7 +15,7 @@ public class NoticeFiles extends BaseEntity {
     @Id
     @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID id;
+    private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "notice_id", nullable = false)

@@ -3,6 +3,7 @@ package com.team5.catdogeats.users.service.impl;
 import com.team5.catdogeats.auth.assistant.JwtAssistant.OAuth2ProviderStrategy;
 import com.team5.catdogeats.auth.assistant.JwtAssistant.OAuth2ProviderStrategyFactory;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.ModifyRoleRequestDTO;
 import com.team5.catdogeats.users.domain.enums.Role;
@@ -21,7 +22,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
@@ -37,7 +37,7 @@ public class ModifyUserRoleServiceImpl  implements ModifyUserRoleService {
     private final OAuth2ProviderStrategyFactory strategyFactory;
 
     @Override
-    @Transactional
+    @JpaTransactional
     public Authentication modifyUserRole(UserPrincipal userPrincipal, ModifyRoleRequestDTO role) {
         Users user = userRepository.findByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("User not found"));

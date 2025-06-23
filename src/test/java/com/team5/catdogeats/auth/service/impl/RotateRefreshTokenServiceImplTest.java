@@ -39,17 +39,17 @@ class RotateRefreshTokenServiceImplTest {
     @InjectMocks
     private RotateRefreshTokenServiceImpl rotateService;
 
-    private UUID tokenId;
+    private String tokenId;
     private RefreshTokens validToken;
 
     @BeforeEach
     void setUp() {
-        tokenId = UUID.randomUUID();
+        tokenId = UUID.randomUUID().toString();
         validToken = RefreshTokens.builder()
                 .id(tokenId)
                 .provider("google")
                 .providerId("12345")
-                .userId(UUID.randomUUID())
+                .userId(UUID.randomUUID().toString())
                 .used(false)
                 .expiresAt(Instant.now().plusSeconds(3600))
                 .createdAt(Instant.now())
@@ -59,14 +59,14 @@ class RotateRefreshTokenServiceImplTest {
     @Test
     void rotateRefreshToken_ShouldReturnNewTokens_WhenValidToken() {
         // given
-        when(refreshTokenRepository.findById(tokenId)).thenReturn(Optional.of(validToken));
+        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.of(validToken));
         when(refreshTokenRepository.save(any(RefreshTokens.class))).thenReturn(validToken);
 
         Authentication authentication = mock(Authentication.class);
         when(jwtService.getAuthentication(any(UserPrincipal.class))).thenReturn(authentication);
         when(jwtService.createAccessToken(authentication)).thenReturn("new-access-token");
 
-        UUID newRefreshTokenId = UUID.randomUUID();
+        String newRefreshTokenId = UUID.randomUUID().toString();
         when(refreshTokenService.createRefreshToken(authentication)).thenReturn(newRefreshTokenId);
 
         // when
@@ -83,7 +83,7 @@ class RotateRefreshTokenServiceImplTest {
     void rotateRefreshToken_ShouldThrowExpiredTokenException_WhenTokenIsExpired() {
         // given
         validToken = validToken.toBuilder().expiresAt(Instant.now().minusSeconds(10)).build();
-        when(refreshTokenRepository.findById(tokenId)).thenReturn(Optional.of(validToken));
+        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.of(validToken));
 
         // when & then
         assertThrows(ExpiredTokenException.class, () -> rotateService.RotateRefreshToken(tokenId));
@@ -93,7 +93,7 @@ class RotateRefreshTokenServiceImplTest {
     void rotateRefreshToken_ShouldThrowInvalidTokenException_WhenTokenIsUsed() {
         // given
         validToken = validToken.toBuilder().used(true).build();
-        when(refreshTokenRepository.findById(tokenId)).thenReturn(Optional.of(validToken));
+        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.of(validToken));
 
         // when & then
         assertThrows(InvalidTokenException.class, () -> rotateService.RotateRefreshToken(tokenId));
@@ -102,7 +102,7 @@ class RotateRefreshTokenServiceImplTest {
     @Test
     void rotateRefreshToken_ShouldThrowNoSuchElementException_WhenTokenNotFound() {
         // given
-        when(refreshTokenRepository.findById(tokenId)).thenReturn(Optional.empty());
+        when(refreshTokenRepository.findById(UUID.fromString(tokenId))).thenReturn(Optional.empty());
 
         // when & then
         assertThrows(NoSuchElementException.class, () -> rotateService.RotateRefreshToken(tokenId));

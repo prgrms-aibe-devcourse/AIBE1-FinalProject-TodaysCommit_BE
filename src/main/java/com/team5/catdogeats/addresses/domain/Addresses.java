@@ -6,8 +6,6 @@ import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.util.UUID;
-
 @Entity
 @Getter
 @Builder
@@ -18,7 +16,7 @@ public class Addresses extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
-    private UUID id;
+    private String id;
 
     @Column(name = "title", length = 30, nullable = false)
     private String title;
@@ -105,7 +103,7 @@ public class Addresses extends BaseEntity {
     }
 
     // 해당 사용자의 주소인지 확인
-    public boolean isOwnedBy(UUID userId) {
+    public boolean isOwnedBy(String userId) {
         return this.user != null && this.user.getId().equals(userId);
     }
 

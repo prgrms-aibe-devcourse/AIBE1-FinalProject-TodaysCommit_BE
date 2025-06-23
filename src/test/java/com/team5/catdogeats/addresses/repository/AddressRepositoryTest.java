@@ -172,7 +172,7 @@ class AddressRepositoryTest {
         // when & then
         assertThat(addressRepository.existsByIdAndUserId(personalAddress1.getId(), testUser1.getId())).isTrue();
         assertThat(addressRepository.existsByIdAndUserId(personalAddress1.getId(), testUser2.getId())).isFalse();
-        assertThat(addressRepository.existsByIdAndUserId(UUID.randomUUID(), testUser1.getId())).isFalse();
+        assertThat(addressRepository.existsByIdAndUserId(UUID.randomUUID().toString(), testUser1.getId())).isFalse();
     }
 
     @Test
@@ -200,7 +200,7 @@ class AddressRepositoryTest {
         addressRepository.flush(); // 변경사항 즉시 반영
 
         // then
-        Addresses updatedAddress = addressRepository.findById(personalAddress1.getId()).orElseThrow();
+        Addresses updatedAddress = addressRepository.findById((personalAddress1.getId())).orElseThrow();
         assertThat(updatedAddress.isDefault()).isFalse();
     }
 
@@ -215,7 +215,7 @@ class AddressRepositoryTest {
         addressRepository.flush(); // 변경사항 즉시 반영
 
         // then
-        Addresses updatedAddress = addressRepository.findById(personalAddress2.getId()).orElseThrow();
+        Addresses updatedAddress = addressRepository.findById((personalAddress2.getId())).orElseThrow();
         assertThat(updatedAddress.isDefault()).isTrue();
     }
 
@@ -232,8 +232,8 @@ class AddressRepositoryTest {
         addressRepository.flush();
 
         // then
-        Addresses updatedAddress1 = addressRepository.findById(personalAddress1.getId()).orElseThrow();
-        Addresses updatedAddress2 = addressRepository.findById(personalAddress2.getId()).orElseThrow();
+        Addresses updatedAddress1 = addressRepository.findById((personalAddress1.getId())).orElseThrow();
+        Addresses updatedAddress2 = addressRepository.findById((personalAddress2.getId())).orElseThrow();
 
         assertThat(updatedAddress1.isDefault()).isFalse();
         assertThat(updatedAddress2.isDefault()).isTrue();
@@ -257,7 +257,7 @@ class AddressRepositoryTest {
         addressRepository.flush();
 
         // then - BUSINESS 타입의 기본 주소는 유지
-        Addresses updatedBusinessAddress = addressRepository.findById(businessAddress1.getId()).orElseThrow();
+        Addresses updatedBusinessAddress = addressRepository.findById((businessAddress1.getId())).orElseThrow();
         assertThat(updatedBusinessAddress.isDefault()).isTrue();
     }
 

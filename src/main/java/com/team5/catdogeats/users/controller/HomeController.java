@@ -14,4 +14,11 @@ public class HomeController {
     public ResponseEntity<?> home() {
         return ResponseEntity.ok("Welcome to CatDogeats");
     }
+
+    @GetMapping("/withdraw")
+    @Operation(summary = "탈퇴한 유저 화면", description = "탈퇴한 유저가 다시 로그인 할 경우")
+    public ResponseEntity<?> withdraw() {
+        return ResponseEntity.ok("You have been withdrawn from CatDogeats");
+    }
+
 }

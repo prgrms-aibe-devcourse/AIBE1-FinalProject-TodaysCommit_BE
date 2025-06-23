@@ -2,13 +2,17 @@ package com.team5.catdogeats.addresses.service.impl;
 
 import com.team5.catdogeats.addresses.domain.Addresses;
 import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.*;
+import com.team5.catdogeats.addresses.dto.AddressListResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressRequestDto;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.dto.AddressUpdateRequestDto;
 import com.team5.catdogeats.addresses.exception.AddressAccessDeniedException;
 import com.team5.catdogeats.addresses.exception.AddressNotFoundException;
 import com.team5.catdogeats.addresses.exception.UserNotFoundException;
 import com.team5.catdogeats.addresses.repository.AddressRepository;
 import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.repository.BuyerRepository;
@@ -21,7 +25,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.UUID;
 
 @Slf4j
 @Service
@@ -35,7 +38,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressListResponseDto getAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType, Pageable pageable) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         Page<Addresses> addressPage = addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
                 userId, addressType, pageable);
@@ -46,7 +49,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressResponseDto> getAllAddressesByUserAndType(UserPrincipal userPrincipal, AddressType addressType) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         List<Addresses> addresses = addressRepository.findByUserIdAndAddressTypeOrderByIsDefaultDescCreatedAtDesc(
                 userId, addressType);
@@ -58,17 +61,17 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressResponseDto getAddressById(String addressId, UserPrincipal userPrincipal) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
         return AddressResponseDto.from(address);
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public AddressResponseDto createAddress(AddressRequestDto requestDto, UserPrincipal userPrincipal) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         // 주소 개수 제한 검증
         validateAddressLimit(userId, requestDto.getAddressType());
@@ -103,11 +106,11 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public AddressResponseDto updateAddress(String addressId, AddressUpdateRequestDto updateDto, UserPrincipal userPrincipal) {
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
 
         // 주소 정보 업데이트
@@ -135,12 +138,12 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public void deleteAddress(String addressId, UserPrincipal userPrincipal) {
         // UserPrincipal에서 userId 조회
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
 
         addressRepository.delete(address);
@@ -148,12 +151,12 @@ public class AddressServiceImpl implements AddressService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public AddressResponseDto setDefaultAddress(String addressId, UserPrincipal userPrincipal) {
         // UserPrincipal에서 userId 조회
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
-        Addresses address = findAddressById(UUID.fromString(addressId));
+        Addresses address = findAddressById((addressId));
         validateAddressOwnership(address, userId);
 
         // 기존 기본 주소 해제
@@ -169,7 +172,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     public AddressResponseDto getDefaultAddress(UserPrincipal userPrincipal, AddressType addressType) {
         // UserPrincipal에서 userId 조회
-        UUID userId = findUserIdByPrincipal(userPrincipal);
+        String userId = findUserIdByPrincipal(userPrincipal);
 
         return addressRepository.findByUserIdAndAddressTypeAndIsDefaultTrue(userId, addressType)
                 .map(AddressResponseDto::from)
@@ -178,7 +181,7 @@ public class AddressServiceImpl implements AddressService {
 
     // Private 헬퍼 메서드
     // UserPrincipal에서 userId 조회
-    private UUID findUserIdByPrincipal(UserPrincipal userPrincipal) {
+    private String findUserIdByPrincipal(UserPrincipal userPrincipal) {
         BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(
                 userPrincipal.provider(),
                 userPrincipal.providerId()
@@ -187,18 +190,18 @@ public class AddressServiceImpl implements AddressService {
         return buyerDTO.userId();
     }
 
-    private Addresses findAddressById(UUID addressId) {
+    private Addresses findAddressById(String addressId) {
         return addressRepository.findById(addressId)
                 .orElseThrow(() -> new AddressNotFoundException("주소를 찾을 수 없습니다: " + addressId));
     }
 
-    private void validateAddressOwnership(Addresses address, UUID userId) {
+    private void validateAddressOwnership(Addresses address, String userId) {
         if (!address.isOwnedBy(userId)) {
             throw new AddressAccessDeniedException("해당 주소에 접근할 권한이 없습니다.");
         }
     }
 
-    private void validateAddressLimit(UUID userId, AddressType addressType) {
+    private void validateAddressLimit(String userId, AddressType addressType) {
         long addressCount = addressRepository.countByUserIdAndAddressType(userId, addressType);
 
         // 주소 제한 (개인 주소: 10개, 사업자 주소: 1개)

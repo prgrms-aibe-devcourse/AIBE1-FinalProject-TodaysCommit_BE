@@ -2,15 +2,11 @@ package com.team5.catdogeats.users.domain.mapping;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.domain.enums.DayOfWeek;
-
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalTime;
-import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.UUID;
+import java.time.OffsetDateTime;
 
 @Entity
 @Getter
@@ -21,11 +17,11 @@ public class Sellers extends BaseEntity {
 
     @Id
     @Column(name = "user_id", length = 36)
-    private UUID userId;
+    private String userId;
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_sellers_user_id"))
+    @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_sellers_user_id"), nullable = false)
     private Users user;
 
     @Column(name = "vendor_name", length = 100)
@@ -54,6 +50,14 @@ public class Sellers extends BaseEntity {
 
     @Column(name = "closed_days", length = 20)
     private String closedDays;
+
+    @Column(nullable = false, name = "is_deleted")
+    @Builder.Default
+    private boolean isDeleted = false;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deledAt;
+
 
     public void updateVendorName(String vendorName) {
         if (vendorName != null && !vendorName.trim().isEmpty()) {
