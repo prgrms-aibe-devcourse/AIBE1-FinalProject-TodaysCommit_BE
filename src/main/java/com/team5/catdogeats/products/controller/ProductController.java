@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -34,7 +33,7 @@ public class ProductController {
     @PostMapping("/sellers/products")
     public ResponseEntity<ApiResponse<Void>> registerProduct(@AuthenticationPrincipal UserPrincipal userPrincipal, @RequestBody @Valid @Parameter(description = "등록할 상품 정보", required = true)ProductCreateRequestDto dto) {
         try {
-            UUID productId = productService.registerProduct(userPrincipal, dto);
+            String productId = productService.registerProduct(userPrincipal, dto);
             return ResponseEntity
                     .created(URI.create("/v1/sellers/products/" + productId))
                     .body(ApiResponse.success(ResponseCode.CREATED));

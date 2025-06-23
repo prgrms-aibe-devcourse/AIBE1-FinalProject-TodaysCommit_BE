@@ -1,6 +1,7 @@
 package com.team5.catdogeats.products.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.domain.dto.ProductCreateRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductDeleteRequestDto;
@@ -11,7 +12,6 @@ import com.team5.catdogeats.products.service.ProductService;
 import com.team5.catdogeats.users.domain.dto.SellerDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.repository.SellersRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 @Slf4j
@@ -31,7 +30,7 @@ public class ProductServiceImpl implements ProductService {
     private final SellersRepository sellerRepository;
 
     @Override
-    public UUID registerProduct(UserPrincipal userPrincipal, ProductCreateRequestDto dto) {
+    public String registerProduct(UserPrincipal userPrincipal, ProductCreateRequestDto dto) {
         SellerDTO sellerDTO = sellerRepository.findSellerDtoByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
 
@@ -64,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
         return productRepository.save(product).getId();
     }
 
-    @Transactional
+    @JpaTransactional
     @Override
     public void updateProduct(ProductUpdateRequestDto dto) {
         Products product = productRepository.findById(dto.productId())
@@ -78,7 +77,7 @@ public class ProductServiceImpl implements ProductService {
         Products product = productRepository.findById(dto.productId())
                 .orElseThrow(() -> new NoSuchElementException("해당 아이템 정보를 찾을 수 없습니다."));
 
-        productRepository.delete(product);
+        productRepository.deleteById(dto.productId());
     }
 
     // TODO: 상품 조회 서비스 로직 / 상품 상세 조회 서비스 로직 구현하기
