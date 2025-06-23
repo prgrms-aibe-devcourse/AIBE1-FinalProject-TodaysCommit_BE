@@ -23,17 +23,9 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 /**
- * 재고 예약 서비스
- *
+ * 재고 예약 서비스 (타입 수정됨)
+ * Products와 Orders 엔티티의 ID 타입이 String으로 변경됨에 따라 모든 관련 메서드를 수정하였습니다.
  * 안전한 재고 관리를 위한 예약 시스템의 핵심 비즈니스 로직을 담당합니다.
- * 동시성 제어, 재고 검증, 예약 상태 관리를 통해
- * 정확하고 안전한 재고 예약 기능을 제공합니다.
- *
- * 주요 기능:
- * - 재고 예약 생성 및 검증
- * - 예약 상태 관리 (확정/취소/만료)
- * - 동시성 제어 및 재시도 로직
- * - RabbitMQ 연동을 위한 만료 처리
  */
 @Slf4j
 @Service
@@ -43,21 +35,13 @@ public class StockReservationService {
     private final StockReservationRepository stockReservationRepository;
     private final ProductRepository productRepository;
 
-    /**
-     * 재고 예약 만료 시간 (분)
-     * application.yml에서 설정 가능, 기본값 30분
-     */
     @Value("${stock.reservation.expiration-minutes:30}")
     private int reservationExpirationMinutes;
 
-    // === 재고 예약 생성 ===
+    // === 재고 예약 생성 (타입 수정) ===
 
     /**
-     * 새로운 재고 예약 생성
-     *
-     * 동시성 제어를 위해 SERIALIZABLE 격리 수준을 사용하고,
-     * OptimisticLockingFailureException 발생 시 재시도합니다.
-     *
+     * 새로운 재고 예약 생성 (타입 수정)
      * @param order 주문 정보
      * @param product 상품 정보
      * @param quantity 예약할 수량
@@ -72,7 +56,7 @@ public class StockReservationService {
         log.info("재고 예약 생성 시작: orderId={}, productId={}, quantity={}",
                 order.getId(), product.getId(), quantity);
 
-        // 1. 재고 가용성 검증
+        // 1. 재고 가용성 검증 (String 타입)
         validateStockAvailability(product.getId(), quantity);
 
         // 2. 재고 예약 생성
@@ -90,9 +74,7 @@ public class StockReservationService {
     }
 
     /**
-     * 여러 상품에 대한 일괄 예약 생성
-     * 모든 상품의 재고가 충분한지 먼저 검증한 후 일괄 예약을 생성합니다.
-     *
+     * 여러 상품에 대한 일괄 예약 생성 (타입 수정)
      * @param order 주문 정보
      * @param reservationRequests 예약 요청 목록
      * @return 생성된 예약 목록
@@ -106,7 +88,7 @@ public class StockReservationService {
         log.info("일괄 재고 예약 생성 시작: orderId={}, 상품 개수={}",
                 order.getId(), reservationRequests.size());
 
-        // 1. 모든 상품의 재고 가용성 사전 검증
+        // 1. 모든 상품의 재고 가용성 사전 검증 (String 타입)
         for (ReservationRequest request : reservationRequests) {
             validateStockAvailability(request.getProduct().getId(), request.getQuantity());
         }
@@ -125,17 +107,15 @@ public class StockReservationService {
         return savedReservations;
     }
 
-    // === 재고 가용성 검증 ===
+    // === 재고 가용성 검증 (타입 수정) ===
 
     /**
-     * 재고 가용성 검증
-     * 실제 재고에서 현재 예약된 수량을 뺀 가용 재고로 주문 가능 여부를 판단합니다.
-     *
-     * @param productId 상품 ID
+     * 재고 가용성 검증 (타입 수정: UUID → String)
+     * @param productId 상품 ID (String 타입)
      * @param requestedQuantity 요청 수량
      * @throws IllegalArgumentException 재고 부족 시
      */
-    public void validateStockAvailability(UUID productId, Integer requestedQuantity) {
+    public void validateStockAvailability(String productId, Integer requestedQuantity) {
         StockAvailabilityDto availability = getStockAvailability(productId);
 
         if (availability.getAvailableStock() < requestedQuantity) {
@@ -150,13 +130,12 @@ public class StockReservationService {
     }
 
     /**
-     * 상품의 재고 가용성 정보 조회
-     *
-     * @param productId 상품 ID
+     * 상품의 재고 가용성 정보 조회 (타입 수정: UUID → String)
+     * @param productId 상품 ID (String 타입)
      * @return 재고 가용성 정보
      */
     @Transactional(readOnly = true)
-    public StockAvailabilityDto getStockAvailability(UUID productId) {
+    public StockAvailabilityDto getStockAvailability(String productId) {
         // 실제 재고 조회
         Products product = productRepository.findById(productId)
                 .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + productId));
@@ -173,17 +152,15 @@ public class StockReservationService {
                 .build();
     }
 
-    // === 예약 상태 관리 ===
+    // === 예약 상태 관리 (타입 수정) ===
 
     /**
-     * 재고 예약 확정 처리
-     * 결제 성공 시 호출되어 예약을 확정 상태로 변경합니다.
-     *
-     * @param orderId 주문 ID
+     * 재고 예약 확정 처리 (타입 수정: UUID → String)
+     * @param orderId 주문 ID (String 타입)
      * @return 확정된 예약 목록
      */
     @Transactional
-    public List<StockReservation> confirmReservations(UUID orderId) {
+    public List<StockReservation> confirmReservations(String orderId) {
         log.info("재고 예약 확정 시작: orderId={}", orderId);
 
         List<StockReservation> reservations = stockReservationRepository.findByOrderId(orderId);
@@ -203,14 +180,12 @@ public class StockReservationService {
     }
 
     /**
-     * 확정된 예약에 대한 실제 재고 차감
-     * 결제 성공 후 호출되어 확정된 예약 수량만큼 실제 재고를 차감합니다.
-     *
-     * @param orderId 주문 ID
+     * 확정된 예약에 대한 실제 재고 차감 (타입 수정: UUID → String)
+     * @param orderId 주문 ID (String 타입)
      * @return 차감 처리된 예약 목록
      */
     @Transactional
-    public List<StockReservation> decrementConfirmedStock(UUID orderId) {
+    public List<StockReservation> decrementConfirmedStock(String orderId) {
         log.info("확정된 재고 차감 시작: orderId={}", orderId);
 
         // 확정된 예약 목록 조회
@@ -252,14 +227,12 @@ public class StockReservationService {
     }
 
     /**
-     * 재고 예약 취소 처리
-     * 주문 취소 시 호출되어 예약을 취소 상태로 변경합니다.
-     *
-     * @param orderId 주문 ID
+     * 재고 예약 취소 처리 (타입 수정: UUID → String)
+     * @param orderId 주문 ID (String 타입)
      * @return 취소된 예약 목록
      */
     @Transactional
-    public List<StockReservation> cancelReservations(UUID orderId) {
+    public List<StockReservation> cancelReservations(String orderId) {
         log.info("재고 예약 취소 시작: orderId={}", orderId);
 
         List<StockReservation> reservations = stockReservationRepository.findByOrderId(orderId);
@@ -285,8 +258,6 @@ public class StockReservationService {
 
     /**
      * 재고 예약 만료 처리
-     * RabbitMQ 지연 메시지를 통해 자동으로 호출됩니다.
-     *
      * @param reservationId 예약 ID
      */
     @Transactional
@@ -312,8 +283,6 @@ public class StockReservationService {
 
     /**
      * 만료된 예약들을 일괄 처리
-     * 스케줄러에서 주기적으로 호출되는 배치 메서드입니다.
-     *
      * @return 처리된 예약 개수
      */
     @Transactional
@@ -328,29 +297,27 @@ public class StockReservationService {
         return expiredCount;
     }
 
-    // === 조회 메서드 ===
+    // === 조회 메서드 (타입 수정) ===
 
     /**
-     * 주문의 활성 예약 목록 조회
-     *
-     * @param orderId 주문 ID
+     * 주문의 활성 예약 목록 조회 (타입 수정: UUID → String)
+     * @param orderId 주문 ID (String 타입)
      * @return 활성 예약 목록
      */
     @Transactional(readOnly = true)
-    public List<StockReservation> getActiveReservationsByOrder(UUID orderId) {
+    public List<StockReservation> getActiveReservationsByOrder(String orderId) {
         return stockReservationRepository.findByOrderId(orderId).stream()
                 .filter(StockReservation::isActive)
                 .toList();
     }
 
     /**
-     * 상품의 활성 예약 목록 조회
-     *
-     * @param productId 상품 ID
+     * 상품의 활성 예약 목록 조회 (타입 수정: UUID → String)
+     * @param productId 상품 ID (String 타입)
      * @return 활성 예약 목록
      */
     @Transactional(readOnly = true)
-    public List<StockReservation> getActiveReservationsByProduct(UUID productId) {
+    public List<StockReservation> getActiveReservationsByProduct(String productId) {
         return stockReservationRepository.findActiveReservationsByProductId(productId);
     }
 

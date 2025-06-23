@@ -29,7 +29,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -54,7 +53,7 @@ public class OrderEventListener {
     private final ProductRepository productRepository;
     private final PaymentRepository paymentRepository;
     private final BuyerRepository buyerRepository;
-    private final UserRepository userRepository; // UserRepository 주입
+    private final UserRepository userRepository;
 
     /**
      * 재고 예약 처리 리스너 (EDA + 재고 예약 시스템)
@@ -66,13 +65,14 @@ public class OrderEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleStockReservation(OrderCreatedEvent event) {
+        String orderId = event.getOrderId().toString();
         log.info("재고 예약 처리 시작: orderId={}, orderNumber={}",
-                event.getOrderId(), event.getOrderNumber());
+                orderId, event.getOrderNumber());
 
         try {
-            // 주문 정보 조회
-            Orders order = orderRepository.findById(event.getOrderId())
-                    .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + event.getOrderId()));
+            // 주문 정보 조회 (UUID → String 변환)
+            Orders order = orderRepository.findById(orderId)
+                    .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + orderId));
 
             // 예약 요청 목록 생성
             List<StockReservationService.ReservationRequest> reservationRequests = createReservationRequests(event);
@@ -81,35 +81,35 @@ public class OrderEventListener {
             List<StockReservation> reservations = stockReservationService.createBulkReservations(order, reservationRequests);
 
             log.info("재고 예약 완료: orderId={}, 예약된 상품 개수={}",
-                    event.getOrderId(), reservations.size());
+                    orderId, reservations.size());
 
         } catch (IllegalArgumentException e) {
             // 재고 부족 등 비즈니스 로직 예외
-            log.error("재고 예약 실패 (재고 부족): orderId={}, error={}", event.getOrderId(), e.getMessage());
-            performStockReservationCompensation(event.getOrderId(), "재고 부족: " + e.getMessage());
+            log.error("재고 예약 실패 (재고 부족): orderId={}, error={}", orderId, e.getMessage());
+            performStockReservationCompensation(orderId, "재고 부족: " + e.getMessage());
 
         } catch (OptimisticLockingFailureException e) {
             // 동시성 제어 실패 (재시도 로직은 StockReservationService에서 처리)
-            log.error("재고 예약 실패 (동시성 충돌): orderId={}, error={}", event.getOrderId(), e.getMessage());
-            performStockReservationCompensation(event.getOrderId(), "동시성 충돌로 인한 재고 예약 실패");
+            log.error("재고 예약 실패 (동시성 충돌): orderId={}, error={}", orderId, e.getMessage());
+            performStockReservationCompensation(orderId, "동시성 충돌로 인한 재고 예약 실패");
 
         } catch (Exception e) {
             // 기타 예외
-            log.error("재고 예약 실패 (시스템 오류): orderId={}, error={}", event.getOrderId(), e.getMessage(), e);
-            performStockReservationCompensation(event.getOrderId(), "시스템 오류: " + e.getMessage());
+            log.error("재고 예약 실패 (시스템 오류): orderId={}, error={}", orderId, e.getMessage(), e);
+            performStockReservationCompensation(orderId, "시스템 오류: " + e.getMessage());
         }
     }
 
     /**
      * 주문 이벤트로부터 예약 요청 목록 생성
-     *
      * @param event 주문 생성 이벤트
      * @return 예약 요청 목록
      */
     private List<StockReservationService.ReservationRequest> createReservationRequests(OrderCreatedEvent event) {
         return event.getOrderItems().stream()
                 .map(item -> {
-                    Products product = productRepository.findById(item.getProductId()) // UUID.fromString 제거
+                    // Products ID는 UUID 타입이므로 그대로 사용
+                    Products product = productRepository.findById(item.getProductId())
                             .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + item.getProductId()));
                     return new StockReservationService.ReservationRequest(product, item.getQuantity());
                 })
@@ -120,11 +120,11 @@ public class OrderEventListener {
      * 재고 예약 실패 시 보상 트랜잭션
      * 주문 상태를 CANCELLED로 변경하고 관련 로그를 기록합니다.
      * 독립적인 트랜잭션으로 실행되어 원본 트랜잭션과 분리됩니다.
-     * @param orderId 주문 ID
+     * @param orderId 주문 ID (String 타입)
      * @param errorMessage 오류 메시지
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void performStockReservationCompensation(UUID orderId, String errorMessage) {
+    public void performStockReservationCompensation(String orderId, String errorMessage) {
         try {
             Orders order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + orderId));
@@ -150,56 +150,48 @@ public class OrderEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentInfoCreation(OrderCreatedEvent event) {
+        String orderId = event.getOrderId().toString();
         log.info("결제 정보 생성 처리 시작: orderId={}, orderNumber={}",
-                event.getOrderId(), event.getOrderNumber());
+                orderId, event.getOrderNumber());
 
         try {
-            // 주문 상태 확인 (재고 예약 실패로 취소된 경우 건너뜀)
-            Orders order = orderRepository.findById(event.getOrderId())
-                    .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + event.getOrderId()));
-
-            if (order.getOrderStatus() == OrderStatus.CANCELLED) {
-                log.info("취소된 주문이므로 결제 정보 생성을 건너뜁니다: orderId={}", event.getOrderId());
-                return;
-            }
-
-            // 이미 결제 정보가 생성되었는지 확인
-            boolean paymentExists = paymentRepository.existsByOrdersIdAndStatus(
-                    event.getOrderId(), PaymentStatus.PENDING);
-
-            if (paymentExists) {
-                log.info("이미 결제 정보가 존재합니다: orderId={}", event.getOrderId());
+            // 주문 상태 재확인 (취소된 주문은 결제 정보 생성하지 않음)
+            Orders order = orderRepository.findById(orderId).orElse(null);
+            if (order == null || order.getOrderStatus() == OrderStatus.CANCELLED) {
+                log.info("취소된 주문이므로 결제 정보 생성을 건너뜁니다: orderId={}", orderId);
                 return;
             }
 
             // 구매자 정보 조회
-            Buyers buyer = buyerRepository.findById(event.getUserId()) // findByUserId -> findById 로 수정
-                    .orElseThrow(() -> new NoSuchElementException("구매자 정보를 찾을 수 없습니다: " + event.getUserId()));
+            String userId = event.getUserId();
+            Buyers buyer = buyerRepository.findById(userId)
+                    .orElseThrow(() -> new NoSuchElementException("구매자 정보를 찾을 수 없습니다: " + userId));
 
-            // 토스 페이먼츠 결제 정보 생성
+            // 토스 페이먼츠 키 생성
+            String tossPaymentKey = generateTossPaymentKey(event.getOrderNumber());
+
+            // 결제 정보 생성
             Payments payment = Payments.builder()
                     .orders(order)
                     .buyers(buyer)
-                    .method(PaymentMethod.TOSS) // 결제 수단 추가
+                    .method(PaymentMethod.TOSS)
                     .status(PaymentStatus.PENDING)
-                    .tossPaymentKey(generateTossPaymentKey(order.getOrderNumber()))
-                    .build(); // amount 필드 제거
+                    .tossPaymentKey(tossPaymentKey)
+                    .build();
 
             paymentRepository.save(payment);
 
-            log.info("결제 정보 생성 완료: orderId={}, paymentId={}, amount={}",
-                    event.getOrderId(), payment.getId(), event.getTotalPrice()); // getTotalAmount -> getTotalPrice
+            log.info("결제 정보 생성 완료: orderId={}, paymentId={}, tossPaymentKey={}",
+                    orderId, payment.getId(), tossPaymentKey);
 
         } catch (Exception e) {
-            log.error("결제 정보 생성 실패: orderId={}, error={}", event.getOrderId(), e.getMessage(), e);
-            // 결제 정보 생성 실패는 주문을 취소하지 않음 (재시도 가능)
+            log.error("결제 정보 생성 실패: orderId={}, error={}", orderId, e.getMessage(), e);
+            // 결제 정보 생성 실패 시 추가 보상 로직은 필요에 따라 구현
         }
     }
 
     /**
      * 토스 페이먼츠 키 생성
-     * 주문 번호를 기반으로 고유한 결제 키를 생성합니다.
-     *
      * @param orderNumber 주문 번호
      * @return 토스 페이먼츠 키
      */
@@ -216,22 +208,23 @@ public class OrderEventListener {
     @Async
     @EventListener
     public void handleUserNotification(OrderCreatedEvent event) {
+        String orderId = event.getOrderId().toString();
+        String userId = event.getUserId();
         log.info("사용자 알림 처리 시작: orderId={}, userId={}",
-                event.getOrderId(), event.getUserId());
+                orderId, userId);
 
         try {
             // 주문 상태 재확인 (취소된 주문은 알림 발송하지 않음)
-            Orders order = orderRepository.findById(event.getOrderId()).orElse(null);
+            Orders order = orderRepository.findById(orderId).orElse(null);
             if (order == null || order.getOrderStatus() == OrderStatus.CANCELLED) {
-                log.info("취소된 주문이므로 알림을 발송하지 않습니다: orderId={}", event.getOrderId());
+                log.info("취소된 주문이므로 알림을 발송하지 않습니다: orderId={}", orderId);
                 return;
             }
 
             // 사용자 이름 조회를 위해 UserRepository 사용
-            String userName = userRepository.findById(event.getUserId())
+            String userName = userRepository.findById(userId)
                     .map(Users::getName)
                     .orElse("고객");
-
 
             // TODO: 실제 알림 서비스 연동
             // - 이메일 알림 발송
@@ -240,10 +233,10 @@ public class OrderEventListener {
             // - 슬랙/디스코드 알림 등
 
             log.info("주문 생성 알림 발송 완료: orderId={}, orderNumber={}, userName={}",
-                    event.getOrderId(), event.getOrderNumber(), userName); // getUserName -> userName
+                    orderId, event.getOrderNumber(), userName);
 
         } catch (Exception e) {
-            log.error("사용자 알림 발송 실패: orderId={}, error={}", event.getOrderId(), e.getMessage(), e);
+            log.error("사용자 알림 발송 실패: orderId={}, error={}", orderId, e.getMessage(), e);
             // 알림 실패는 주문에 영향을 주지 않음
         }
     }
@@ -255,12 +248,14 @@ public class OrderEventListener {
      */
     @EventListener
     public void handleOrderProcessingComplete(OrderCreatedEvent event) {
+        String orderId = event.getOrderId().toString();
+        String userId = event.getUserId();
         log.info("주문 처리 감사 로그: orderId={}, orderNumber={}, userId={}, amount={}, itemCount={}, timestamp={}",
-                event.getOrderId(),
+                orderId,
                 event.getOrderNumber(),
-                event.getUserId(),
-                event.getTotalPrice(), // getTotalAmount -> getTotalPrice
+                userId,
+                event.getTotalPrice(),
                 event.getOrderItems().size(),
-                event.getEventOccurredAt()); // getCreatedAt -> getEventOccurredAt
+                event.getEventOccurredAt());
     }
 }
