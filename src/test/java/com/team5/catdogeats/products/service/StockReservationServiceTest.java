@@ -582,15 +582,5 @@ class StockReservationServiceTest {
                     .isInstanceOf(OptimisticLockingFailureException.class)
                     .hasMessageContaining("버전이 변경되었습니다");
         }
-
-        // ⚠️ 실제 멀티스레드 동시성 테스트는 비활성화
-        // 이유: 테스트 환경에서는 예측하기 어렵고 불안정함
-        @Test
-        @Disabled("실제 동시성 테스트는 별도 환경에서 수행")
-        @DisplayName("❌ 실제 멀티스레드 동시성 테스트 (비활성화)")
-        void actualConcurrencyTest_Disabled() {
-            // 이 테스트는 실제 프로덕션 환경이나 별도의 성능 테스트 환경에서만 수행
-            // 단위 테스트에서는 Mock을 사용한 시나리오 검증으로 충분
-        }
     }
 }
