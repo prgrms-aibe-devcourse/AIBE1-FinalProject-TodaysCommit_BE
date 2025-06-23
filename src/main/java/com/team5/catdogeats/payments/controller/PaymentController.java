@@ -73,7 +73,7 @@ public class PaymentController {
         } catch (IllegalArgumentException e) {
             log.error("결제 승인 실패 (잘못된 요청): {}", e.getMessage());
             return ResponseEntity.badRequest().body(
-                    ApiResponse.error(ResponseCode.BAD_REQUEST, e.getMessage())
+                    ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage())
             );
 
         } catch (Exception e) {
