@@ -1,5 +1,6 @@
 package com.team5.catdogeats.carts.controller;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.carts.dto.request.AddCartItemRequest;
 import com.team5.catdogeats.carts.dto.request.UpdateCartItemRequest;
 import com.team5.catdogeats.carts.dto.response.CartResponse;
@@ -25,20 +26,21 @@ public class CartController {
             @PathVariable String cartId,
             Authentication authentication) {
 
-        String userId = authentication.getName(); // 인증된 사용자 ID
-        CartResponse cartResponse = cartService.getCartByUserId(userId);
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        CartResponse cartResponse = cartService.getCartByUserPrincipal(userPrincipal);
 
         return ResponseEntity.ok(cartResponse);
     }
 
     // 장바구니에 상품 추가
+
     @PostMapping
     public ResponseEntity<CartResponse> addCartItem(
             @Valid @RequestBody AddCartItemRequest request,
             Authentication authentication) {
 
-        String userId = authentication.getName();
-        CartResponse cartResponse = cartService.addItemToCart(userId, request);
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        CartResponse cartResponse = cartService.addItemToCart(userPrincipal, request);
 
         return ResponseEntity.ok(cartResponse);
     }
@@ -50,8 +52,8 @@ public class CartController {
             @Valid @RequestBody UpdateCartItemRequest request,
             Authentication authentication) {
 
-        String userId = authentication.getName();
-        CartResponse cartResponse = cartService.updateCartItem(userId, cartItemId, request);
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        CartResponse cartResponse = cartService.updateCartItem(userPrincipal, cartItemId, request);
 
         return ResponseEntity.ok(cartResponse);
     }
@@ -62,8 +64,8 @@ public class CartController {
             @PathVariable String cartItemId,
             Authentication authentication) {
 
-        String userId = authentication.getName();
-        cartService.removeCartItem(userId, cartItemId);
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        cartService.removeCartItem(userPrincipal, cartItemId);
 
         return ResponseEntity.noContent().build();
     }
@@ -71,8 +73,8 @@ public class CartController {
     // 장바구니 전체 비우기
     @DeleteMapping
     public ResponseEntity<Void> clearCart(Authentication authentication) {
-        String userId = authentication.getName();
-        cartService.clearCart(userId);
+        UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+        cartService.clearCart(userPrincipal);
 
         return ResponseEntity.noContent().build();
     }

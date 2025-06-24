@@ -1,5 +1,6 @@
 package com.team5.catdogeats.carts.service;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.carts.domain.Carts;
 import com.team5.catdogeats.carts.domain.mapping.CartItems;
 import com.team5.catdogeats.carts.dto.request.AddCartItemRequest;
@@ -9,9 +10,9 @@ import com.team5.catdogeats.carts.dto.response.CartResponse;
 import com.team5.catdogeats.carts.repository.CartItemRepository;
 import com.team5.catdogeats.carts.repository.CartRepository;
 import com.team5.catdogeats.products.domain.Products;
-import com.team5.catdogeats.products.repository.ProductsRepository;
+import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.repository.UsersRepository;
+import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,12 +29,13 @@ public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
-    private final UsersRepository usersRepository;
-    private final ProductsRepository productsRepository;
+    private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
     @Override
-    public CartResponse getCartByUserId(String userId) {
-        Carts cart = getOrCreateCart(userId);
+    public CartResponse getCartByUserPrincipal(UserPrincipal userPrincipal) {
+        Users user = getUserByPrincipal(userPrincipal);
+        Carts cart = getOrCreateCart(user.getId());
         List<CartItems> cartItems = cartItemRepository.findByCartsIdWithProduct(cart.getId());
 
         return buildCartResponse(cart, cartItems);
@@ -41,8 +43,9 @@ public class CartServiceImpl implements CartService {
 
     @Override
     @Transactional
-    public CartResponse addItemToCart(String userId, AddCartItemRequest request) {
-        Carts cart = getOrCreateCart(userId);
+    public CartResponse addItemToCart(UserPrincipal userPrincipal, AddCartItemRequest request) {
+        Users user = getUserByPrincipal(userPrincipal);
+        Carts cart = getOrCreateCart(user.getId());
         Products product = getProductById(request.getProductId());
 
         // 기존에 같은 상품이 있는지 확인
@@ -64,13 +67,14 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(newItem);
         }
 
-        return getCartByUserId(userId);
+        return getCartByUserPrincipal(userPrincipal);
     }
 
     @Override
     @Transactional
-    public CartResponse updateCartItem(String userId, String cartItemId, UpdateCartItemRequest request) {
-        Carts cart = getCartByUserId(userId);
+    public CartResponse updateCartItem(UserPrincipal userPrincipal, String cartItemId, UpdateCartItemRequest request) {
+        Users user = getUserByPrincipal(userPrincipal);
+        Carts cart = getOrCreateCart(user.getId());
         CartItems cartItem = getCartItemById(cartItemId);
 
         // 권한 확인
@@ -81,13 +85,14 @@ public class CartServiceImpl implements CartService {
         cartItem.setQuantity(request.getQuantity());
         cartItemRepository.save(cartItem);
 
-        return getCartByUserId(userId);
+        return getCartByUserPrincipal(userPrincipal);
     }
 
     @Override
     @Transactional
-    public CartResponse removeCartItem(String userId, String cartItemId) {
-        Carts cart = getOrCreateCart(userId);
+    public CartResponse removeCartItem(UserPrincipal userPrincipal, String cartItemId) {
+        Users user = getUserByPrincipal(userPrincipal);
+        Carts cart = getOrCreateCart(user.getId());
         CartItems cartItem = getCartItemById(cartItemId);
 
         // 권한 확인
@@ -97,13 +102,14 @@ public class CartServiceImpl implements CartService {
 
         cartItemRepository.delete(cartItem);
 
-        return getCartByUserId(userId);
+        return getCartByUserPrincipal(userPrincipal);
     }
 
     @Override
     @Transactional
-    public void clearCart(String userId) {
-        Carts cart = getOrCreateCart(userId);
+    public void clearCart(UserPrincipal userPrincipal) {
+        Users user = getUserByPrincipal(userPrincipal);
+        Carts cart = getOrCreateCart(user.getId());
         List<CartItems> cartItems = cartItemRepository.findByCartsId(cart.getId());
         cartItemRepository.deleteAll(cartItems);
     }
@@ -123,13 +129,22 @@ public class CartServiceImpl implements CartService {
         return cartRepository.save(newCart);
     }
 
+    // UserPrincipal로 사용자 조회
+    private Users getUserByPrincipal(UserPrincipal userPrincipal) {
+        return userRepository.findByProviderAndProviderId(
+                        userPrincipal.provider(),
+                        userPrincipal.providerId())
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "사용자를 찾을 수 없습니다: " + userPrincipal.provider() + "/" + userPrincipal.providerId()));
+    }
+
     private Users getUserById(String userId) {
-        return usersRepository.findById(userId)
+        return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
     }
 
     private Products getProductById(String productId) {
-        return productsRepository.findById(productId)
+        return productRepository.findById(productId)
                 .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다: " + productId));
     }
 
@@ -163,8 +178,8 @@ public class CartServiceImpl implements CartService {
         return CartItemResponse.builder()
                 .id(cartItem.getId())
                 .productId(product.getId())
-                .productName(product.getName())
-                .productImage(product.getImageUrl()) // Products 엔티티에 imageUrl 필드 가정
+                .productName(product.getTitle()) // Products 엔티티의 실제 필드명 사용
+                .productImage("") // 이미지는 나중에 S3 로직 완성 후 추가
                 .productPrice(product.getPrice())
                 .quantity(cartItem.getQuantity())
                 .totalPrice(totalPrice)

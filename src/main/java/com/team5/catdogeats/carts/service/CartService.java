@@ -6,13 +6,13 @@ import com.team5.catdogeats.carts.dto.response.CartResponse;
 
 public interface CartService {
 
-    CartResponse getCartByUserId(String userId);
+    CartResponse getCartByUserPrincipal(UserPrincipal userPrincipal);
 
-    CartResponse addItemToCart(String userId, AddCartItemRequest request);
+    CartResponse addItemToCart(UserPrincipal userPrincipal, AddCartItemRequest request);
 
-    CartResponse updateCartItem(String userId, String cartItemId, UpdateCartItemRequest request);
+    CartResponse updateCartItem(UserPrincipal userPrincipal, String cartItemId, UpdateCartItemRequest request);
 
-    CartResponse removeCartItem(String userId, String cartItemId);
+    CartResponse removeCartItem(UserPrincipal userPrincipal, String cartItemId);
 
-    void clearCart(String userId);
+    void clearCart(UserPrincipal userPrincipal);
 }
