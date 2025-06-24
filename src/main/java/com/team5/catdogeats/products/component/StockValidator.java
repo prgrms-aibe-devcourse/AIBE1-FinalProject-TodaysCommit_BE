@@ -1,38 +1,34 @@
 package com.team5.catdogeats.products.component;
 
+import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.dto.StockAvailabilityDto;
-import com.team5.catdogeats.products.service.StockReservationService;
+import com.team5.catdogeats.products.repository.ProductRepository;
+import com.team5.catdogeats.products.repository.StockReservationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
- * 재고 검증 컴포넌트
- * StockReservationService를 위임받아 재고 검증 기능을 제공합니다.
- * 패키지 위치: roducts/component
- * - Spring 컴포넌트로 관리되는 재고 검증 전용 클래스
- * - 여러 서비스에서 재사용 가능한 공통 컴포넌트
- * - 재고 검증이라는 단일 책임만 담당
- * 사용 예시:
- * - 장바구니 서비스: 상품 추가 시 재고 검증
- * - 주문 서비스: 주문 생성 시 재고 검증
- * - 상품 상세 페이지: 재고 가용성 표시
- * - 대량 주문 서비스: 여러 상품 일괄 검증
- * 위임 패턴 적용으로 기존 StockReservationService 로직 재활용
+ * 재고 검증 컴포넌트 (리팩토링)
+ * - 순환 참조를 해결하기 위해 StockReservationService 의존성 제거
+ * - ProductRepository, StockReservationRepository를 직접 사용하여 재고 검증 로직 수행
+ * - 단일 책임 원칙에 따라 재고 조회 및 검증 역할만 담당
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class StockValidator {
 
-    private final StockReservationService stockReservationService;
+    private final ProductRepository productRepository;
+    private final StockReservationRepository stockReservationRepository;
 
     /**
      * 재고 가용성 검증
-     * StockReservationService의 검증 로직을 위임받아 사용합니다.
-     *
      * @param productId 상품 ID
      * @param requestedQuantity 요청 수량
      * @throws IllegalArgumentException 재고가 부족한 경우
@@ -41,24 +37,40 @@ public class StockValidator {
     public void validateStockAvailability(String productId, Integer requestedQuantity) {
         log.debug("재고 가용성 검증: productId={}, requestedQuantity={}", productId, requestedQuantity);
 
-        // 기존 StockReservationService의 검증 로직 위임
-        stockReservationService.validateStockAvailability(productId, requestedQuantity);
+        StockAvailabilityDto availability = getStockAvailability(productId);
+
+        if (!availability.canReserve(requestedQuantity)) {
+            log.warn("재고 부족: 상품 ID={}, 요청 수량={}, 가용 재고={}",
+                    productId, requestedQuantity, availability.getAvailableStock());
+            throw new IllegalArgumentException(
+                    String.format("재고가 부족합니다. (상품 ID: %s, 요청 수량: %d, 가용 재고: %d)",
+                            productId, requestedQuantity, availability.getAvailableStock()));
+        }
 
         log.debug("재고 가용성 검증 완료: productId={}", productId);
     }
 
     /**
      * 재고 가용성 정보 조회
-     * StockReservationService의 조회 로직을 위임받아 사용합니다.
-     *
      * @param productId 상품 ID
      * @return StockAvailabilityDto 재고 가용성 정보
      */
     public StockAvailabilityDto getStockAvailability(String productId) {
         log.debug("재고 가용성 정보 조회: productId={}", productId);
 
-        // 기존 StockReservationService의 조회 로직 위임
-        StockAvailabilityDto result = stockReservationService.getStockAvailability(productId);
+        Products product = productRepository.findById(productId)
+                .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + productId));
+
+        Integer reservedStock = stockReservationRepository.getTotalReservedQuantity(productId);
+        Integer actualStock = product.getStock();
+        Integer availableStock = actualStock - reservedStock;
+
+        StockAvailabilityDto result = StockAvailabilityDto.builder()
+                .productId(productId)
+                .actualStock(actualStock)
+                .reservedStock(reservedStock)
+                .availableStock(availableStock)
+                .build();
 
         log.debug("재고 가용성 정보 조회 완료: {}", result);
         return result;
@@ -66,9 +78,6 @@ public class StockValidator {
 
     /**
      * 여러 상품의 재고 가용성 일괄 검증
-     * 여러 상품에 대해 한 번에 재고 가용성을 검증합니다.
-     * 하나라도 재고가 부족한 경우 즉시 예외가 발생합니다.
-     *
      * @param productValidations 상품별 검증 정보 목록
      * @throws IllegalArgumentException 재고가 부족한 상품이 있는 경우
      */
@@ -82,12 +91,6 @@ public class StockValidator {
         log.debug("다중 상품 재고 가용성 검증 완료");
     }
 
-    /**
-     * 상품 검증 정보를 담는 Record
-     *
-     * @param productId 상품 ID
-     * @param requestedQuantity 요청 수량
-     */
     public record ProductValidation(String productId, Integer requestedQuantity) {
         public ProductValidation {
             if (productId == null || productId.trim().isEmpty()) {

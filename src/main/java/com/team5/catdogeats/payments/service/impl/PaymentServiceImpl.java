@@ -12,6 +12,7 @@ import com.team5.catdogeats.payments.dto.response.PaymentConfirmResponse;
 import com.team5.catdogeats.payments.dto.response.TossPaymentConfirmResponse;
 import com.team5.catdogeats.payments.repository.PaymentRepository;
 import com.team5.catdogeats.payments.service.PaymentService;
+import com.team5.catdogeats.products.service.ProductStockManager;
 import com.team5.catdogeats.products.service.StockReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +33,7 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final StockReservationService stockReservationService;
+    private final ProductStockManager productStockManager;
     private final TossPaymentsClient tossPaymentsClient;
 
     @Override
@@ -40,34 +42,22 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("결제 승인 처리 시작: paymentKey={}, orderId={}, amount={}",
                 paymentKey, orderId, amount);
 
-        // 1. 주문 정보 조회 및 검증 (String 타입으로 직접 사용)
         Orders order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + orderId));
-
-        // 2. 결제 정보 조회 (String 타입으로 직접 사용)
         Payments payment = paymentRepository.findByOrdersId(orderId)
                 .orElseThrow(() -> new NoSuchElementException("결제 정보를 찾을 수 없습니다: " + orderId));
 
-        // 3. 결제 상태 검증
         validatePaymentStatus(payment, order);
-
-        // 4. 결제 금액 검증 (보안 중요)
         validatePaymentAmount(order, amount);
 
-        // 5. Toss Payments API 결제 승인 요청
         TossPaymentConfirmResponse tossResponse = callTossPaymentConfirm(paymentKey, orderId, amount);
-
-        // 6. Toss 응답 검증
         validateTossResponse(tossResponse, order, amount);
 
-        // 7. 주문 상태 업데이트
         updateOrderStatus(order, OrderStatus.PAYMENT_COMPLETED);
-
-        // 8. 결제 정보 업데이트
         updatePaymentStatus(payment, tossResponse);
 
-        // 9. 재고 확정 및 차감 (String 타입으로 직접 사용)
-        confirmAndDecrementStock(orderId);
+        stockReservationService.confirmReservations(orderId);
+        productStockManager.decrementStockForConfirmedReservations(orderId); // 수정
 
         log.info("결제 승인 완료: orderId={}, paymentId={}, tossPaymentKey={}",
                 orderId, payment.getId(), tossResponse.getPaymentKey());
@@ -165,15 +155,5 @@ public class PaymentServiceImpl implements PaymentService {
         payment.setTossPaymentKey(tossResponse.getPaymentKey());
         paymentRepository.save(payment);
         log.info("결제 정보 업데이트: paymentId={}", payment.getId());
-    }
-
-    private void confirmAndDecrementStock(String orderId) {
-        // 재고 예약 확정 (String 타입으로 직접 사용)
-        stockReservationService.confirmReservations(orderId);
-
-        // 확정된 재고 차감 (String 타입으로 직접 사용)
-        stockReservationService.decrementConfirmedStock(orderId);
-
-        log.info("재고 확정 및 차감 완료: orderId={}", orderId);
     }
 }
