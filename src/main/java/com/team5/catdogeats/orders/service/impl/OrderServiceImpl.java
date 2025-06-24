@@ -1,6 +1,7 @@
 package com.team5.catdogeats.orders.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
 import com.team5.catdogeats.orders.dto.common.DetailedOrderItemInfo;
@@ -21,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -63,7 +63,7 @@ public class OrderServiceImpl implements OrderService {
      * 5. OrderCreatedEvent 발행 (할인 적용된 금액 정보 포함)
      */
     @Override
-    @Transactional(transactionManager = "jpaTransactionManager")
+    @JpaTransactional
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
         log.info("주문 생성 시작 (EDA + Record DTO + 할인 적용): provider={}, providerId={}, 상품 개수={}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());

@@ -1,5 +1,6 @@
 package com.team5.catdogeats.payments.service;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
 import com.team5.catdogeats.orders.repository.OrderRepository;
@@ -14,7 +15,6 @@ import com.team5.catdogeats.products.service.StockReservationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.NoSuchElementException;
@@ -41,7 +41,7 @@ public class PaymentService {
      * @param amount 결제 금액
      * @return 결제 승인 결과
      */
-    @Transactional(transactionManager = "jpaTransactionManager")
+    @JpaTransactional
     public PaymentConfirmResponse confirmPayment(String paymentKey, String orderId, Long amount) {
         log.info("결제 승인 처리 시작: paymentKey={}, orderId={}, amount={}",
                 paymentKey, orderId, amount);
@@ -95,7 +95,7 @@ public class PaymentService {
      * @param code 실패 코드
      * @param message 실패 메시지
      */
-    @Transactional(transactionManager = "jpaTransactionManager")
+    @JpaTransactional
     public void handlePaymentFailure(String orderId, String code, String message) {
         log.info("결제 실패 처리 시작: orderId={}, code={}, message={}", orderId, code, message);
 
