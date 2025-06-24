@@ -24,7 +24,7 @@ public class Sellers extends BaseEntity {
     @JoinColumn(name = "user_id", foreignKey = @ForeignKey(name = "fk_sellers_user_id"), nullable = false)
     private Users user;
 
-    @Column(name = "vendor_name", length = 100)
+    @Column(name = "vendor_name", length = 100, unique = true)
     private String vendorName;
 
     @Column(name = "vendor_profile_image", length = 255)

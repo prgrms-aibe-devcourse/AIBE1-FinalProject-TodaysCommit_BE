@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Schema(description = "판매자 정보 응답 DTO")
-public record SellerInfoResponse(
+public record SellerInfoResponseDTO(
 
         @Schema(description = "사용자 ID", example = "2ceb807f-586f-4450-b470-d1ece7173749")
         String userId,
@@ -46,13 +46,13 @@ public record SellerInfoResponse(
         LocalDateTime updatedAt
 
 ) {
-    public static SellerInfoResponse from(Sellers seller) {
+    public static SellerInfoResponseDTO from(Sellers seller) {
         if (seller == null) {
             return null;
         }
 
-        return new SellerInfoResponse(
-                seller.getUserId() != null ? seller.getUserId().toString() : null,
+        return new SellerInfoResponseDTO(
+                seller.getUserId() != null ? seller.getUserId() : null,
                 seller.getVendorName(),
                 seller.getVendorProfileImage(),
                 seller.getBusinessNumber(),

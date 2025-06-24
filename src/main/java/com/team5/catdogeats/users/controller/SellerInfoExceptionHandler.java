@@ -2,76 +2,91 @@ package com.team5.catdogeats.users.controller;
 
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
-import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
-import com.team5.catdogeats.users.exception.InvalidOperatingHoursException;
-import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
-import com.team5.catdogeats.users.exception.UserNotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
-@RestControllerAdvice(basePackages = "com.team5.catdogeats.users.controller")
+@RestControllerAdvice(assignableTypes = SellerInfoController.class)
 public class SellerInfoExceptionHandler {
 
+
     /**
-     * 사용자 없음 예외 처리
+     * 사용자 조회 실패
      */
-    @ExceptionHandler(UserNotFoundException.class)
-    public ResponseEntity<ApiResponse<Object>> handleUserNotFound(UserNotFoundException e) {
-        log.warn("사용자 없음 - Message: {}", e.getMessage());
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ResponseEntity<ApiResponse<Object>> handleEntityNotFound(EntityNotFoundException e) {
+        log.warn("엔티티 없음 - Message: {}", e.getMessage());
         return ResponseEntity.status(ResponseCode.USER_NOT_FOUND.getStatus())
                 .body(ApiResponse.error(ResponseCode.USER_NOT_FOUND));
     }
 
     /**
-     * 사업자 등록번호 중복 예외 처리
+     * 데이터 무결성 위반 예외 처리 (Spring Data 표준)
+     * - 사업자 등록번호 중복 등
      */
-    @ExceptionHandler(BusinessNumberDuplicateException.class)
-    public ResponseEntity<ApiResponse<Object>> handleBusinessNumberDuplicate(BusinessNumberDuplicateException e) {
-        log.warn("사업자 등록번호 중복 - Message: {}", e.getMessage());
-        return ResponseEntity.status(ResponseCode.BUSINESS_NUMBER_DUPLICATE.getStatus())
-                .body(ApiResponse.error(ResponseCode.BUSINESS_NUMBER_DUPLICATE));
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Object>> handleDataIntegrityViolation(DataIntegrityViolationException e) {
+        log.warn("데이터 무결성 위반 - Message: {}", e.getMessage());
+
+
+        // 벤더명 중복인지 확인
+        if (e.getMessage() != null && e.getMessage().contains("상점명")) {
+            return ResponseEntity.status(ResponseCode.VENDOR_NAME_DUPLICATE.getStatus())
+                    .body(ApiResponse.error(ResponseCode.VENDOR_NAME_DUPLICATE));
+        }
+
+        // 사업자 등록번호 중복인지 확인
+        if (e.getMessage() != null && e.getMessage().contains("사업자 등록번호")) {
+            return ResponseEntity.status(ResponseCode.BUSINESS_NUMBER_DUPLICATE.getStatus())
+                    .body(ApiResponse.error(ResponseCode.BUSINESS_NUMBER_DUPLICATE));
+        }
+
+        // 일반적인 데이터 무결성 위반
+        return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
+                .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, "데이터 무결성 위반입니다"));
     }
 
     /**
-     * 운영시간 잘못된 입력 예외 처리
+     * Bean Validation 예외 처리 (@Valid 어노테이션 검증 실패)
      */
-    @ExceptionHandler(InvalidOperatingHoursException.class)
-    public ResponseEntity<ApiResponse<Object>> handleInvalidOperatingHours(InvalidOperatingHoursException e) {
-        log.warn("운영시간 유효성 검증 실패 - Message: {}", e.getMessage());
-        return ResponseEntity.status(ResponseCode.INVALID_OPERATING_HOURS.getStatus())
-                .body(ApiResponse.error(ResponseCode.INVALID_OPERATING_HOURS, e.getMessage()));
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ApiResponse<Object>> handleValidation(MethodArgumentNotValidException e) {
+        log.warn("입력값 검증 실패 - 필드 오류 개수: {}", e.getBindingResult().getFieldErrorCount());
+
+        List<FieldError> fieldErrors = e.getBindingResult().getFieldErrors();
+        String errorMessage = fieldErrors.stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining(", "));
+
+        log.warn("검증 실패 상세 - {}", errorMessage);
+
+        return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
+                .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, errorMessage));
     }
 
     /**
-     * 커스텀 판매자 접근 권한 없음 예외 처리
-     */
-    @ExceptionHandler(SellerAccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleSellerAccessDenied(SellerAccessDeniedException e) {
-        log.warn("판매자 접근 권한 없음 - Message: {}", e.getMessage());
-        return ResponseEntity.status(ResponseCode.SELLER_ACCESS_DENIED.getStatus())
-                .body(ApiResponse.error(ResponseCode.SELLER_ACCESS_DENIED));
-    }
-
-    /**
-     * Spring Security 접근 권한 없음 예외 처리
-     */
-    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Object>> handleSpringAccessDenied(
-            org.springframework.security.access.AccessDeniedException e) {
-        log.warn("Spring Security 접근 권한 없음 - Message: {}", e.getMessage());
-        return ResponseEntity.status(ResponseCode.ACCESS_DENIED.getStatus())
-                .body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
-    }
-
-    /**
-     * IllegalArgumentException 처리
+     * IllegalArgumentException 처리 (Java 표준)
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiResponse<Object>> handleIllegalArgument(IllegalArgumentException e) {
         log.warn("잘못된 요청 - Message: {}", e.getMessage());
+
+        // 운영시간 관련 예외인지 확인
+        if (e.getMessage() != null && e.getMessage().contains("운영")) {
+            return ResponseEntity.status(ResponseCode.INVALID_OPERATING_HOURS.getStatus())
+                    .body(ApiResponse.error(ResponseCode.INVALID_OPERATING_HOURS, e.getMessage()));
+        }
+
+        // 일반적인 잘못된 입력
         return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
                 .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
     }
