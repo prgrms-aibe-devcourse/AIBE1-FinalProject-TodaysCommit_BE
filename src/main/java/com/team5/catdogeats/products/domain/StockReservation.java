@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.ZonedDateTime;
-import java.util.UUID;
 
 /**
  * 재고 예약 엔티티
@@ -37,7 +36,7 @@ public class StockReservation extends BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(length = 36)
-    private UUID id;
+    private String id;
 
     /**
      * 주문 정보 (N:1 관계)
