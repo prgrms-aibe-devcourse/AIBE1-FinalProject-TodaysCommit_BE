@@ -43,7 +43,7 @@ public class StockReservationServiceImpl implements StockReservationService {
 
     @Override
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
-    @Retryable(value = {OptimisticLockingFailureException.class},
+    @Retryable(retryFor = {OptimisticLockingFailureException.class},
             backoff = @Backoff(delay = 100))
     public StockReservation createReservation(Orders order, Products product, Integer quantity) {
         log.info("재고 예약 생성 시작: orderId={}, productId={}, quantity={}",
@@ -68,7 +68,7 @@ public class StockReservationServiceImpl implements StockReservationService {
 
     @Override
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
-    @Retryable(value = {OptimisticLockingFailureException.class},
+    @Retryable(retryFor = {OptimisticLockingFailureException.class},
             backoff = @Backoff(delay = 100))
     public List<StockReservation> createBulkReservations(Orders order,
                                                          List<ReservationRequest> reservationRequests) {
