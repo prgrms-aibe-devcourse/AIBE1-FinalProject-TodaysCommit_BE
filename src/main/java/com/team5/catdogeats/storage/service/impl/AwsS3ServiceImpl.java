@@ -45,4 +45,24 @@ public class AwsS3ServiceImpl implements ObjectStorageService {
         );
         return awsS3Config.getDomain() + "/" + fileKey;
     }
+
+    @Override
+    public void deleteFile(String key) {
+        String fileKey = "files/" + key;
+        s3Client.deleteObject(builder -> builder
+                .bucket(awsS3Config.getBucket())
+                .key(fileKey)
+                .build()
+        );
+    }
+
+    public void deleteImage(String key) {
+        String imageKey = "images/" + key;
+        s3Client.deleteObject(builder -> builder
+                .bucket(awsS3Config.getBucket())
+                .key(imageKey)
+                .build()
+        );
+    }
+
 }

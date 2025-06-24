@@ -10,12 +10,15 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -84,5 +87,47 @@ class AwsS3ServiceImplTest {
         assertThat(request.contentType()).isEqualTo(contentType);
 
         assertThat(url).isEqualTo("https://cdn.example.com/files/" + key);
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void deleteFile_Success() {
+        String key = "document.pdf";
+
+        awsS3Service.deleteFile(key);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Consumer<DeleteObjectRequest.Builder>> captor =
+                ArgumentCaptor.forClass((Class) Consumer.class);
+
+        verify(s3Client).deleteObject(captor.capture());
+
+        DeleteObjectRequest.Builder builder = DeleteObjectRequest.builder();
+        captor.getValue().accept(builder);
+        DeleteObjectRequest request = builder.build();
+
+        assertEquals("test-bucket", request.bucket());
+        assertEquals("files/"+key, request.key());
+    }
+
+    @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    void deleteImage_Success() {
+        String key = "document.pdf";
+
+        awsS3Service.deleteImage(key);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<Consumer<DeleteObjectRequest.Builder>> captor =
+                ArgumentCaptor.forClass((Class) Consumer.class);
+
+        verify(s3Client).deleteObject(captor.capture());
+
+        DeleteObjectRequest.Builder builder = DeleteObjectRequest.builder();
+        captor.getValue().accept(builder);
+        DeleteObjectRequest request = builder.build();
+
+        assertEquals("test-bucket", request.bucket());
+        assertEquals("images/"+key, request.key());
     }
 }

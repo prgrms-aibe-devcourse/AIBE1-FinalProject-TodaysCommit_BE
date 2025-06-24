@@ -4,23 +4,20 @@ import com.team5.catdogeats.storage.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("v1/users/upload")
+@RequestMapping("v1/users")
 public class UploadTestController {
 
     private final ObjectStorageService objectStorageService;
 
     // 이미지 업로드
-    @PostMapping("/image")
+    @PostMapping("/upload/image")
     public ResponseEntity<String> uploadImage(@RequestPart MultipartFile file) {
         try {
             String url = objectStorageService.uploadImage(
@@ -36,7 +33,7 @@ public class UploadTestController {
     }
 
     // 파일 업로드
-    @PostMapping("/file")
+    @PostMapping("/upload/file")
     public ResponseEntity<String> uploadFile(@RequestPart MultipartFile file) {
         try {
             String url = objectStorageService.uploadFile(
@@ -50,5 +47,18 @@ public class UploadTestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("파일 업로드 실패");
         }
     }
+
+    @DeleteMapping(value = "/delete/file")
+    public ResponseEntity<Void> deleteFile(@RequestParam String key) {
+        objectStorageService.deleteFile(key);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/delete/image")
+    public ResponseEntity<Void> deleteImage(@RequestParam String key) {
+        objectStorageService.deleteImage(key);
+        return ResponseEntity.noContent().build();
+    }
+
 }
 
