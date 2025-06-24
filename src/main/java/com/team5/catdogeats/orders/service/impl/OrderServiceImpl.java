@@ -1,7 +1,6 @@
 package com.team5.catdogeats.orders.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
-import com.team5.catdogeats.global.config.TossPaymentsConfig;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
 import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
@@ -15,6 +14,7 @@ import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.repository.BuyerRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
+import com.team5.catdogeats.orders.util.TossPaymentResponseBuilder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -29,15 +29,16 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (EDA 전환 + BuyerRepository + 할인 적용)
+ * 주문 관리 서비스 구현체 (EDA + BuyerRepository + 할인 적용 + 토스 Util 분리)
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
- * 주요 개선사항:
+ * SOLID 원칙 적용을 위한 개선사항:
  * 1. BuyerRepository 활용으로 구매자 조회 + 권한 검증을 한 번에 처리
  * 2. 상품별 할인 적용 로직 추가 (isDiscounted, discountRate 반영)
- * 3. 할인 전후 가격 정보 완전 보존으로 투명한 가격 정책 구현
- * 4. 정확한 주문 금액 계산으로 결제 시스템과의 데이터 일치성 확보
+ * 3. 토스 페이먼츠 관련 유틸리티 분리로 단일 책임 원칙(SRP) 부분 적용
+ *    - TossPaymentResponseBuilder: 토스 페이먼츠 응답 생성 전담
+ * 4. 핵심 비즈니스 로직에 집중하여 유지보수성 향상
  */
 @Slf4j
 @Service
@@ -48,22 +49,23 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final BuyerRepository buyerRepository;
     private final ProductRepository productRepository;
-    private final TossPaymentsConfig.TossPaymentsProperties tossPaymentsProperties;
     private final ApplicationEventPublisher eventPublisher;
+    private final TossPaymentResponseBuilder tossPaymentResponseBuilder;
 
     /**
-     * UserPrincipal을 사용한 주문 생성 (EDA 전환 + BuyerRepository + 할인 적용)
+     * UserPrincipal을 사용한 주문 생성 (EDA + 할인 적용 + 토스 Util 분리)
      * 변경된 처리 흐름:
      * 1. 구매자 검증 (한 번의 조회로 존재 여부 + 권한 확인)
      * 2. 상품 정보 수집 및 할인 적용된 가격 계산
      * 3. 주문 엔티티 저장 (할인 반영된 총 금액)
-     * 4. OrderCreatedEvent 발행 (할인 적용된 금액 정보 포함)
-     * 5. 이벤트 리스너들이 비동기로 후속 작업 처리
+     * 4. 토스 페이먼츠 응답 생성 (유틸리티 클래스 활용)
+     * 5. OrderCreatedEvent 발행 (할인 적용된 금액 정보 포함)
+     * 6. 이벤트 리스너들이 비동기로 후속 작업 처리
      */
     @Override
     @Transactional(transactionManager = "jpaTransactionManager")
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
-        log.info("주문 생성 시작 (EDA + BuyerRepository + 할인적용): provider={}, providerId={}, 상품 개수={}",
+        log.info("주문 생성 시작 (EDA + 토스 Util 분리 + 할인적용): provider={}, providerId={}, 상품 개수={}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());
 
         // 1. UserPrincipal로 구매자 조회 및 권한 검증 (한 번에 처리)
@@ -81,13 +83,15 @@ public class OrderServiceImpl implements OrderService {
         // 5. 주문 엔티티 생성 및 저장 (PAYMENT_PENDING 상태)
         Orders savedOrder = createAndSaveOrder(user, totalPrice);
 
-        // 6. 토스 페이먼츠 응답 생성
-        OrderCreateResponse response = buildTossPaymentResponse(savedOrder, request.getPaymentInfo());
+        // 6. 토스 페이먼츠 응답 생성 (주문명을 미리 생성해서 전달)
+        String orderName = generateOrderName(savedOrder);
+        OrderCreateResponse response = tossPaymentResponseBuilder
+                .buildTossPaymentResponse(savedOrder, request.getPaymentInfo(), orderName);
 
         // 7. OrderCreatedEvent 발행 (트랜잭션 커밋 후 이벤트 리스너들이 처리)
         publishOrderCreatedEvent(savedOrder, user, userPrincipal, orderItemInfos);
 
-        log.info("주문 생성 완료 (할인 적용 + 재고 차감은 이벤트 처리): orderId={}, orderNumber={}, totalPrice={}",
+        log.info("주문 생성 완료 (토스 Util 분리 + 할인 적용 + 재고 차감은 이벤트 처리): orderId={}, orderNumber={}, totalPrice={}",
                 savedOrder.getId(), savedOrder.getOrderNumber(), totalPrice);
 
         return response;
@@ -269,34 +273,6 @@ public class OrderServiceImpl implements OrderService {
 
         eventPublisher.publishEvent(event);
         log.info("OrderCreatedEvent 발행 완료: {}", event);
-    }
-
-    /**
-     * 토스 페이먼츠 응답 생성
-     */
-    private OrderCreateResponse buildTossPaymentResponse(Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo) {
-        // TossPaymentInfo 생성
-        OrderCreateResponse.TossPaymentInfo tossPaymentInfo = OrderCreateResponse.TossPaymentInfo.builder()
-                .tossOrderId(order.getId())
-                .orderName(generateOrderName(order))
-                .amount(order.getTotalPrice())
-                .customerName(paymentInfo.getCustomerName())
-                .customerEmail(paymentInfo.getCustomerEmail())
-                .successUrl(paymentInfo.getSuccessUrl() != null ?
-                        paymentInfo.getSuccessUrl() : tossPaymentsProperties.getSuccessUrl())
-                .failUrl(paymentInfo.getFailUrl() != null ?
-                        paymentInfo.getFailUrl() : tossPaymentsProperties.getFailUrl())
-                .clientKey(tossPaymentsProperties.getClientKey())
-                .build();
-
-        return OrderCreateResponse.builder()
-                .orderNumber(order.getOrderNumber())
-                .totalPrice(order.getTotalPrice())
-                .orderId(order.getId())
-                .orderStatus(order.getOrderStatus())
-                .createdAt(order.getCreatedAt())
-                .tossPaymentInfo(tossPaymentInfo)
-                .build();
     }
 
     /**
