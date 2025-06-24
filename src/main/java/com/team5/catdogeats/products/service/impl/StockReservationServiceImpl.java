@@ -1,6 +1,7 @@
 package com.team5.catdogeats.products.service.impl;
 
 import com.team5.catdogeats.orders.domain.Orders;
+import com.team5.catdogeats.products.component.StockValidator;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.domain.StockReservation;
 import com.team5.catdogeats.products.domain.enums.ReservationStatus;
@@ -15,7 +16,6 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +24,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-// 재고 예약 서비스 구현체 (타입 수정됨)
-// Products와 Orders 엔티티의 ID 타입이 String으로 변경됨에 따라 모든 관련 메서드를 수정하였습니다.
-// 안전한 재고 관리를 위한 예약 시스템의 핵심 비즈니스 로직을 담당합니다.
-// 프로젝트 컨벤션에 따라 인터페이스 + 구현체 패턴을 적용했습니다.
+// 재고 예약 서비스 구현체 (StockValidator 위임 적용)
+// StockValidator를 주입받아 재고 검증과 조회 로직을 위임합니다.
+// 이를 통해 재고 검증 로직의 재사용성을 높이고, 관심사를 분리했습니다.
+// StockReservationService는 예약 관리에만 집중하고, 재고 검증은 StockValidator에 위임합니다.
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,11 +35,12 @@ public class StockReservationServiceImpl implements StockReservationService {
 
     private final StockReservationRepository stockReservationRepository;
     private final ProductRepository productRepository;
+    private final StockValidator stockValidator; // 재고 검증 전용 컴포넌트
 
     @Value("${stock.reservation.expiration-minutes:30}")
     private int reservationExpirationMinutes;
 
-    // === 재고 예약 생성 (타입 수정) ===
+    // === 재고 예약 생성 ===
 
     @Override
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
@@ -49,8 +50,8 @@ public class StockReservationServiceImpl implements StockReservationService {
         log.info("재고 예약 생성 시작: orderId={}, productId={}, quantity={}",
                 order.getId(), product.getId(), quantity);
 
-        // 1. 재고 가용성 검증 (String 타입)
-        validateStockAvailability(product.getId(), quantity);
+        // 1. StockValidator에 재고 검증 위임
+        stockValidator.validateStockAvailability(product.getId(), quantity);
 
         // 2. 재고 예약 생성
         StockReservation reservation = StockReservation.createReservation(
@@ -75,10 +76,14 @@ public class StockReservationServiceImpl implements StockReservationService {
         log.info("일괄 재고 예약 생성 시작: orderId={}, 상품 개수={}",
                 order.getId(), reservationRequests.size());
 
-        // 1. 모든 상품의 재고 가용성 사전 검증 (String 타입)
-        for (ReservationRequest request : reservationRequests) {
-            validateStockAvailability(request.getProduct().getId(), request.getQuantity());
-        }
+        // 1. StockValidator에 다중 상품 재고 검증 위임
+        List<StockValidator.ProductValidation> validations = reservationRequests.stream()
+                .map(request -> new StockValidator.ProductValidation(
+                        request.getProduct().getId(),
+                        request.getQuantity()))
+                .toList();
+
+        stockValidator.validateMultipleStockAvailability(validations);
 
         // 2. 예약 생성 목록 준비
         List<StockReservation> reservations = new ArrayList<>();
@@ -100,42 +105,21 @@ public class StockReservationServiceImpl implements StockReservationService {
         return savedReservations;
     }
 
-    // === 재고 가용성 검증 ===
+    // === 재고 가용성 검증 (StockValidator에 위임) ===
 
     @Override
-    @Transactional(transactionManager = "jpaTransactionManager", readOnly = true, isolation = Isolation.READ_COMMITTED)
     public void validateStockAvailability(String productId, Integer requestedQuantity) {
-        StockAvailabilityDto availability = getStockAvailability(productId);
-
-        if (availability.getAvailableStock() < requestedQuantity) {
-            throw new IllegalArgumentException(
-                    String.format("재고가 부족합니다: 요청수량=%d, 가용재고=%d (상품ID: %s)",
-                            requestedQuantity, availability.getAvailableStock(), productId));
-        }
+        // StockValidator에 위임
+        stockValidator.validateStockAvailability(productId, requestedQuantity);
     }
 
     @Override
-    @Transactional(transactionManager = "jpaTransactionManager", readOnly = true)
     public StockAvailabilityDto getStockAvailability(String productId) {
-        // 1. 상품 정보 조회 (String 타입으로 직접 사용)
-        Products product = productRepository.findById(productId)
-                .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + productId));
-
-        // 2. 예약된 수량 조회 (String 타입으로 직접 사용)
-        Integer reservedQuantity = stockReservationRepository.getTotalReservedQuantity(productId);
-
-        // 3. 가용 재고 계산
-        int availableStock = product.getStock() - (reservedQuantity != null ? reservedQuantity : 0);
-
-        return StockAvailabilityDto.builder()
-                .productId(productId)
-                .actualStock(product.getStock())
-                .reservedStock(reservedQuantity != null ? reservedQuantity : 0)
-                .availableStock(Math.max(0, availableStock)) // 음수 방지
-                .build();
+        // StockValidator에 위임
+        return stockValidator.getStockAvailability(productId);
     }
 
-    // === 예약 상태 관리 (타입 수정) ===
+    // === 예약 상태 관리 ===
 
     @Override
     @Transactional(transactionManager = "jpaTransactionManager")
@@ -187,7 +171,7 @@ public class StockReservationServiceImpl implements StockReservationService {
                                 product.getId(), product.getStock(), decrementQuantity));
             }
 
-            // 실제 재고 차감
+            // 실제 재고 차감 (정확한 메서드명 사용)
             product.decreaseStock(decrementQuantity);
             productRepository.save(product);
 
@@ -242,7 +226,7 @@ public class StockReservationServiceImpl implements StockReservationService {
         return expiredCount;
     }
 
-    // === 조회 메서드 (타입 수정) ===
+    // === 조회 메서드 ===
 
     @Override
     @Transactional(transactionManager = "jpaTransactionManager", readOnly = true)
