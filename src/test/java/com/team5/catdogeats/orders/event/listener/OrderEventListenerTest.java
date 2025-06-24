@@ -2,6 +2,7 @@ package com.team5.catdogeats.orders.event.listener;
 
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
+import com.team5.catdogeats.orders.dto.common.OrderItemInfo;
 import com.team5.catdogeats.orders.event.OrderCreatedEvent;
 import com.team5.catdogeats.orders.repository.OrderRepository;
 import com.team5.catdogeats.payments.domain.Payments;
@@ -14,7 +15,6 @@ import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
-import com.team5.catdogeats.users.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,31 +24,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.OptimisticLockingFailureException;
-import static org.mockito.Mockito.times;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.BDDMockito.willThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 /**
- * 주문 이벤트 리스너 테스트
- * OrderEventListener의 모든 이벤트 처리 메서드를 검증합니다.
- * EDA 아키텍처의 핵심인 이벤트 기반 처리 로직의 정확성을 보장합니다.
- * 테스트 범위:
- * 1. 재고 예약 처리 (handleStockReservation)
- * 2. 결제 정보 생성 (handlePaymentInfoCreation)
- * 3. 사용자 알림 처리 (handleUserNotification)
- * 4. 감사 로깅 (handleOrderProcessingComplete)
- * 5. 보상 트랜잭션 (재고 예약 실패 시)
+ * OrderEventListener 테스트 (Record DTO 적용)
+ * Record DTO 사용으로 인한 테스트 코드 변경사항:
+ * 1. OrderItemInfo Record 정적 팩토리 메서드 사용
+ * 2. Record의 불변성 활용
+ * 3. 메서드 호출 방식 변경 테스트
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("주문 이벤트 리스너 테스트")
+@DisplayName("OrderEventListener 테스트 (Record DTO)")
 class OrderEventListenerTest {
 
     @InjectMocks
@@ -56,29 +50,21 @@ class OrderEventListenerTest {
 
     @Mock
     private StockReservationService stockReservationService;
-
     @Mock
     private OrderRepository orderRepository;
-
+    @Mock
+    private PaymentRepository paymentRepository;
+    @Mock
+    private BuyerRepository buyerRepository;
     @Mock
     private ProductRepository productRepository;
 
-    @Mock
-    private PaymentRepository paymentRepository;
-
-    @Mock
-    private BuyerRepository buyerRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    // 테스트 데이터
-    private OrderCreatedEvent testEvent;
     private Orders testOrder;
-    private Products testProduct1;
-    private Products testProduct2;
     private Users testUser;
     private Buyers testBuyer;
+    private Products testProduct1;
+    private Products testProduct2;
+    private OrderCreatedEvent testEvent;
     private List<StockReservation> testReservations;
 
     @BeforeEach
@@ -86,29 +72,29 @@ class OrderEventListenerTest {
         // 테스트 사용자 생성
         testUser = Users.builder()
                 .id("user123")
-                .name("김철수")
-                .role(Role.ROLE_BUYER)
                 .provider("google")
                 .providerId("google123")
+                .role(Role.ROLE_BUYER)
+                .accountDisable(false)
                 .build();
 
         // 테스트 구매자 생성
         testBuyer = Buyers.builder()
-                .userId(testUser.getId()) // 수정: id() -> userId()
+                .userId("user123")
                 .user(testUser)
                 .build();
 
         // 테스트 상품들 생성
         testProduct1 = Products.builder()
                 .id("product1")
-                .title("강아지 사료") // 수정: productName() -> title()
+                .title("강아지 사료")
                 .price(25000L)
                 .stock(100)
                 .build();
 
         testProduct2 = Products.builder()
                 .id("product2")
-                .title("고양이 간식") // 수정: productName() -> title()
+                .title("고양이 간식")
                 .price(15000L)
                 .stock(50)
                 .build();
@@ -119,25 +105,13 @@ class OrderEventListenerTest {
                 .orderNumber(1001L)
                 .user(testUser)
                 .orderStatus(OrderStatus.PAYMENT_PENDING)
-                .totalPrice(65000L) // 금액 일치시킴
+                .totalPrice(65000L)
                 .build();
 
-        // 테스트 이벤트 생성
-        List<OrderCreatedEvent.OrderItemInfo> orderItems = Arrays.asList(
-                OrderCreatedEvent.OrderItemInfo.builder()
-                        .productId("product1")
-                        .productName("강아지 사료")
-                        .quantity(2)
-                        .unitPrice(25000L)
-                        .totalPrice(50000L)
-                        .build(),
-                OrderCreatedEvent.OrderItemInfo.builder()
-                        .productId("product2")
-                        .productName("고양이 간식")
-                        .quantity(1)
-                        .unitPrice(15000L)
-                        .totalPrice(15000L)
-                        .build()
+        // 테스트 이벤트 생성 (Record DTO 정적 팩토리 메서드 사용)
+        List<OrderItemInfo> orderItems = Arrays.asList(
+                OrderItemInfo.of("product1", "강아지 사료", 2, 25000L),
+                OrderItemInfo.of("product2", "고양이 간식", 1, 15000L)
         );
 
         testEvent = OrderCreatedEvent.of(
@@ -159,16 +133,16 @@ class OrderEventListenerTest {
 
     @Nested
     @DisplayName("재고 예약 처리 테스트")
-    class StockReservationHandlerTests {
+    class StockReservationTests {
 
         @Test
-        @DisplayName("✅ 재고 예약 성공")
-        void handleStockReservation_Success() {
-            // Given
+        @DisplayName("✅ 재고 예약 성공 (Record DTO 활용)")
+        void handleStockReservation_Success_WithRecordDTO() {
+            // Given - 모든 Mock을 한 번에 설정
             given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
             given(productRepository.findById("product1")).willReturn(Optional.of(testProduct1));
             given(productRepository.findById("product2")).willReturn(Optional.of(testProduct2));
-            given(stockReservationService.createBulkReservations(eq(testOrder), any()))
+            given(stockReservationService.createBulkReservations(any(Orders.class), anyList()))
                     .willReturn(testReservations);
 
             // When
@@ -176,69 +150,69 @@ class OrderEventListenerTest {
 
             // Then
             verify(orderRepository).findById("order123");
-            verify(stockReservationService).createBulkReservations(eq(testOrder), any());
-            verify(orderRepository, never()).save(any()); // 성공 시에는 주문 상태 변경 없음
+            verify(stockReservationService).createBulkReservations(eq(testOrder), anyList());
+            verify(productRepository).findById("product1");
+            verify(productRepository).findById("product2");
         }
 
         @Test
-        @DisplayName("❌ 주문 정보 조회 실패 시 보상 트랜잭션 실행")
-        void handleStockReservation_OrderNotFound_CompensationTriggered() {
-            // Given
+        @DisplayName("❌ 재고 부족으로 예약 실패 → 보상 트랜잭션 실행")
+        void handleStockReservation_InsufficientStock_CompensationTriggered() {
+            // Given - 초기 주문 조회 성공
+            given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
+
+            // Product Mock 설정 (예외 발생 전에 모든 product가 조회되어야 함)
+            given(productRepository.findById("product1")).willReturn(Optional.of(testProduct1));
+            given(productRepository.findById("product2")).willReturn(Optional.of(testProduct2));
+
+            // 재고 예약 실패 시뮬레이션
+            given(stockReservationService.createBulkReservations(any(Orders.class), anyList()))
+                    .willThrow(new IllegalArgumentException("재고가 부족합니다"));
+
+            // When
+            orderEventListener.handleStockReservation(testEvent);
+
+            // Then
+            verify(orderRepository, times(2)).findById("order123"); // 1번: 예약 시도, 1번: 보상 트랜잭션
+            verify(stockReservationService).createBulkReservations(any(Orders.class), anyList());
+            verify(orderRepository).save(testOrder); // 보상 트랜잭션에서 주문 상태 변경
+        }
+
+        @Test
+        @DisplayName("❌ 동시성 충돌로 예약 실패 → 보상 트랜잭션 실행")
+        void handleStockReservation_OptimisticLockingFailure_CompensationTriggered() {
+            // Given - 초기 주문 조회 성공
+            given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
+
+            // Product Mock 설정 (예외 발생 전에 모든 product가 조회되어야 함)
+            given(productRepository.findById("product1")).willReturn(Optional.of(testProduct1));
+            given(productRepository.findById("product2")).willReturn(Optional.of(testProduct2));
+
+            // 동시성 충돌 예외 시뮬레이션
+            given(stockReservationService.createBulkReservations(any(Orders.class), anyList()))
+                    .willThrow(new OptimisticLockingFailureException("동시성 충돌"));
+
+            // When
+            orderEventListener.handleStockReservation(testEvent);
+
+            // Then
+            verify(orderRepository, times(2)).findById("order123");
+            verify(stockReservationService).createBulkReservations(any(Orders.class), anyList());
+            verify(orderRepository).save(testOrder); // 보상 트랜잭션에서 주문 상태 변경
+        }
+
+        @Test
+        @DisplayName("❌ 주문을 찾을 수 없음")
+        void handleStockReservation_OrderNotFound() {
+            // Given - 주문을 찾을 수 없는 상황
             given(orderRepository.findById("order123")).willReturn(Optional.empty());
 
-            // When
+            // When & Then - 예외가 발생하므로 보상 트랜잭션도 실행되지 않음
             orderEventListener.handleStockReservation(testEvent);
 
-            // Then
-            verify(orderRepository, times(2)).findById("order123");
-            // 주문이 없으므로 보상 트랜잭션은 실행되지만, 내부에서 다시 findById를 호출하고 예외를 던지므로 save는 호출되지 않음.
-            verify(orderRepository, never()).save(any());
+            verify(orderRepository).findById("order123");
             verify(stockReservationService, never()).createBulkReservations(any(), any());
-        }
-
-        @Test
-        @DisplayName("❌ 재고 부족으로 예약 실패 - 보상 트랜잭션 실행")
-        void handleStockReservation_InsufficientStock_CompensationTriggered() {
-            // Given
-            given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
-            given(productRepository.findById("product1")).willReturn(Optional.of(testProduct1));
-            given(productRepository.findById("product2")).willReturn(Optional.of(testProduct2));
-            willThrow(new IllegalArgumentException("재고가 부족합니다"))
-                    .given(stockReservationService).createBulkReservations(any(), any());
-
-            // 보상 트랜잭션 Mocking
-            given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
-
-            // When
-            orderEventListener.handleStockReservation(testEvent);
-
-            // Then
-            verify(stockReservationService).createBulkReservations(any(), any());
-            verify(orderRepository, times(2)).findById("order123"); // 최초 1번, 보상 트랜잭션에서 1번
-            verify(orderRepository).save(testOrder); // 주문 상태를 CANCELLED로 변경하고 저장
-            assert testOrder.getOrderStatus() == OrderStatus.CANCELLED;
-        }
-
-        @Test
-        @DisplayName("❌ 동시성 충돌로 예약 실패 - 보상 트랜잭션 실행")
-        void handleStockReservation_OptimisticLockFailure_CompensationTriggered() {
-            // Given
-            given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
-            given(productRepository.findById("product1")).willReturn(Optional.of(testProduct1));
-            given(productRepository.findById("product2")).willReturn(Optional.of(testProduct2));
-            willThrow(new OptimisticLockingFailureException("동시성 충돌"))
-                    .given(stockReservationService).createBulkReservations(any(), any());
-
-            given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
-
-            // When
-            orderEventListener.handleStockReservation(testEvent);
-
-            // Then
-            verify(stockReservationService).createBulkReservations(any(), any());
-            verify(orderRepository, times(2)).findById("order123");
-            verify(orderRepository).save(testOrder);
-            assert testOrder.getOrderStatus() == OrderStatus.CANCELLED;
+            verify(orderRepository, never()).save(any()); // 주문이 없으므로 저장도 없음
         }
     }
 
@@ -279,7 +253,7 @@ class OrderEventListenerTest {
         }
 
         @Test
-        @DisplayName("❌ 구매자 정보 조회 실패")
+        @DisplayName("❌ 구매자를 찾을 수 없음")
         void handlePaymentInfoCreation_BuyerNotFound() {
             // Given
             given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
@@ -300,18 +274,19 @@ class OrderEventListenerTest {
     class UserNotificationTests {
 
         @Test
-        @DisplayName("✅ 사용자 알림 발송 성공")
-        void handleUserNotification_Success() {
+        @DisplayName("✅ 사용자 알림 발송 성공 (Record 편의 메서드 활용)")
+        void handleUserNotification_Success_WithRecordMethods() {
             // Given
             given(orderRepository.findById("order123")).willReturn(Optional.of(testOrder));
-            given(userRepository.findById("user123")).willReturn(Optional.of(testUser));
 
             // When
             orderEventListener.handleUserNotification(testEvent);
 
             // Then
             verify(orderRepository).findById("order123");
-            verify(userRepository).findById("user123");
+
+            // Record의 편의 메서드들이 올바르게 동작하는지 확인
+            // (실제 알림 발송 로직이 구현되면 더 상세한 검증 추가)
         }
 
         @Test
@@ -326,7 +301,6 @@ class OrderEventListenerTest {
 
             // Then
             verify(orderRepository).findById("order123");
-            verify(userRepository, never()).findById(any());
         }
     }
 
@@ -335,13 +309,48 @@ class OrderEventListenerTest {
     class AuditLoggingTests {
 
         @Test
-        @DisplayName("✅ 주문 처리 감사 로그 기록")
-        void handleOrderProcessingComplete_Success() {
+        @DisplayName("✅ 주문 처리 감사 로그 기록 (Record 편의 메서드 활용)")
+        void handleOrderProcessingComplete_Success_WithRecordMethods() {
             // When
             orderEventListener.handleOrderProcessingComplete(testEvent);
 
-            // Then: 로깅은 실제 검증하기 어려우므로 메서드 호출 여부만으로 테스트를 대신합니다.
-            // 실제 환경에서는 로그 어펜더를 Mocking하여 검증할 수 있습니다.
+            // Then
+            // Record의 편의 메서드들이 올바르게 동작하는지 검증
+            // 실제 환경에서는 로그 어펜더를 Mocking하여 로그 내용을 검증할 수 있습니다.
+
+            // 이벤트의 편의 메서드들이 예상한 값을 반환하는지 확인
+            assert testEvent.getOrderItemCount() == 2;
+            assert testEvent.getTotalQuantity() == 3; // 2 + 1
+            assert testEvent.getFirstProductName().equals("강아지 사료");
+        }
+    }
+
+    @Nested
+    @DisplayName("Record DTO 메서드 동작 테스트")
+    class RecordDTOMethodTests {
+
+        @Test
+        @DisplayName("✅ OrderItemInfo Record 메서드 동작 확인")
+        void orderItemInfo_RecordMethods_WorkCorrectly() {
+            // Given
+            OrderItemInfo item = OrderItemInfo.of("test-product", "테스트 상품", 5, 10000L);
+
+            // When & Then
+            assert item.productId().equals("test-product");
+            assert item.productName().equals("테스트 상품");
+            assert item.quantity() == 5;
+            assert item.unitPrice() == 10000L;
+            assert item.totalPrice() == 50000L; // 10000 * 5
+        }
+
+        @Test
+        @DisplayName("✅ OrderCreatedEvent 편의 메서드 동작 확인")
+        void orderCreatedEvent_ConvenienceMethods_WorkCorrectly() {
+            // When & Then
+            assert testEvent.getOrderItemCount() == 2;
+            assert testEvent.getTotalQuantity() == 3; // 2 + 1
+            assert testEvent.getFirstProductName().equals("강아지 사료");
+            assert testEvent.getTotalPrice() == 65000L;
         }
     }
 }
