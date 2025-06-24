@@ -1,21 +1,21 @@
 package com.team5.catdogeats.users.service.impl;
 
+import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.domain.dto.SellerInfoRequest;
-import com.team5.catdogeats.users.domain.dto.SellerInfoResponse;
 import com.team5.catdogeats.users.domain.enums.DayOfWeek;
-import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
-import com.team5.catdogeats.users.exception.BusinessNumberDuplicateException;
-import com.team5.catdogeats.users.exception.SellerAccessDeniedException;
-import com.team5.catdogeats.users.exception.UserNotFoundException;
+import com.team5.catdogeats.users.domain.dto.SellerInfoRequestDTO;
+import com.team5.catdogeats.users.domain.dto.SellerInfoResponseDTO;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import com.team5.catdogeats.users.service.SellerInfoService;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
 
 import java.util.List;
 import java.util.Optional;
@@ -23,39 +23,61 @@ import java.util.Optional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class SellerInfoServiceImpl implements SellerInfoService {
 
     private final SellersRepository sellersRepository;
     private final UserRepository userRepository;
 
     @Override
-    public SellerInfoResponse getSellerInfo(String userId) {
-        log.info("판매자 정보 조회 - userId: {}", userId);
+    public SellerInfoResponseDTO getSellerInfo(UserPrincipal userPrincipal) {
+        log.info("판매자 정보 조회 (JWT) - provider: {}, providerId: {}",
+                userPrincipal.provider(), userPrincipal.providerId());
 
-        // 사용자 존재 여부 및 판매자 권한 확인
-        validateSellerUser(userId);
+        // Users 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
-        return getSellerInfoInternal(userId);
+        // 판매자 정보 조회
+        return getSellerInfoInternal(user.getId());
     }
+    @JpaTransactional
+    @Override
+    public SellerInfoResponseDTO upsertSellerInfo(UserPrincipal userPrincipal, SellerInfoRequestDTO request) {
+        log.info("판매자 정보 등록/수정 (JWT) - provider: {}, providerId: {}, vendorName: {}",
+                userPrincipal.provider(), userPrincipal.providerId(), request.vendorName());
 
-    public SellerInfoResponse upsertSellerInfo(String userId, SellerInfoRequest request) {
-        log.info("판매자 정보 등록/수정 - userId: {}, vendorName: {}", userId, request.vendorName());
+        // Users 조회
+        Users user = findUserByPrincipal(userPrincipal);
 
-        // 사용자 존재 여부 및 판매자 권한 확인
-        Users user = validateSellerUser(userId);
 
-        // 운영시간 유효성 검증
+        // 운영시간, 휴무일 유효성 검증
         validateOperatingHours(request);
         validateClosedDays(request.closedDays());
 
+        // 판매자 정보 등록/수정
         return upsertSellerInfoInternal(user, request);
     }
+
+
+
+    // === 공통 헬퍼 메서드들 ===
+
+    /**
+     *  Users 엔티티 조회
+     */
+    private Users findUserByPrincipal(UserPrincipal userPrincipal) {
+        return userRepository.findByProviderAndProviderId(
+                userPrincipal.provider(),
+                userPrincipal.providerId()
+        ).orElseThrow(() -> new EntityNotFoundException(
+                String.format("사용자를 찾을 수 없습니다 - provider: %s, providerId: %s",
+                        userPrincipal.provider(), userPrincipal.providerId())));
+    }
+
 
     /**
      * 판매자 정보 조회 로직 (권한 검증 분리)
      */
-    private SellerInfoResponse getSellerInfoInternal(String userId) {
+    private SellerInfoResponseDTO getSellerInfoInternal(String userId) {
         Optional<Sellers> sellerOpt = sellersRepository.findByUserId(userId);
 
         if (sellerOpt.isEmpty()) {
@@ -63,51 +85,85 @@ public class SellerInfoServiceImpl implements SellerInfoService {
             return null;
         }
 
-        return SellerInfoResponse.from(sellerOpt.get());
+        return SellerInfoResponseDTO.from(sellerOpt.get());
     }
 
     /**
      * 판매자 정보 등록/수정 로직
      */
-    private SellerInfoResponse upsertSellerInfoInternal(Users user, SellerInfoRequest request) {
+    private SellerInfoResponseDTO upsertSellerInfoInternal(Users user, SellerInfoRequestDTO request) {
         String userId = user.getId();
-        // 사업자 등록번호 중복 체크
-        validateBusinessNumberDuplication(userId, request.businessNumber());
 
         // 기존 판매자 정보 조회
         Optional<Sellers> existingSellerOpt = sellersRepository.findByUserId(userId);
 
-        Sellers seller;
-        if (existingSellerOpt.isPresent()) {
-            // 기존 정보 수정
-            seller = existingSellerOpt.get();
-            updateSellerInfo(seller, request);
-            log.info("판매자 정보 수정 완료 - userId: {}", userId);
-        } else {
-            // 신규 정보 등록
-            seller = createNewSeller(user, request);
+        if (existingSellerOpt.isEmpty()) {
+            // 신규 등록 - 필수 필드 체크 추가
+            if (!request.isCreateRequest()) {
+                throw new IllegalArgumentException("신규 등록 시 업체명,사업자 등록번호는 필수입니다.");
+            }
+
+            //이름 중복 검증
+            validateVendorNameDuplication(userId, request.vendorName());
+            //사업자 번호 중복 검증
+            validateBusinessNumberDuplication(userId, request.businessNumber());
+
+            // 신규 생성
+            Sellers seller = createNewSeller(user, request);
             log.info("판매자 정보 신규 등록 완료 - userId: {}", userId);
-        }
+            Sellers savedSeller = sellersRepository.save(seller);
+            return SellerInfoResponseDTO.from(savedSeller);
 
-        Sellers savedSeller = sellersRepository.save(seller);
-        return SellerInfoResponse.from(savedSeller);
+        } else {
+            Sellers seller = existingSellerOpt.get();
+            updateSellerInfoPatch(seller, request, userId);
+            log.info("판매자 정보 수정 완료 - userId: {}", userId);
+            Sellers savedSeller = sellersRepository.save(seller);
+            return SellerInfoResponseDTO.from(savedSeller);
+        }
     }
 
-    /**
-     * 판매자 사용자 검증 (존재 여부 + 판매자 권한)
-     */
-    private Users validateSellerUser(String userId) {
-        Users user = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("존재하지 않는 사용자입니다."));
 
-        if (user.getRole() != Role.ROLE_SELLER) {
-            log.warn("판매자 권한이 없는 사용자의 접근 시도 - userId: {}, role: {}", userId, user.getRole());
-            throw new SellerAccessDeniedException("판매자 권한이 필요합니다.");
+    private void updateSellerInfoPatch(Sellers seller, SellerInfoRequestDTO request, String userId) {
+        if (request.vendorName() != null && !request.vendorName().trim().isEmpty()) {
+            validateVendorNameDuplication(userId, request.vendorName());
+            seller.updateVendorName(request.vendorName());
         }
 
-        log.info("판매자 권한 확인 완료 - userId: {}", userId);
-        return user;
+        if (request.vendorProfileImage() != null && !request.vendorProfileImage().trim().isEmpty()) {
+            seller.updateVendorProfileImage(request.vendorProfileImage());
+        }
+
+        if (request.businessNumber() != null && !request.businessNumber().trim().isEmpty()) {
+            validateBusinessNumberDuplication(userId, request.businessNumber());
+            seller.updateBusinessNumber(request.businessNumber());
+        }
+
+        if (request.settlementBank() != null) {
+            seller.updateSettlementBank(request.settlementBank());
+        }
+
+        if (request.settlementAcc() != null) {
+            seller.updateSettlementAcc(request.settlementAcc());
+        }
+
+        if (request.tags() != null) {
+            seller.updateTags(request.tags());
+        }
+
+        if (request.operatingStartTime() != null) {
+            seller.updateOperatingStartTime(request.operatingStartTime());
+        }
+
+        if (request.operatingEndTime() != null) {
+            seller.updateOperatingEndTime(request.operatingEndTime());
+        }
+
+        if (request.closedDays() != null) {
+            seller.updateClosedDays(request.closedDays());
+        }
     }
+
 
     /**
      * 사업자 등록번호 중복 검증
@@ -117,21 +173,16 @@ public class SellerInfoServiceImpl implements SellerInfoService {
 
         if (existingSeller.isPresent()) {
             Sellers seller = existingSeller.get();
-
-            // Null 체크
             String existingUserId = seller.getUserId();
-            if (existingUserId == null) {
-                // userId가 null인 경우 Users 관계에서 가져오기
-                if (seller.getUser() != null) {
-                    existingUserId = seller.getUser().getId();
-                }
+
+            if (existingUserId == null && seller.getUser() != null) {
+                existingUserId = seller.getUser().getId();
             }
 
-            // 다른 사용자가 사용 중인지 확인
             if (existingUserId != null && !existingUserId.equals(userId)) {
                 log.warn("사업자 등록번호 중복 - businessNumber: {}, 요청자: {}, 기존사용자: {}",
                         businessNumber, userId, existingUserId);
-                throw new BusinessNumberDuplicateException("이미 등록된 사업자 등록번호입니다.");
+                throw new DataIntegrityViolationException("이미 등록된 사업자 등록번호입니다: " + businessNumber);
             }
         }
     }
@@ -139,20 +190,19 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 운영시간 유효성 검증
      */
-    private void validateOperatingHours(SellerInfoRequest request) {
+    private void validateOperatingHours(SellerInfoRequestDTO request) {
         if (request.operatingStartTime() != null && request.operatingEndTime() != null) {
             if (request.operatingStartTime().isAfter(request.operatingEndTime())) {
-                throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다.");
+                throw new IllegalArgumentException("운영 시작 시간은 종료 시간보다 빠를 수 없습니다");
             }
         }
 
-        // 시작 시간만 있고 종료 시간이 없는 경우 또는 그 반대인 경우 검증
         if ((request.operatingStartTime() != null && request.operatingEndTime() == null) ||
                 (request.operatingStartTime() == null && request.operatingEndTime() != null)) {
             throw new IllegalArgumentException("운영 시작 시간과 종료 시간은 모두 입력하거나 모두 입력하지 않아야 합니다.");
         }
 
-        log.info("운영시간 유효성 검증 완료 - start: {}, end: {}",
+        log.debug("운영시간 유효성 검증 완료 - start: {}, end: {}",
                 request.operatingStartTime(), request.operatingEndTime());
     }
 
@@ -161,14 +211,13 @@ public class SellerInfoServiceImpl implements SellerInfoService {
      */
     private void validateClosedDays(String closedDays) {
         if (closedDays == null || closedDays.trim().isEmpty()) {
-            log.info("휴무일이 설정되지 않음 (null 또는 빈 값)");
-            return; // null이나 빈 값은 허용
+            log.debug("휴무일이 설정되지 않음 (null 또는 빈 값)");
+            return;
         }
 
         try {
-            // DayOfWeek.parseFromString()을 사용해서 유효성 검증
             List<DayOfWeek> days = DayOfWeek.parseFromString(closedDays);
-            log.info("휴무일 유효성 검증 완료 - closedDays: {}, parsed: {}", closedDays, days);
+            log.debug("휴무일 유효성 검증 완료 - closedDays: {}, parsed: {}", closedDays, days);
         } catch (IllegalArgumentException e) {
             log.warn("유효하지 않은 휴무일 입력 - closedDays: {}, error: {}", closedDays, e.getMessage());
             throw new IllegalArgumentException("유효하지 않은 요일이 포함되어 있습니다: " + closedDays, e);
@@ -176,10 +225,20 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     }
 
 
+    private void validateVendorNameDuplication(String userId, String vendorName) {
+        sellersRepository.findByVendorName(vendorName)
+                .filter(seller -> !userId.equals(seller.getUserId()))
+                .ifPresent(seller -> {
+                    log.warn("상점명 중복 시도 - vendorName: {}, 요청자: {}, 기존사용자: {}",
+                            vendorName, userId, seller.getUserId());
+                    throw new DataIntegrityViolationException("이미 사용 중인 상점명입니다: " + vendorName);
+                });
+    }
+
     /**
      * 기존 판매자 정보 업데이트
      */
-    private void updateSellerInfo(Sellers seller, SellerInfoRequest request) {
+    private void updateSellerInfo(Sellers seller, SellerInfoRequestDTO request) {
         seller.updateVendorName(request.vendorName());
         seller.updateVendorProfileImage(request.vendorProfileImage());
         seller.updateBusinessNumber(request.businessNumber());
@@ -194,7 +253,7 @@ public class SellerInfoServiceImpl implements SellerInfoService {
     /**
      * 새 판매자 정보 생성
      */
-    private Sellers createNewSeller(Users user, SellerInfoRequest request) {
+    private Sellers createNewSeller(Users user, SellerInfoRequestDTO request) {
         return Sellers.builder()
                 .user(user)
                 .vendorName(request.vendorName())
