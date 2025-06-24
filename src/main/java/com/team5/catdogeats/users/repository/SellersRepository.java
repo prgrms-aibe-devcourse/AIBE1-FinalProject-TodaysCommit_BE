@@ -5,11 +5,10 @@ import com.team5.catdogeats.users.domain.mapping.Sellers;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@Repository
+
 public interface SellersRepository extends JpaRepository<Sellers, String> {
 
     /**
@@ -22,6 +21,10 @@ public interface SellersRepository extends JpaRepository<Sellers, String> {
      */
     Optional<Sellers> findByBusinessNumber(String businessNumber);
 
+    /**
+     * 상점명으로 판매자 정보 조회
+     */
+    Optional<Sellers> findByVendorName(String vendorName);
 
 
     @Query("""
