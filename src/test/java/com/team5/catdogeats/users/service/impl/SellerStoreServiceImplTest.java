@@ -4,6 +4,7 @@ import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
 import com.team5.catdogeats.users.domain.dto.SellerStorePageResponse;
@@ -91,6 +92,7 @@ class SellerStoreServiceImplTest {
                         12.92,
                         "",
                         PetCategory.DOG,
+                        ProductCategory.HANDMADE,
                         StockStatus.IN_STOCK,
                         3.6,
                         36L,
@@ -105,6 +107,7 @@ class SellerStoreServiceImplTest {
                         9.3,
                         "",
                         PetCategory.DOG,
+                        ProductCategory.FINISHED,
                         StockStatus.IN_STOCK,
                         3.6,
                         38L,
@@ -130,14 +133,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(sellerId))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(sellerId), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(sellerId), isNull(),isNull(), isNull(), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(sellerId))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, null
+                    vendorName, 1, 12, "createdAt,desc", null,null, null
             );
 
             // then
@@ -168,7 +171,7 @@ class SellerStoreServiceImplTest {
             // verify
             verify(sellersRepository).findByVendorName(vendorName);
             verify(productService).countSellerActiveProducts(sellerId);
-            verify(productService).getSellerProductsBaseInfo(eq(sellerId), isNull(), isNull(), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(sellerId), isNull(), isNull(), isNull(), any(Pageable.class));
             verify(sellerStoreStatsService).getSellerStoreStats(sellerId);
         }
 
@@ -183,14 +186,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), eq(category), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), eq(category),isNull(),  isNull(), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", category, null
+                    vendorName, 1, 12, "createdAt,desc", category, isNull(), null
             );
 
             // then
@@ -198,7 +201,7 @@ class SellerStoreServiceImplTest {
             assertThat(result.products().content()).hasSize(2);
 
             // verify
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), eq(category), isNull(), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), eq(category), isNull(), isNull(), any(Pageable.class));
         }
 
         @Test
@@ -212,14 +215,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), eq(filter), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, filter
+                    vendorName, 1, 12, "createdAt,desc", null, null,filter
             );
 
             // then
@@ -230,7 +233,7 @@ class SellerStoreServiceImplTest {
             assertThat(result.products().content().get(0).bestScore()).isGreaterThan(0);
 
             // verify
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), eq(filter), any(Pageable.class));
         }
 
         @Test
@@ -244,21 +247,21 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(),isNull(),  eq(filter), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, filter
+                    vendorName, 1, 12, "createdAt,desc", null,isNull(),  filter
             );
 
             // then
             assertThat(result).isNotNull();
             assertThat(result.products().content()).hasSize(2);
 
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(),isNull(),  eq(filter), any(Pageable.class));
         }
 
         @Test
@@ -271,21 +274,21 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(),isNull(),  isNull(), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when - 100개 요청하지만 최대 50개로 제한됨
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 100, "createdAt,desc", null, null
+                    vendorName, 1, 100, "createdAt,desc", null,null, null
             );
 
             // then
             assertThat(result).isNotNull();
 
             // verify - 실제로는 50개로 제한된 Pageable이 전달되어야 함
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(),isNull(), any(Pageable.class));
         }
 
         @Test
@@ -298,20 +301,20 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(),isNull(),  any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "price,asc", null, null
+                    vendorName, 1, 12, "price,asc", null, null,null
             );
 
             // then
             assertThat(result).isNotNull();
 
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), isNull(), any(Pageable.class));
         }
     }
 
@@ -330,7 +333,7 @@ class SellerStoreServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    nonExistentVendorName, 1, 12, "createdAt,desc", null, null
+                    nonExistentVendorName, 1, 12, "createdAt,desc", null,null, null
             ))
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("판매자를 찾을 수 없습니다: " + nonExistentVendorName);
@@ -343,7 +346,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_EmptyVendorName_ThrowsException() {
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    "", 1, 12, "createdAt,desc", null, null
+                    "", 1, 12, "createdAt,desc", null, null,null
             ))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("판매자 상점명은 필수입니다");
@@ -354,7 +357,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_NullVendorName_ThrowsException() {
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    null, 1, 12, "createdAt,desc", null, null
+                    null, 1, 12, "createdAt,desc", null,null, null
             ))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("판매자 상점명은 필수입니다");
@@ -365,7 +368,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_InvalidPageNumber_ThrowsException() {
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    "멍멍이네 수제간식", 0, 12, "createdAt,desc", null, null
+                    "멍멍이네 수제간식", 0, 12, "createdAt,desc", null, null, null
             ))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("페이지 번호는 1 이상이어야 합니다");
@@ -376,7 +379,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_InvalidPageSize_ThrowsException() {
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    "멍멍이네 수제간식", 1, 0, "createdAt,desc", null, null
+                    "멍멍이네 수제간식", 1, 0, "createdAt,desc", null, null, null
             ))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("페이지 크기는 1~100 사이여야 합니다");
@@ -387,7 +390,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_PageSizeTooLarge_ThrowsException() {
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    "멍멍이네 수제간식", 1, 101, "createdAt,desc", null, null
+                    "멍멍이네 수제간식", 1, 101, "createdAt,desc", null, null, null
             ))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("페이지 크기는 1~100 사이여야 합니다");
@@ -398,7 +401,7 @@ class SellerStoreServiceImplTest {
         void getSellerStorePage_InvalidFilter_ThrowsException() {
             // when & then
             assertThatThrownBy(() -> sellerStoreService.getSellerStorePage(
-                    "멍멍이네 수제간식", 1, 12, "createdAt,desc", null, "invalid_filter"
+                    "멍멍이네 수제간식", 1, 12, "createdAt,desc", null, null, "invalid_filter"
             ))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("유효하지 않은 필터 값입니다");
@@ -419,14 +422,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(),isNull(), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, null
+                    vendorName, 1, 12, "createdAt,desc", null, null, null
             );
 
             // then
@@ -448,14 +451,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(),isNull(), any(Pageable.class)))
                     .willReturn(secondPageResult);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 2, 12, "createdAt,desc", null, null
+                    vendorName, 2, 12, "createdAt,desc", null, null,null
             );
 
             // then
@@ -477,14 +480,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(25L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), isNull(),any(Pageable.class)))
                     .willReturn(lastPageResult);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 3, 12, "createdAt,desc", null, null
+                    vendorName, 3, 12, "createdAt,desc", null, null,null
             );
 
             // then
@@ -509,19 +512,19 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), eq(filter), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, filter
+                    vendorName, 1, 12, "createdAt,desc", null, null, filter
             );
 
             // then
             assertThat(result).isNotNull();
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), eq(filter), any(Pageable.class));
         }
 
         @Test
@@ -535,19 +538,19 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(),  isNull(),eq(filter), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, filter
+                    vendorName, 1, 12, "createdAt,desc", null,null, filter
             );
 
             // then
             assertThat(result).isNotNull();
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), eq(filter), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), eq(filter), any(Pageable.class));
         }
     }
 
@@ -566,14 +569,14 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(30L);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(emptyStats); // 빈 통계 반환
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, null
+                    vendorName, 1, 12, "createdAt,desc",  isNull(),null, null
             );
 
             // then
@@ -595,21 +598,21 @@ class SellerStoreServiceImplTest {
                     .willReturn(Optional.of(testSeller));
             given(productService.countSellerActiveProducts(testSeller.getUserId()))
                     .willReturn(expectedProductCount);
-            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class)))
+            given(productService.getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), isNull(), any(Pageable.class)))
                     .willReturn(testProductPage);
             given(sellerStoreStatsService.getSellerStoreStats(testSeller.getUserId()))
                     .willReturn(testStats);
 
             // when
             SellerStorePageResponse result = sellerStoreService.getSellerStorePage(
-                    vendorName, 1, 12, "createdAt,desc", null, null
+                    vendorName, 1, 12, "createdAt,desc", null,null, null
             );
 
             // then
             assertThat(result.sellerInfo().totalProducts()).isEqualTo(expectedProductCount);
 
             verify(productService).countSellerActiveProducts(testSeller.getUserId());
-            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(), any(Pageable.class));
+            verify(productService).getSellerProductsBaseInfo(eq(testSeller.getUserId()), isNull(), isNull(),  isNull(), any(Pageable.class));
         }
     }
 }

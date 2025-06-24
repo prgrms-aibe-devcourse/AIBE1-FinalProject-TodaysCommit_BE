@@ -4,6 +4,7 @@ import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
 import com.team5.catdogeats.users.controller.SellerStoreExceptionHandler.ProductDataRetrievalException;
@@ -60,6 +61,7 @@ class SellerStoreProductServiceImplTest {
                         10.0,
                         "image1.jpg",
                         PetCategory.DOG,
+                        ProductCategory.HANDMADE,
                         StockStatus.IN_STOCK,
                         4.5,
                         100L,
@@ -74,6 +76,7 @@ class SellerStoreProductServiceImplTest {
                         0.0,
                         "image2.jpg",
                         PetCategory.CAT,
+                        ProductCategory.FINISHED,
                         StockStatus.LOW_STOCK,
                         4.0,
                         50L,
@@ -96,14 +99,14 @@ class SellerStoreProductServiceImplTest {
         void getSellerProductsBaseInfo_Basic_Success() {
             // given
             Pageable pageable = PageRequest.of(0, 12);
-            given(productStoreMapper.findSellerProductsBaseInfo(testSellerId, null, null, 12, 0))
+            given(productStoreMapper.findSellerProductsBaseInfo(testSellerId, null, null,null, 12, 0))
                     .willReturn(testProducts);
-            given(productStoreMapper.countSellerProductsForStore(testSellerId, null, null))
+            given(productStoreMapper.countSellerProductsForStore(testSellerId, null,null, null))
                     .willReturn(50L);
 
             // when
             Page<ProductStoreInfoDTO> result = sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, null, null, pageable);
+                    .getSellerProductsBaseInfo(testSellerId, null, null, null,pageable);
 
             // then
             assertThat(result).isNotNull();
@@ -112,8 +115,8 @@ class SellerStoreProductServiceImplTest {
             assertThat(result.getContent().get(0).productId()).isEqualTo("product1");
             assertThat(result.getContent().get(1).productId()).isEqualTo("product2");
 
-            verify(productStoreMapper).findSellerProductsBaseInfo(testSellerId, null, null, 12, 0);
-            verify(productStoreMapper).countSellerProductsForStore(testSellerId, null, null);
+            verify(productStoreMapper).findSellerProductsBaseInfo(testSellerId, null, null, null,12, 0);
+            verify(productStoreMapper).countSellerProductsForStore(testSellerId, null, null,null);
         }
 
         @Test
@@ -122,21 +125,21 @@ class SellerStoreProductServiceImplTest {
             // given
             Pageable pageable = PageRequest.of(0, 12);
             PetCategory category = PetCategory.DOG;
-            given(productStoreMapper.findSellerProductsBaseInfo(testSellerId, "DOG", null, 12, 0))
+            given(productStoreMapper.findSellerProductsBaseInfo(testSellerId, "DOG", null, null,12, 0))
                     .willReturn(List.of(testProducts.get(0))); // DOG 상품만
-            given(productStoreMapper.countSellerProductsForStore(testSellerId, "DOG", null))
+            given(productStoreMapper.countSellerProductsForStore(testSellerId, "DOG", null,null))
                     .willReturn(25L);
 
             // when
             Page<ProductStoreInfoDTO> result = sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, category, null, pageable);
+                    .getSellerProductsBaseInfo(testSellerId, category, null,null, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).petCategory()).isEqualTo(PetCategory.DOG);
             assertThat(result.getTotalElements()).isEqualTo(25L);
 
-            verify(productStoreMapper).findSellerProductsBaseInfo(testSellerId, "DOG", null, 12, 0);
+            verify(productStoreMapper).findSellerProductsBaseInfo(testSellerId, "DOG", null, null,12, 0);
         }
 
         @Test
@@ -145,20 +148,20 @@ class SellerStoreProductServiceImplTest {
             // given
             Pageable pageable = PageRequest.of(0, 12);
             String filter = "discount";
-            given(productStoreMapper.findSellerProductsBaseInfo(testSellerId, null, filter, 12, 0))
+            given(productStoreMapper.findSellerProductsBaseInfo(testSellerId, null, null, filter, 12, 0))
                     .willReturn(List.of(testProducts.get(0))); // 할인 상품만
-            given(productStoreMapper.countSellerProductsForStore(testSellerId, null, filter))
+            given(productStoreMapper.countSellerProductsForStore(testSellerId, null,null, filter))
                     .willReturn(10L);
 
             // when
             Page<ProductStoreInfoDTO> result = sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, null, filter, pageable);
+                    .getSellerProductsBaseInfo(testSellerId, null,null, filter, pageable);
 
             // then
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).isDiscounted()).isTrue();
 
-            verify(productStoreMapper).findSellerProductsBaseInfo(testSellerId, null, filter, 12, 0);
+            verify(productStoreMapper).findSellerProductsBaseInfo(testSellerId, null,null, filter, 12, 0);
         }
 
         @Test
@@ -169,7 +172,7 @@ class SellerStoreProductServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerStoreProductService
-                    .getSellerProductsBaseInfo("", null, null, pageable))
+                    .getSellerProductsBaseInfo("", null, null, null,pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("판매자 ID는 필수입니다");
         }
@@ -182,7 +185,7 @@ class SellerStoreProductServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, null, null, pageable))
+                    .getSellerProductsBaseInfo(testSellerId, null, null,null, pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("페이지 크기는 100을 초과할 수 없습니다");
         }
@@ -195,7 +198,7 @@ class SellerStoreProductServiceImplTest {
 
             // when & then
             assertThatThrownBy(() -> sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, null, "invalid_filter", pageable))
+                    .getSellerProductsBaseInfo(testSellerId, null,null, "invalid_filter", pageable))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("유효하지 않은 필터 값");
         }
@@ -205,12 +208,12 @@ class SellerStoreProductServiceImplTest {
         void getSellerProductsBaseInfo_DataRetrievalFailure_ThrowsException() {
             // given
             Pageable pageable = PageRequest.of(0, 12);
-            given(productStoreMapper.findSellerProductsBaseInfo(anyString(), any(), any(), anyInt(), anyInt()))
+            given(productStoreMapper.findSellerProductsBaseInfo(anyString(), any(), any(), any(),anyInt(), anyInt()))
                     .willThrow(new RuntimeException("DB 연결 실패"));
 
             // when & then
             assertThatThrownBy(() -> sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, null, null, pageable))
+                    .getSellerProductsBaseInfo(testSellerId, null, null,null, pageable))
                     .isInstanceOf(ProductDataRetrievalException.class)
                     .hasMessageContaining("상품 정보 조회 실패");
         }
@@ -229,12 +232,12 @@ class SellerStoreProductServiceImplTest {
 
             given(productBestScoreService.getProductBestScoreData(testSellerId))
                     .willReturn(testBestScoreData);
-            given(productStoreMapper.findProductsByIds(topProductIds, null))
+            given(productStoreMapper.findProductsByIds(topProductIds,null,null))
                     .willReturn(testProducts);
 
             // when
             Page<ProductStoreInfoDTO> result = sellerStoreProductService
-                    .getSellerProductsBaseInfo(testSellerId, null, "best", pageable);
+                    .getSellerProductsBaseInfo(testSellerId, null, null,"best", pageable);
 
             // then
             assertThat(result.getContent()).hasSize(2);

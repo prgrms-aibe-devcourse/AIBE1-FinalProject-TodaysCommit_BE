@@ -128,7 +128,7 @@ public interface ProductStoreMapper {
         """)
     List<ProductStoreInfoDTO> findSellerProductsBaseInfo(
             @Param("sellerId") String sellerId,
-            @Param("petCategory") String category,
+            @Param("petCategory") String petCategory,
             @Param("productCategory") String productCategory,
             @Param("filter") String filter,
             @Param("limit") int limit,
