@@ -2,6 +2,7 @@ package com.team5.catdogeats.pets.controller;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
+import com.team5.catdogeats.global.dto.PageResponseDto;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.pets.domain.dto.*;
 import com.team5.catdogeats.pets.service.PetService;
