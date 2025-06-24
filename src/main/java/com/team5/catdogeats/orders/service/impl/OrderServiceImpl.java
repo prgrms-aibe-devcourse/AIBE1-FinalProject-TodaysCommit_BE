@@ -12,7 +12,8 @@ import com.team5.catdogeats.orders.service.OrderService;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
-import com.team5.catdogeats.users.domain.enums.Role;
+import com.team5.catdogeats.users.domain.dto.BuyerDTO;
+import com.team5.catdogeats.users.repository.BuyerRepository;
 import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,15 +29,14 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (EDA 전환 + String ID 타입 적용)
+ * 주문 관리 서비스 구현체 (EDA 전환 + BuyerRepository 적용)
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
- * 핵심 변경사항:
- * 1. 재고 차감 로직을 이벤트 리스너로 이동
- * 2. ApplicationEventPublisher를 통한 OrderCreatedEvent 발행
- * 3. 트랜잭션 범위를 주문 저장까지로 축소
- * 4. 모든 Entity ID를 String 타입으로 통일 처리
+ * 리팩터링 개선사항:
+ * 1. BuyerRepository 활용으로 구매자 조회 + 권한 검증을 한 번에 처리
+ * 2. 불필요한 validateBuyerPermission() 메서드 제거
+ * 3. 효율적인 구매자 권한 확인 로직 적용
  */
 @Slf4j
 @Service
@@ -45,29 +45,30 @@ public class OrderServiceImpl implements OrderService {
 
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final BuyerRepository buyerRepository;
     private final ProductRepository productRepository;
     private final TossPaymentsConfig.TossPaymentsProperties tossPaymentsProperties;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * UserPrincipal을 사용한 주문 생성 (EDA 전환 + String ID 타입 버전)
+     * UserPrincipal을 사용한 주문 생성 (EDA 전환 + BuyerRepository 적용)
      * 변경된 처리 흐름:
-     * 1. 사용자 검증 및 상품 정보 수집
-     * 2. 주문 엔티티 저장 (재고 차감 제외)
-     * 3. OrderCreatedEvent 발행 (String ID 타입)
+     * 1. 구매자 검증 (한 번의 조회로 존재 여부 + 권한 확인)
+     * 2. 상품 정보 수집 및 주문 엔티티 저장
+     * 3. OrderCreatedEvent 발행
      * 4. 이벤트 리스너들이 비동기로 후속 작업 처리
      */
     @Override
     @Transactional(transactionManager = "jpaTransactionManager")
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
-        log.info("주문 생성 시작 (EDA + String ID 버전): provider={}, providerId={}, 상품 개수={}",
+        log.info("주문 생성 시작 (EDA + BuyerRepository 버전): provider={}, providerId={}, 상품 개수={}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());
 
-        // 1. UserPrincipal로 사용자 조회 및 검증
-        Users user = findUserByPrincipal(userPrincipal);
+        // 1. UserPrincipal로 구매자 조회 및 권한 검증 (한 번에 처리)
+        BuyerDTO buyerDTO = findBuyerByPrincipal(userPrincipal);
 
-        // 2. 구매자 권한 검증 (보안 강화)
-        validateBuyerPermission(user);
+        // 2. Users 엔티티 조회 (주문 생성용)
+        Users user = userRepository.getReferenceById(buyerDTO.userId());
 
         // 3. 주문 상품들 검증 및 정보 수집 (재고 차감은 제외)
         List<OrderItemInfo> orderItemInfos = validateAndCollectOrderItems(request.getOrderItems());
@@ -78,13 +79,10 @@ public class OrderServiceImpl implements OrderService {
         // 5. 주문 엔티티 생성 및 저장 (PAYMENT_PENDING 상태)
         Orders savedOrder = createAndSaveOrder(user, totalPrice);
 
-        // 6. 주문 아이템들 생성 및 저장
-        //List<OrderItems> orderItems = createAndSaveOrderItems(savedOrder, orderItemInfos);
-
-        // 7. 토스 페이먼츠 응답 생성
+        // 6. 토스 페이먼츠 응답 생성
         OrderCreateResponse response = buildTossPaymentResponse(savedOrder, request.getPaymentInfo());
 
-        // 8. OrderCreatedEvent 발행 (트랜잭션 커밋 후 이벤트 리스너들이 처리)
+        // 7. OrderCreatedEvent 발행 (트랜잭션 커밋 후 이벤트 리스너들이 처리)
         publishOrderCreatedEvent(savedOrder, user, userPrincipal, orderItemInfos);
 
         log.info("주문 생성 완료 (재고 차감은 이벤트 처리): orderId={}, orderNumber={}, totalPrice={}",
@@ -94,29 +92,18 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * UserPrincipal로 사용자 조회
+     * UserPrincipal로 구매자 조회 및 권한 검증 (개선된 버전)
+     * BuyerRepository를 사용하여 한 번의 쿼리로 구매자 확인 + 권한 검증을 동시에 처리합니다.
+     * 구매자가 아니거나 존재하지 않으면 조회되지 않으므로 별도 권한 검증이 불필요합니다.
      */
-    private Users findUserByPrincipal(UserPrincipal userPrincipal) {
-        return userRepository.findByProviderAndProviderId(
+    private BuyerDTO findBuyerByPrincipal(UserPrincipal userPrincipal) {
+        return buyerRepository.findOnlyBuyerByProviderAndProviderId(
                         userPrincipal.provider(), userPrincipal.providerId())
-                .orElseThrow(() -> new NoSuchElementException("사용자를 찾을 수 없습니다"));
+                .orElseThrow(() -> new NoSuchElementException("구매자를 찾을 수 없거나 권한이 없습니다"));
     }
 
     /**
-     * 구매자 권한 검증
-     */
-    private void validateBuyerPermission(Users user) {
-        if (user.getRole() != Role.ROLE_BUYER) {
-            throw new IllegalArgumentException("구매자만 주문을 생성할 수 있습니다");
-        }
-
-        if (user.isAccountDisable()) {
-            throw new IllegalStateException("비활성화된 계정입니다");
-        }
-    }
-
-    /**
-     * 주문 상품들 검증 및 정보 수집 (EDA 전환 + String ID 타입: 재고 차감 로직 제거)
+     * 주문 상품들 검증 및 정보 수집 (EDA 전환: 재고 차감 로직 제거)
      * 기존 validateOrderItems에서 재고 차감 부분을 제거하고,
      * 상품 존재 여부와 기본 검증만 수행합니다.
      * 실제 재고 차감은 StockEventListener에서 처리됩니다.
@@ -127,7 +114,7 @@ public class OrderServiceImpl implements OrderService {
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
         for (OrderCreateRequest.OrderItemRequest item : orderItems) {
-            // 상품 존재 여부 확인 (String ID 직접 사용)
+            // 상품 존재 여부 확인
             Products product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new NoSuchElementException(
                             "상품을 찾을 수 없습니다: " + item.getProductId()));
@@ -137,7 +124,7 @@ public class OrderServiceImpl implements OrderService {
                 throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다");
             }
 
-            // 재고가 요청 수량보다 부족한지 확인합니다.
+            // 재고가 요청 수량보다 부족한지 확인
             if (product.getStock() < item.getQuantity()) {
                 throw new IllegalArgumentException(
                         String.format("재고가 부족한 상품입니다: 상품=%s, 요청수량=%d, 현재고=%d",
@@ -146,7 +133,7 @@ public class OrderServiceImpl implements OrderService {
 
             // 주문 아이템 정보 수집
             OrderItemInfo itemInfo = OrderItemInfo.builder()
-                    .productId(item.getProductId()) // String 타입 직접 사용
+                    .productId(item.getProductId())
                     .productName(product.getTitle())
                     .quantity(item.getQuantity())
                     .unitPrice(product.getPrice())
@@ -194,7 +181,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * OrderCreatedEvent 발행 (String ID 타입 적용)
+     * OrderCreatedEvent 발행
      * 이벤트 리스너들이 다음 작업들을 비동기로 처리합니다:
      * - StockEventListener: 재고 차감
      * - PaymentEventListener: 결제 정보 생성
@@ -203,10 +190,10 @@ public class OrderServiceImpl implements OrderService {
     private void publishOrderCreatedEvent(Orders order, Users user, UserPrincipal userPrincipal,
                                           List<OrderItemInfo> orderItemInfos) {
 
-        // OrderCreatedEvent용 OrderItemInfo 리스트 변환 (String ID 타입)
+        // OrderCreatedEvent용 OrderItemInfo 리스트 변환
         List<OrderCreatedEvent.OrderItemInfo> eventOrderItems = orderItemInfos.stream()
                 .map(info -> OrderCreatedEvent.OrderItemInfo.builder()
-                        .productId(info.getProductId()) // String 타입 직접 사용
+                        .productId(info.getProductId())
                         .productName(info.getProductName())
                         .quantity(info.getQuantity())
                         .unitPrice(info.getUnitPrice())
@@ -214,9 +201,9 @@ public class OrderServiceImpl implements OrderService {
                         .build())
                 .toList();
 
-        // OrderCreatedEvent 생성 및 발행 (String ID 타입)
+        // OrderCreatedEvent 생성 및 발행
         OrderCreatedEvent event = OrderCreatedEvent.of(
-                order.getId(), // String 타입 직접 사용
+                order.getId(),
                 order.getOrderNumber(),
                 user.getId(),
                 userPrincipal.provider(),
@@ -230,12 +217,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 토스 페이먼츠 응답 생성 (String ID 타입 적용)
+     * 토스 페이먼츠 응답 생성
      */
     private OrderCreateResponse buildTossPaymentResponse(Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo) {
         // TossPaymentInfo 생성
         OrderCreateResponse.TossPaymentInfo tossPaymentInfo = OrderCreateResponse.TossPaymentInfo.builder()
-                .tossOrderId(order.getId()) // String 타입 직접 사용 (toString() 제거)
+                .tossOrderId(order.getId())
                 .orderName(generateOrderName(order))
                 .amount(order.getTotalPrice())
                 .customerName(paymentInfo.getCustomerName())
@@ -250,7 +237,7 @@ public class OrderServiceImpl implements OrderService {
         return OrderCreateResponse.builder()
                 .orderNumber(order.getOrderNumber())
                 .totalPrice(order.getTotalPrice())
-                .orderId(order.getId()) // String 타입 직접 사용 (toString() 제거)
+                .orderId(order.getId())
                 .orderStatus(order.getOrderStatus())
                 .createdAt(order.getCreatedAt())
                 .tossPaymentInfo(tossPaymentInfo)
@@ -283,14 +270,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품 정보를 담는 내부 클래스 (String ID 타입 적용)
+     * 주문 상품 정보를 담는 내부 클래스
      */
     @lombok.Data
     @lombok.Builder
     @lombok.NoArgsConstructor
     @lombok.AllArgsConstructor
     private static class OrderItemInfo {
-        private String productId; // String 타입으로 변경
+        private String productId;
         private String productName;
         private Integer quantity;
         private Long unitPrice;
