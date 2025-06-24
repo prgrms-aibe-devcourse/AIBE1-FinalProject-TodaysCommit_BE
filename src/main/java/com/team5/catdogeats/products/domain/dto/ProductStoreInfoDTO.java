@@ -1,6 +1,7 @@
 package com.team5.catdogeats.products.domain.dto;
 
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 
 
@@ -17,6 +18,7 @@ public record ProductStoreInfoDTO(
         Double discountRate,
         String mainImageUrl,
         PetCategory petCategory,
+        ProductCategory productCategory,
         StockStatus stockStatus,
         Double avgRating,
         Long reviewCount,

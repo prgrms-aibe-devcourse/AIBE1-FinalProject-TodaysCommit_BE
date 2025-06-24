@@ -1,10 +1,10 @@
 package com.team5.catdogeats.products.service.impl;
 
-
 import com.team5.catdogeats.orders.service.ProductBestScoreService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductBestScoreDataDTO;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.mapper.ProductStoreMapper;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
@@ -16,7 +16,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
 
 import java.util.List;
 import java.util.Map;
@@ -35,19 +34,26 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
     private final ProductBestScoreService productBestScoreService;
 
     @Override
-    public Page<ProductStoreInfoDTO> getSellerProductsBaseInfo(String sellerId, PetCategory category, String filter, Pageable pageable) {
-        log.debug("판매자 상품 정보 조회 - sellerId: {}, category: {}, filter: {}, page: {}",
-                sellerId, category, filter, pageable.getPageNumber());
+    public Page<ProductStoreInfoDTO> getSellerProductsBaseInfo(
+            String sellerId,
+            PetCategory category,
+            ProductCategory productCategory,
+            String filter,
+            Pageable pageable) {
+
+        log.debug("판매자 상품 정보 조회 - sellerId: {}, petCategory: {}, productCategory: {}, filter: {}, page: {}",
+                sellerId, category, productCategory, filter, pageable.getPageNumber());
         try {
             // 1. 파라미터 검증
             validateParameters(sellerId, pageable);
 
             String categoryStr = category != null ? category.name() : null;
+            String productCategoryStr = productCategory != null ? productCategory.name() : null;
             String normalizedFilter = validateAndNormalizeFilter(filter);
 
             // 2. 베스트 상품 특별 처리
             if ("best".equals(normalizedFilter)) {
-                return getBestProducts(sellerId, categoryStr);
+                return getBestProducts(sellerId, categoryStr, productCategoryStr);
             }
 
             // 3. 일반 상품 조회
@@ -55,10 +61,11 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
             int offset = (int) pageable.getOffset();
 
             List<ProductStoreInfoDTO> products = productStoreMapper.findSellerProductsBaseInfo(
-                    sellerId, categoryStr, normalizedFilter, limit, offset
+                    sellerId, categoryStr, productCategoryStr, normalizedFilter, limit, offset
             );
 
-            Long total = productStoreMapper.countSellerProductsForStore(sellerId, categoryStr, normalizedFilter);
+            Long total = productStoreMapper.countSellerProductsForStore(
+                    sellerId, categoryStr, productCategoryStr, normalizedFilter);
 
             log.debug("상품 조회 결과 - total: {}, products: {}", total, products.size());
 
@@ -142,8 +149,9 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
     /**
      * 베스트 상품 조회 (예외 처리 적용)
      */
-    private Page<ProductStoreInfoDTO> getBestProducts(String sellerId, String categoryStr) {
-        log.debug("베스트 상품 조회 시작 - sellerId: {}, category: {}", sellerId, categoryStr);
+    private Page<ProductStoreInfoDTO> getBestProducts(String sellerId, String petCategoryStr, String productCategoryStr) {
+        log.debug("베스트 상품 조회 시작 - sellerId: {}, petCategory: {}, productCategory: {}",
+                sellerId, petCategoryStr, productCategoryStr);
 
         try {
             // 1. Orders 도메인에서 베스트 점수 계산 데이터 조회
@@ -168,8 +176,9 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
                 return new PageImpl<>(List.of(), PageRequest.of(0, 10), 0);
             }
 
-            // 3. 상위 상품들의 기본 정보 조회
-            List<ProductStoreInfoDTO> bestProducts = productStoreMapper.findProductsByIds(topProductIds, categoryStr);
+            // 3. 상위 상품들의 기본 정보 조회 (productCategory 추가)
+            List<ProductStoreInfoDTO> bestProducts = productStoreMapper.findProductsByIds(
+                    topProductIds, petCategoryStr, productCategoryStr);
 
             // 4. 베스트 점수를 ProductStoreInfo에 매핑
             Map<String, Double> bestScoreMap = bestScoreDataList.stream()
@@ -189,6 +198,7 @@ public class SellerStoreProductServiceImpl implements SellerStoreProductService 
                             product.discountRate(),
                             product.mainImageUrl(),
                             product.petCategory(),
+                            product.productCategory(),  // 추가된 필드
                             product.stockStatus(),
                             product.avgRating(),
                             product.reviewCount(),

@@ -1,6 +1,7 @@
 package com.team5.catdogeats.users.service;
 
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.users.domain.dto.SellerStorePageResponse;
 import jakarta.persistence.EntityNotFoundException;
 
@@ -16,7 +17,7 @@ public interface SellerStoreService {
      * @param page 페이지 번호 (1부터 시작)
      * @param size 페이지 크기
      * @param sort 정렬 기준
-     * @param category 상품 카테고리 필터 (optional)
+     * @param petCategory 상품 카테고리 필터 (optional)
      * @param filter 추가 필터 조건 (best, discount, new, exclude_sold_out)
      * @return 스토어 페이지 응답 데이터
      *
@@ -29,7 +30,8 @@ public interface SellerStoreService {
             int page,
             int size,
             String sort,
-            PetCategory category,
+            PetCategory petCategory,
+            ProductCategory productCategory,
             String filter
     );
 }

@@ -2,6 +2,7 @@ package com.team5.catdogeats.users.domain.dto;
 
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.domain.enums.StockStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 
@@ -35,7 +36,10 @@ public record SellerStoreProductCardDTO(
         String imageUrl,
 
         @Schema(description = "상품 카테고리", example = "DOG")
-        PetCategory category,
+        PetCategory petCategory,
+
+        @Schema(description = "상품 카테고리2", example = "수제품")
+        ProductCategory productCategory,
 
         @Schema(description = "재고 상태", example = "IN_STOCK")
         StockStatus stockStatus,
@@ -78,6 +82,7 @@ public record SellerStoreProductCardDTO(
                 productInfo.discountRate(),
                 productInfo.mainImageUrl(),
                 productInfo.petCategory(),
+                productInfo.productCategory(),
                 productInfo.stockStatus(),
                 avgRating,
                 productInfo.reviewCount(),

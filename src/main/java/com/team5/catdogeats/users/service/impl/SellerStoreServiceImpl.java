@@ -4,6 +4,7 @@ import com.team5.catdogeats.orders.domain.dto.SellerStoreStatsDTO;
 import com.team5.catdogeats.orders.service.SellerStoreStatsService;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
 import com.team5.catdogeats.products.domain.dto.ProductStoreInfoDTO;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.products.service.SellerStoreProductService;
 import com.team5.catdogeats.users.domain.dto.*;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
@@ -37,11 +38,12 @@ public class SellerStoreServiceImpl implements SellerStoreService {
             int page,
             int size,
             String sort,
-            PetCategory category,
+            PetCategory petCategory,
+            ProductCategory productCategory,
             String filter) {
 
-        log.info("판매자 스토어 페이지 조회 요청 - vendorName: {}, page: {}, size: {}, sort: {}, category: {}, filter: {}",
-                vendorName, page, size, sort, category, filter);
+        log.info("판매자 스토어 페이지 조회 요청 - vendorName: {}, page: {}, size: {}, sort: {}, petCategory: {},productCategory: {},  filter: {}",
+                vendorName, page, size, sort, petCategory,productCategory, filter);
 
         //1. 파라미터 검증
         validateRequestParameters(vendorName, page, size, filter);
@@ -55,7 +57,7 @@ public class SellerStoreServiceImpl implements SellerStoreService {
         // 4. 상품 기본 정보 조회 (Products 도메인)
         Long totalProducts = productService.countSellerActiveProducts(seller.getUserId());
         Page<ProductStoreInfoDTO> productInfoPage = productService
-                .getSellerProductsBaseInfo(seller.getUserId(), category, filter, pageable);
+                .getSellerProductsBaseInfo(seller.getUserId(), petCategory, productCategory, filter, pageable);
 
         // 5. 상점 집계 정보 조회 (Orders 도메인)
         SellerStoreStatsDTO storeStats = sellerStoreStatsService.getSellerStoreStats(seller.getUserId());

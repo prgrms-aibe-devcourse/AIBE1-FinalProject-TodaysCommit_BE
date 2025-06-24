@@ -41,6 +41,7 @@ public interface ProductStoreMapper {
             p.discount_rate as discountRate,
             COALESCE(fi.image_url, '') as mainImageUrl,
             p.petcategory as petCategory,
+            p.productcategory as productCategory,
             p.stock_status as stockStatus,
             COALESCE(rs.avg_rating, 0.0) as avgRating,
             COALESCE(rs.review_count, 0) as reviewCount,
@@ -52,15 +53,19 @@ public interface ProductStoreMapper {
         <foreach collection="productIds" item="productId" open="(" separator="," close=")">
             #{productId}
         </foreach>
-        <if test="category != null and category != '' and category != 'ALL'">
-            AND p.petcategory = #{category}
+        <if test="petCategory != null and petCategory != '' and petCategory != 'ALL'">
+          AND p.petcategory = #{petCategory}
+        </if>
+        <if test="productCategory != null and productCategory != '' and productCategory != 'ALL'">
+            AND p.productcategory = #{productCategory}
         </if>
         ORDER BY p.created_at DESC
         </script>
         """)
     List<ProductStoreInfoDTO> findProductsByIds(
             @Param("productIds") List<String> productIds,
-            @Param("category") String category
+            @Param("petCategory") String petCategory,
+            @Param("productCategory") String productCategory
     );
 
     /**
@@ -93,6 +98,7 @@ public interface ProductStoreMapper {
             p.discount_rate as discountRate,
             COALESCE(fi.image_url, '') as mainImageUrl,
             p.petcategory as petCategory,
+            p.productcategory as productCategory,
             p.stock_status as stockStatus,
             COALESCE(rs.avg_rating, 0.0) as avgRating,
             COALESCE(rs.review_count, 0) as reviewCount,
@@ -104,8 +110,11 @@ public interface ProductStoreMapper {
         <if test="filter == 'exclude_sold_out'">
             AND p.stock_status != 'OUT_OF_STOCK'
         </if>
-        <if test="category != null and category != '' and category != 'ALL'">
-            AND p.petcategory = #{category}
+        <if test="petCategory\s != null and petCategory\s != '' and petCategory != 'ALL'">
+            AND p.petcategory = #{petCategory}
+        </if>
+        <if test="productCategory != null and productCategory != '' and productCategory != 'ALL'">
+            AND p.productcategory = #{productCategory}
         </if>
         <if test="filter == 'discount'">
             AND p.is_discounted = true
@@ -119,11 +128,13 @@ public interface ProductStoreMapper {
         """)
     List<ProductStoreInfoDTO> findSellerProductsBaseInfo(
             @Param("sellerId") String sellerId,
-            @Param("category") String category,
+            @Param("petCategory") String category,
+            @Param("productCategory") String productCategory,
             @Param("filter") String filter,
             @Param("limit") int limit,
             @Param("offset") int offset
     );
+
 
     /**
      * 판매자 상품 개수 조회 (필터별,카레고리별,페이징을 위한 스토어의 상품 개수 조회)
@@ -136,8 +147,11 @@ public interface ProductStoreMapper {
         <if test="filter == 'exclude_sold_out'">
             AND p.stock_status != 'OUT_OF_STOCK'
         </if>
-        <if test="category != null and category != '' and category != 'ALL'">
-            AND p.petcategory = #{category}
+        <if test="petCategory != null and petCategory != '' and petCategory != 'ALL'">
+            AND p.petcategory = #{petCategory}
+        </if>
+        <if test="productCategory != null and productCategory != '' and productCategory != 'ALL'">
+            AND p.productcategory = #{productCategory}
         </if>
         <if test="filter == 'discount'">
             AND p.is_discounted = true
@@ -149,7 +163,8 @@ public interface ProductStoreMapper {
         """)
     Long countSellerProductsForStore(
             @Param("sellerId") String sellerId,
-            @Param("category") String category,
+            @Param("petCategory") String petCategory,
+            @Param("productCategory") String productCategory,
             @Param("filter") String filter
     );
 }

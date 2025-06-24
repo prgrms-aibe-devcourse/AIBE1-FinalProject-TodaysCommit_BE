@@ -3,6 +3,7 @@ package com.team5.catdogeats.users.controller;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.pets.domain.enums.PetCategory;
+import com.team5.catdogeats.products.domain.enums.ProductCategory;
 import com.team5.catdogeats.users.domain.dto.SellerStorePageResponse;
 import com.team5.catdogeats.users.service.SellerStoreService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,7 +36,7 @@ public class SellerStoreController {
                     - page: 페이지 번호 (1부터 시작, 기본값: 1)
                     - size: 페이지 크기 (기본값: 10)
                     - sort: 정렬 기준 (기본값: createdAt,desc)
-                    - category: 상품 카테고리 필터 (DOG,CAT - 선택사항)
+                    - petCategory: 상품 카테고리 필터 (DOG,CAT - 선택사항)
                     - filter: 추가 필터 조건 (선택사항)
                     
                     **필터 옵션:**
@@ -74,17 +75,20 @@ public class SellerStoreController {
             @Parameter(description = "정렬 기준", example = "createdAt,desc")
             @RequestParam(value = "sort", defaultValue = "createdAt,desc") String sort,
 
-            @Parameter(description = "상품 카테고리 필터 (DOG: 강아지, CAT: 고양이)", example = "DOG")
-            @RequestParam(value = "category", required = false) PetCategory category,
+            @Parameter(description = "반려동물 카테고리 필터 (DOG: 강아지, CAT: 고양이)", example = "DOG")
+            @RequestParam(value = "petcategory", required = false) PetCategory petcategory,
+
+            @Parameter(description = "상품 카테고리 필터 (HANDMADE: 수제품, FINISHED: 완제품)", example = "HANDMADE")
+            @RequestParam(value = "productCategory", required = false) ProductCategory productCategory,
 
             @Parameter(description = "추가 필터 조건 (best: 베스트상품, discount: 할인상품, new: 신규상품, exclude_sold_out: 품절제외)", example = "best")
             @RequestParam(value = "filter", required = false) String filter) {
 
-        log.info("판매자 스토어 페이지 조회 요청 - vendorName: {}, page: {}, size: {}, sort: {}, category: {}, filter: {}",
-                vendorName, page, size, sort, category, filter);
+        log.info("판매자 스토어 페이지 조회 요청 - vendorName: {}, page: {}, size: {}, sort: {}, petCategory: {},productCategory: {}, filter: {}",
+                vendorName, page, size, sort, petcategory, productCategory, filter);
 
         SellerStorePageResponse response = sellerStoreService.getSellerStorePage(
-                vendorName, page, size, sort, category, filter);
+                vendorName, page, size, sort, petcategory, productCategory, filter);
 
         log.info("판매자 스토어 페이지 조회 완료 - vendorName: {}, filter: {}, 상품수: {}",
                 vendorName, filter, response.products().content().size());
