@@ -29,14 +29,15 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (EDA 전환 + BuyerRepository 적용)
+ * 주문 관리 서비스 구현체 (EDA 전환 + BuyerRepository + 할인 적용)
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
- * 리팩터링 개선사항:
+ * 주요 개선사항:
  * 1. BuyerRepository 활용으로 구매자 조회 + 권한 검증을 한 번에 처리
- * 2. 불필요한 validateBuyerPermission() 메서드 제거
- * 3. 효율적인 구매자 권한 확인 로직 적용
+ * 2. 상품별 할인 적용 로직 추가 (isDiscounted, discountRate 반영)
+ * 3. 할인 전후 가격 정보 완전 보존으로 투명한 가격 정책 구현
+ * 4. 정확한 주문 금액 계산으로 결제 시스템과의 데이터 일치성 확보
  */
 @Slf4j
 @Service
@@ -51,17 +52,18 @@ public class OrderServiceImpl implements OrderService {
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * UserPrincipal을 사용한 주문 생성 (EDA 전환 + BuyerRepository 적용)
+     * UserPrincipal을 사용한 주문 생성 (EDA 전환 + BuyerRepository + 할인 적용)
      * 변경된 처리 흐름:
      * 1. 구매자 검증 (한 번의 조회로 존재 여부 + 권한 확인)
-     * 2. 상품 정보 수집 및 주문 엔티티 저장
-     * 3. OrderCreatedEvent 발행
-     * 4. 이벤트 리스너들이 비동기로 후속 작업 처리
+     * 2. 상품 정보 수집 및 할인 적용된 가격 계산
+     * 3. 주문 엔티티 저장 (할인 반영된 총 금액)
+     * 4. OrderCreatedEvent 발행 (할인 적용된 금액 정보 포함)
+     * 5. 이벤트 리스너들이 비동기로 후속 작업 처리
      */
     @Override
     @Transactional(transactionManager = "jpaTransactionManager")
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
-        log.info("주문 생성 시작 (EDA + BuyerRepository 버전): provider={}, providerId={}, 상품 개수={}",
+        log.info("주문 생성 시작 (EDA + BuyerRepository + 할인적용): provider={}, providerId={}, 상품 개수={}",
                 userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());
 
         // 1. UserPrincipal로 구매자 조회 및 권한 검증 (한 번에 처리)
@@ -85,7 +87,7 @@ public class OrderServiceImpl implements OrderService {
         // 7. OrderCreatedEvent 발행 (트랜잭션 커밋 후 이벤트 리스너들이 처리)
         publishOrderCreatedEvent(savedOrder, user, userPrincipal, orderItemInfos);
 
-        log.info("주문 생성 완료 (재고 차감은 이벤트 처리): orderId={}, orderNumber={}, totalPrice={}",
+        log.info("주문 생성 완료 (할인 적용 + 재고 차감은 이벤트 처리): orderId={}, orderNumber={}, totalPrice={}",
                 savedOrder.getId(), savedOrder.getOrderNumber(), totalPrice);
 
         return response;
@@ -103,13 +105,14 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품들 검증 및 정보 수집 (EDA 전환: 재고 차감 로직 제거)
+     * 주문 상품들 검증 및 정보 수집 (EDA 전환 + 할인 적용 로직)
      * 기존 validateOrderItems에서 재고 차감 부분을 제거하고,
      * 상품 존재 여부와 기본 검증만 수행합니다.
+     * 할인 적용 로직을 추가하여 정확한 주문 금액을 계산합니다.
      * 실제 재고 차감은 StockEventListener에서 처리됩니다.
      */
     private List<OrderItemInfo> validateAndCollectOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
-        log.debug("주문 상품 검증 시작 (재고 차감 제외): 상품 개수={}", orderItems.size());
+        log.debug("주문 상품 검증 시작 (재고 차감 제외, 할인 적용): 상품 개수={}", orderItems.size());
 
         List<OrderItemInfo> orderItemInfos = new ArrayList<>();
 
@@ -131,19 +134,27 @@ public class OrderServiceImpl implements OrderService {
                                 product.getTitle(), item.getQuantity(), product.getStock()));
             }
 
-            // 주문 아이템 정보 수집
+            // 할인 적용된 단가 계산
+            Long discountedPrice = calculateDiscountedPrice(product);
+
+            // 주문 아이템 정보 수집 (할인 정보 포함)
             OrderItemInfo itemInfo = OrderItemInfo.builder()
                     .productId(item.getProductId())
                     .productName(product.getTitle())
                     .quantity(item.getQuantity())
-                    .unitPrice(product.getPrice())
-                    .totalPrice(product.getPrice() * item.getQuantity())
+                    .originalPrice(product.getPrice())
+                    .unitPrice(discountedPrice)
+                    .totalPrice(discountedPrice * item.getQuantity())
+                    .isDiscounted(product.isDiscounted())
+                    .discountRate(product.getDiscountRate())
                     .build();
 
             orderItemInfos.add(itemInfo);
 
-            log.debug("상품 검증 완료: productId={}, name={}, quantity={}, price={}",
-                    item.getProductId(), product.getTitle(), item.getQuantity(), product.getPrice());
+            log.debug("상품 검증 완료: productId={}, name={}, quantity={}, 원가={}, 할인가={}, 할인율={}%",
+                    item.getProductId(), product.getTitle(), item.getQuantity(),
+                    product.getPrice(), discountedPrice,
+                    product.isDiscounted() ? product.getDiscountRate() : 0);
         }
 
         log.debug("전체 주문 상품 검증 완료: 상품 개수={}", orderItemInfos.size());
@@ -151,15 +162,59 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 총 주문 금액 계산
+     * 총 주문 금액 계산 (할인 적용)
      */
     private Long calculateTotalPrice(List<OrderItemInfo> orderItemInfos) {
         Long totalPrice = orderItemInfos.stream()
                 .mapToLong(OrderItemInfo::getTotalPrice)
                 .sum();
 
-        log.debug("총 주문 금액 계산 완료: {}원", totalPrice);
+        // 할인 적용 통계 로깅
+        long totalOriginalPrice = orderItemInfos.stream()
+                .mapToLong(info -> info.getOriginalPrice() * info.getQuantity())
+                .sum();
+        long totalDiscountAmount = totalOriginalPrice - totalPrice;
+
+        if (totalDiscountAmount > 0) {
+            log.debug("총 주문 금액 계산 완료: 할인전={}원, 할인후={}원, 할인금액={}원",
+                    totalOriginalPrice, totalPrice, totalDiscountAmount);
+        } else {
+            log.debug("총 주문 금액 계산 완료: {}원 (할인 없음)", totalPrice);
+        }
+
         return totalPrice;
+    }
+
+    /**
+     * 상품의 할인 적용된 가격 계산
+     */
+    private Long calculateDiscountedPrice(Products product) {
+        // 할인이 적용되지 않은 경우 원가 반환
+        if (!product.isDiscounted() || product.getDiscountRate() == null) {
+            return product.getPrice();
+        }
+
+        // 할인율 유효성 검증
+        validateDiscountRate(product.getDiscountRate());
+
+        // 할인 적용 계산 (소수점 반올림)
+        double discountMultiplier = 1.0 - (product.getDiscountRate() / 100.0);
+        Long discountedPrice = Math.round(product.getPrice() * discountMultiplier);
+
+        log.debug("할인 가격 계산: 상품={}, 원가={}원, 할인율={}%, 할인가={}원",
+                product.getTitle(), product.getPrice(), product.getDiscountRate(), discountedPrice);
+
+        return discountedPrice;
+    }
+
+    /**
+     * 할인율 유효성 검증
+     */
+    private void validateDiscountRate(Double discountRate) {
+        if (discountRate < 0 || discountRate > 100) {
+            throw new IllegalArgumentException(
+                    String.format("할인율은 0~100 사이여야 합니다: %.2f", discountRate));
+        }
     }
 
     /**
@@ -190,14 +245,14 @@ public class OrderServiceImpl implements OrderService {
     private void publishOrderCreatedEvent(Orders order, Users user, UserPrincipal userPrincipal,
                                           List<OrderItemInfo> orderItemInfos) {
 
-        // OrderCreatedEvent용 OrderItemInfo 리스트 변환
+        // OrderCreatedEvent용 OrderItemInfo 리스트 변환 (할인 정보 포함)
         List<OrderCreatedEvent.OrderItemInfo> eventOrderItems = orderItemInfos.stream()
                 .map(info -> OrderCreatedEvent.OrderItemInfo.builder()
                         .productId(info.getProductId())
                         .productName(info.getProductName())
                         .quantity(info.getQuantity())
-                        .unitPrice(info.getUnitPrice())
-                        .totalPrice(info.getTotalPrice())
+                        .unitPrice(info.getUnitPrice())        // 할인 적용된 단가
+                        .totalPrice(info.getTotalPrice())      // 할인 적용된 총가격
                         .build())
                 .toList();
 
@@ -270,7 +325,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품 정보를 담는 내부 클래스
+     * 주문 상품 정보를 담는 내부 클래스 (할인 정보 포함)
      */
     @lombok.Data
     @lombok.Builder
@@ -280,7 +335,10 @@ public class OrderServiceImpl implements OrderService {
         private String productId;
         private String productName;
         private Integer quantity;
-        private Long unitPrice;
-        private Long totalPrice;
+        private Long originalPrice;    // 원가 (할인 전 가격)
+        private Long unitPrice;        // 할인 적용된 단가
+        private Long totalPrice;       // 할인 적용된 총 가격
+        private Boolean isDiscounted;  // 할인 적용 여부
+        private Double discountRate;   // 할인율 (%)
     }
 }
