@@ -14,8 +14,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.UUID;
 
 @Slf4j
@@ -32,6 +32,8 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
     public SellerBrandImageResponseDTO uploadBrandImage(UserPrincipal userPrincipal, MultipartFile imageFile) {
         // 1. 파일 검증 - null이면 예외 발생
         validateImageFile(imageFile);
+
+        validateFileSignature(imageFile);
 
         // 2. 사용자 및 판매자 조회
         Users user = findUserByPrincipal(userPrincipal);
@@ -216,12 +218,7 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         String extension = getFileExtension(originalFileName);
         String uuid = UUID.randomUUID().toString().replace("-", "");
 
-        String cleanUserId = userId;
-        if (userId.startsWith("user-uuid-")) {
-            cleanUserId = userId.substring("user-uuid-".length());
-        }
-
-        String shortUserId = cleanUserId.length() > 8 ? cleanUserId.substring(0, 8) : cleanUserId;
+        String shortUserId = userId.length() > 8 ? userId.substring(0, 8) : userId;
 
         // 처음 8자리만 사용 (너무 길어지는 것 방지)
         return String.format("brand_%s_%s.%s", shortUserId, uuid, extension);
@@ -235,11 +232,48 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
             return "jpg"; // 기본값
         }
 
-        int lastDotIndex = fileName.lastIndexOf('.');
-        if (lastDotIndex != -1 && lastDotIndex < fileName.length() - 1) {
-            return fileName.substring(lastDotIndex + 1).toLowerCase();
+        // 파일명 정화
+        String safeName = fileName.replaceAll("[^a-zA-Z0-9._-]", "");
+
+        int lastDotIndex = safeName.lastIndexOf('.');
+        if (lastDotIndex != -1 && lastDotIndex < safeName.length() - 1) {
+            String ext = safeName.substring(lastDotIndex + 1).toLowerCase();
+
+            // 허용된 확장자만 반환
+            if (ext.matches("^(jpg|jpeg|png|webp)$")) {
+                return ext;
+            }
         }
 
         return "jpg"; // 기본값
     }
+
+    /**
+     * 파일 시그니처 검증
+     */
+    private void validateFileSignature(MultipartFile file) {
+        try (InputStream is = file.getInputStream()) {
+            byte[] header = new byte[8];
+            int bytesRead = is.read(header);
+
+            if (bytesRead < 4) {
+                throw new IllegalArgumentException("파일 형식을 확인할 수 없습니다.");
+            }
+
+            // JPEG: FF D8 FF
+            if (header[0] == (byte) 0xFF && header[1] == (byte) 0xD8 && header[2] == (byte) 0xFF) {
+                return;
+            }
+            // PNG: 89 50 4E 47
+            if (header[0] == (byte) 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) {
+                return;
+            }
+
+            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+        } catch (IOException e) {
+            throw new IllegalArgumentException("파일 형식 검증 중 오류가 발생했습니다.", e);
+        }
+    }
+
+
 }
