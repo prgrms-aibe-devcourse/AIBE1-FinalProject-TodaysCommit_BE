@@ -12,7 +12,6 @@ import java.util.Optional;
  * OrderEventListener에서 결제 정보 생성 시 사용됩니다.
  * Orders 엔티티의 ID 타입이 String으로 수정됨에 따라 관련 메서드들도 수정되었습니다.
  */
-@Repository
 public interface PaymentRepository extends JpaRepository<Payments, String> {
 
     /**
