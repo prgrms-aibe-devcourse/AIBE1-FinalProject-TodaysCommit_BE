@@ -39,9 +39,9 @@ public class NoticeAdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "latest") String sortBy) {  // 👈 추가
+            @RequestParam(defaultValue = "latest") String sortBy) {
 
-        NoticeListResponseDTO response = noticeService.getNotices(page, size, search, sortBy);  // 👈 수정
+        NoticeListResponseDTO response = noticeService.getNotices(page, size, search, sortBy);
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
@@ -149,7 +149,7 @@ public class NoticeAdminController {
         String fileName = file.getOriginalFilename();
         if (!isAllowedFileType(fileName)) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, "허용되지 않는 파일 형식입니다. (jpg, jpeg, png, pdf, doc, docx, xls, xlsx 만 가능)"
+                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, "허용되지 않는 파일 형식입니다. (pdf, doc, docx, xls, xlsx 만 가능)"
                     ));
         }
 
@@ -229,18 +229,12 @@ public class NoticeAdminController {
         String ext = extension.toLowerCase();
 
         return switch (ext) {
-            // 이미지 파일
-            case ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" -> "notice_image";
 
             // 문서 파일
             case ".pdf" -> "notice_document";
             case ".doc", ".docx" -> "notice_word_document";
             case ".xls", ".xlsx" -> "notice_excel_document";
             case ".ppt", ".pptx" -> "notice_presentation";
-            case ".txt" -> "notice_text_file";
-
-            // 압축 파일
-            case ".zip", ".rar", ".7z" -> "notice_archive";
 
             // 기타
             default -> "notice_file";
@@ -254,15 +248,11 @@ public class NoticeAdminController {
         String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
 
         return switch (extension) {
-            case "jpg", "jpeg" -> "image/jpeg";
-            case "png" -> "image/png";
-            case "gif" -> "image/gif";
             case "pdf" -> "application/pdf";
             case "doc" -> "application/msword";
             case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
             case "xls" -> "application/vnd.ms-excel";
             case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            case "txt" -> "text/plain";
             default -> "application/octet-stream";
         };
     }
@@ -272,7 +262,7 @@ public class NoticeAdminController {
         if (fileName == null) return false;
 
         String extension = fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-        return List.of("jpg", "jpeg", "png", "pdf", "doc", "docx", "xls", "xlsx").contains(extension);
+        return List.of("pdf", "doc", "docx", "xls", "xlsx").contains(extension);
     }
 
     // ========== 파일 삭제 ========== (파일 다운로드 메서드 뒤에 추가)
@@ -331,7 +321,7 @@ public class NoticeAdminController {
         if (!isAllowedFileType(fileName)) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE,
-                            "허용되지 않는 파일 형식입니다. (jpg, jpeg, png, pdf, doc, docx, xls, xlsx 만 가능)"));
+                            "허용되지 않는 파일 형식입니다. (pdf, doc, docx, xls, xlsx 만 가능)"));
         }
 
         try {

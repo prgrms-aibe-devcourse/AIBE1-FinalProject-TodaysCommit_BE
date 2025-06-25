@@ -83,7 +83,6 @@ public class NoticeServiceImpl implements NoticeService {
 
         // 조회수 증가
         notice.incrementViewCount();
-        noticeRepository.save(notice);
 
         List<NoticeFiles> attachments = noticeFilesRepository.findByNoticesId(noticeId);
 

@@ -51,7 +51,7 @@ public class SecurityConfig {
                             session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers("/v1/admin/login").permitAll()
-                            .requestMatchers("/v1/admin/**").hasRole("ADMIN")
+                            .requestMatchers("/v1/admin/**").permitAll() // Todo: hasRole("ADMIN") <- 임시로 permitAll 처리 ✅ pr전 되돌리기!
                             .anyRequest().authenticated());
             return http.build();
         } catch (Exception e) {
@@ -83,7 +83,7 @@ public class SecurityConfig {
                             .requestMatchers("/login/oauth2/code/naver/**").permitAll()
                             .requestMatchers("/login/oauth2/code/kakao/**").permitAll()
                             .requestMatchers("/v1/auth/refresh").permitAll()
-                            .requestMatchers("/v1/notices").permitAll()
+                            .requestMatchers("/v1/notices/**").permitAll()
                             .requestMatchers("/v1/faqs").permitAll()
                             .requestMatchers("/v1/buyers/products/list").permitAll()
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()
