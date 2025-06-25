@@ -13,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
@@ -51,6 +48,29 @@ public class SellerBrandImageController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(ResponseCode.SELLER_INFO_SAVE_SUCCESS, response)
+        );
+    }
+
+
+    @Operation(
+            summary = "판매자 브랜드 이미지 삭제",
+            description = """
+                판매자의 브랜드 이미지를 삭제합니다.
+                판매자 권한(ROLE_SELLER)이 필요합니다.
+                S3에서 이미지 파일을 삭제하고 DB의 이미지 URL을 null로 설정합니다.
+                """
+    )
+    @DeleteMapping("/image")
+    public ResponseEntity<ApiResponse<SellerBrandImageResponseDTO>> deleteBrandImage(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+
+        log.info("판매자 브랜드 이미지 삭제 요청 - provider: {}, providerId: {}",
+                userPrincipal.provider(), userPrincipal.providerId());
+
+        SellerBrandImageResponseDTO response = sellerBrandImageService.deleteBrandImage(userPrincipal);
+
+        return ResponseEntity.ok(
+                ApiResponse.success(ResponseCode.SUCCESS, response)
         );
     }
 }

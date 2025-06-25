@@ -130,9 +130,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
             seller.updateVendorName(request.vendorName());
         }
 
-        if (request.vendorProfileImage() != null && !request.vendorProfileImage().trim().isEmpty()) {
-            seller.updateVendorProfileImage(request.vendorProfileImage());
-        }
 
         if (request.businessNumber() != null && !request.businessNumber().trim().isEmpty()) {
             validateBusinessNumberDuplication(userId, request.businessNumber());
@@ -234,22 +231,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
                     throw new DataIntegrityViolationException("이미 사용 중인 상점명입니다: " + vendorName);
                 });
     }
-
-    /**
-     * 기존 판매자 정보 업데이트
-     */
-    private void updateSellerInfo(Sellers seller, SellerInfoRequestDTO request) {
-        seller.updateVendorName(request.vendorName());
-        seller.updateVendorProfileImage(request.vendorProfileImage());
-        seller.updateBusinessNumber(request.businessNumber());
-        seller.updateSettlementBank(request.settlementBank());
-        seller.updateSettlementAcc(request.settlementAcc());
-        seller.updateTags(request.tags());
-        seller.updateOperatingStartTime(request.operatingStartTime());
-        seller.updateOperatingEndTime(request.operatingEndTime());
-        seller.updateClosedDays(request.closedDays());
-    }
-
     /**
      * 새 판매자 정보 생성
      */
@@ -257,7 +238,6 @@ public class SellerInfoServiceImpl implements SellerInfoService {
         return Sellers.builder()
                 .user(user)
                 .vendorName(request.vendorName())
-                .vendorProfileImage(request.vendorProfileImage())
                 .businessNumber(request.businessNumber())
                 .settlementBank(request.settlementBank())
                 .settlementAccount(request.settlementAcc())

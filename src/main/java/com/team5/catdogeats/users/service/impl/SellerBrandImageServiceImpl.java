@@ -57,6 +57,38 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         return SellerBrandImageResponseDTO.from(savedSeller);
     }
 
+    @Override
+    @JpaTransactional
+    public SellerBrandImageResponseDTO deleteBrandImage(UserPrincipal userPrincipal) {
+        log.info("판매자 브랜드 이미지 삭제 요청 - provider: {}, providerId: {}",
+                userPrincipal.provider(), userPrincipal.providerId());
+
+        // 1. 사용자 조회
+        Users user = findUserByPrincipal(userPrincipal);
+
+        // 2. 판매자 정보 조회
+        Sellers seller = findSellerByUserId(user.getId());
+
+        // 3. 기존 이미지 삭제 (S3에서)
+        String existingImageUrl = seller.getVendorProfileImage();
+        if (existingImageUrl != null && !existingImageUrl.trim().isEmpty()) {
+            deleteExistingImage(existingImageUrl);
+            log.info("브랜드 이미지 S3 삭제 완료 - userId: {}, imageUrl: {}", user.getId(), existingImageUrl);
+        } else {
+            log.info("삭제할 브랜드 이미지가 없습니다 - userId: {}", user.getId());
+        }
+
+        // 4. DB에서 이미지 URL을 null로 설정
+        seller.updateVendorProfileImage(null);
+        Sellers savedSeller = sellersRepository.save(seller);
+
+        log.info("판매자 브랜드 이미지 삭제 완료 - userId: {}", user.getId());
+
+        return SellerBrandImageResponseDTO.from(savedSeller);
+    }
+
+
+
     /**
      * 이미지 파일 유효성 검증
      */

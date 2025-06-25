@@ -9,4 +9,9 @@ public interface SellerBrandImageService {
      * 판매자 브랜드 이미지 업로드/수정
      */
     SellerBrandImageResponseDTO uploadBrandImage(UserPrincipal userPrincipal, MultipartFile imageFile);
+
+    /**
+     * 판매자 브랜드 이미지 삭제
+     */
+    SellerBrandImageResponseDTO deleteBrandImage(UserPrincipal userPrincipal);
 }
