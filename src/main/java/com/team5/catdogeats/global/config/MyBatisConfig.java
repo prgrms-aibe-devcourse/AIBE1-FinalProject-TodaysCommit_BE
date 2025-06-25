@@ -14,7 +14,9 @@ import javax.sql.DataSource;
 @Configuration
 @MapperScan(
         basePackages = {"com.team5.catdogeats.users.mapper",
-                        "com.team5.catdogeats.batch.mapper"}, // @Mapper 인터페이스가 있는 패키지
+                        "com.team5.catdogeats.batch.mapper",
+                        "com.team5.catdogeats.products.mapper",
+                        "com.team5.catdogeats.orders.mapper"},
 
         sqlSessionFactoryRef = "sqlSessionFactory"
 )
