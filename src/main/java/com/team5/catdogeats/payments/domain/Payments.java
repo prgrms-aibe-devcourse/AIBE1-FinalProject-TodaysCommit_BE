@@ -42,7 +42,7 @@ public class Payments extends BaseEntity {
     @Column(nullable = false, length = 10)
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    @Column(name = "toss_payment_key", nullable = false, length = 255)
+    @Column(name = "toss_payment_key")
     private String tossPaymentKey;
 
     @Column(name = "paid_at")

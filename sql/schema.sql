@@ -286,7 +286,7 @@ CREATE TABLE payments (
                           order_id BIGINT NOT NULL,
                           method ENUM('TOSS') NOT NULL,
                           status ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
-                          toss_payment_key VARCHAR(255) NOT NULL ,
+                          toss_payment_key VARCHAR(255),
                           paid_at DATETIME,
                           CONSTRAINT fk_payments_user_id FOREIGN KEY (buyers_id) REFERENCES buyers(user_id) ,
                           CONSTRAINT fk_payments_order_id FOREIGN KEY (order_id) REFERENCES orders(id)

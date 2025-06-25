@@ -153,7 +153,8 @@ public class PaymentServiceImpl implements PaymentService {
     private void updatePaymentStatus(Payments payment, TossPaymentConfirmResponse tossResponse) {
         payment.setStatus(PaymentStatus.SUCCESS);
         payment.setTossPaymentKey(tossResponse.getPaymentKey());
+        payment.setPaidAt(tossResponse.getApprovedAt()); // 결제 승인 시간 설정
         paymentRepository.save(payment);
-        log.info("결제 정보 업데이트: paymentId={}", payment.getId());
+        log.info("결제 정보 업데이트: paymentId={}, tossPaymentKey={}", payment.getId(), tossResponse.getPaymentKey());
     }
 }
