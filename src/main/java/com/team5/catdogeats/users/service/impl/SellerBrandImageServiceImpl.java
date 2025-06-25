@@ -30,11 +30,11 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
     @Override
     @JpaTransactional
     public SellerBrandImageResponseDTO uploadBrandImage(UserPrincipal userPrincipal, MultipartFile imageFile) {
-        log.info("판매자 브랜드 이미지 업로드 요청 - provider: {}, providerId: {}, fileName: {}",
-                userPrincipal.provider(), userPrincipal.providerId(), imageFile.getOriginalFilename());
-
         // 1. 이미지 파일 유효성 검증
         validateImageFile(imageFile);
+
+        log.info("판매자 브랜드 이미지 업로드 요청 - provider: {}, providerId: {}, fileName: {}",
+                userPrincipal.provider(), userPrincipal.providerId(), imageFile.getOriginalFilename());
 
         // 2. 사용자 조회
         Users user = findUserByPrincipal(userPrincipal);
@@ -223,9 +223,14 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         String extension = getFileExtension(originalFileName);
         String uuid = UUID.randomUUID().toString().replace("-", "");
 
-        // userId의 처음 8자리만 사용 (너무 길어지는 것 방지)
-        String shortUserId = userId.length() > 8 ? userId.substring(0, 8) : userId;
+        String cleanUserId = userId;
+        if (userId.startsWith("user-uuid-")) {
+            cleanUserId = userId.substring("user-uuid-".length());
+        }
 
+        String shortUserId = cleanUserId.length() > 8 ? cleanUserId.substring(0, 8) : cleanUserId;
+
+       // 처음 8자리만 사용 (너무 길어지는 것 방지)
         return String.format("brand_%s_%s.%s", shortUserId, uuid, extension);
     }
 

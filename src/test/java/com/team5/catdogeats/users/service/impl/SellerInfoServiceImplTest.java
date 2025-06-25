@@ -120,7 +120,6 @@ class SellerInfoServiceImplTest {
 
         testRequest = new SellerInfoRequestDTO(
                 "펫푸드 공방",
-                "https://example.com/logo.jpg",
                 "123-45-67890",
                 "신한은행",
                 "110-123-456789",
@@ -235,7 +234,6 @@ class SellerInfoServiceImplTest {
             String newVendorName = "수정된 Vendor_name";
             SellerInfoRequestDTO updateRequest = new SellerInfoRequestDTO(
                     newVendorName,
-                    testRequest.vendorProfileImage(),
                     testRequest.businessNumber(),
                     testRequest.settlementBank(),
                     testRequest.settlementAcc(),
@@ -300,7 +298,6 @@ class SellerInfoServiceImplTest {
             // given - 상점명만 있고 사업자번호 없음
             SellerInfoRequestDTO incompleteRequest = new SellerInfoRequestDTO(
                     "펫푸드 공방",        // 상점명만 있음
-                    "https://example.com/logo.jpg",
                     null,               // 사업자번호 없음
                     "신한은행",
                     "110-123-456789",
@@ -340,8 +337,8 @@ class SellerInfoServiceImplTest {
                     null,
                     null,
                     null,
-                    null,
                     null
+
             );
 
             given(userRepository.findByProviderAndProviderId("google", "113091084348977764576"))
@@ -414,7 +411,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO invalidRequest = new SellerInfoRequestDTO(
                     "펫푸드 공방",
-                    "https://example.com/logo.jpg",
                     "987-65-43210",
                     "신한은행",
                     "110-123-456789",
@@ -443,7 +439,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO invalidRequest = new SellerInfoRequestDTO(
                     "펫푸드 공방",
-                    "https://example.com/logo.jpg",
                     "987-65-43210",
                     "신한은행",
                     "110-123-456789",
@@ -525,7 +520,6 @@ class SellerInfoServiceImplTest {
             // given - Record 생성자로 null 값들 포함
             SellerInfoRequestDTO requestWithNulls = new SellerInfoRequestDTO(
                     "펫푸드 공방",                          // 필수
-                    "https://example.com/logo.jpg",        // 필수
                     "987-65-43210",                        // 필수 (다른 사업자번호)
                     null,                                  // settlementBank (선택)
                     null,                                  // settlementAcc (선택)
@@ -557,7 +551,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO requestWithEmptyStrings = new SellerInfoRequestDTO(
                     "펫푸드 공방",                          // 필수
-                    "https://example.com/logo.jpg",        // 필수
                     "987-65-43210",                        // 필수
                     "",                                    // 빈 문자열
                     "",                                    // 빈 문자열
@@ -594,7 +587,6 @@ class SellerInfoServiceImplTest {
             // given - 주말 휴무
             SellerInfoRequestDTO weekendRequest = new SellerInfoRequestDTO(
                     "주말휴무 펫샵",
-                    "https://example.com/logo.jpg",
                     "111-11-11111",
                     "신한은행",
                     "110-123-456789",
@@ -624,7 +616,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO singleDayRequest = new SellerInfoRequestDTO(
                     "월요일만 휴무",
-                    "https://example.com/logo.jpg",
                     "222-22-22222",
                     "신한은행",
                     "110-123-456789",
@@ -654,7 +645,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO noClosedDaysRequest = new SellerInfoRequestDTO(
                     "무휴 펫샵",
-                    "https://example.com/logo.jpg",
                     "333-33-33333",
                     "신한은행",
                     "110-123-456789",
@@ -684,7 +674,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO emptyClosedDaysRequest = new SellerInfoRequestDTO(
                     "무휴 펫샵2",
-                    "https://example.com/logo.jpg",
                     "444-44-44444",
                     "신한은행",
                     "110-123-456789",
@@ -714,7 +703,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO manyClosedDaysRequest = new SellerInfoRequestDTO(
                     "주 3일만 운영",
-                    "https://example.com/logo.jpg",
                     "555-55-55555",
                     "신한은행",
                     "110-123-456789",
@@ -744,7 +732,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO invalidRequest = new SellerInfoRequestDTO(
                     "잘못된 요일",
-                    "https://example.com/logo.jpg",
                     "333-33-33333",
                     "신한은행",
                     "110-123-456789",
@@ -773,7 +760,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO partiallyInvalidRequest = new SellerInfoRequestDTO(
                     "부분 잘못",
-                    "https://example.com/logo.jpg",
                     "444-44-44444",
                     "신한은행",
                     "110-123-456789",
@@ -798,7 +784,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO spacedDaysRequest = new SellerInfoRequestDTO(
                     "공백 포함 요일",
-                    "https://example.com/logo.jpg",
                     "777-77-77777",
                     "신한은행",
                     "110-123-456789",
@@ -833,7 +818,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO onlyStartTimeRequest = new SellerInfoRequestDTO(
                     "시작시간만 설정",
-                    "https://example.com/logo.jpg",
                     "888-88-88888",
                     "신한은행",
                     "110-123-456789",
@@ -862,7 +846,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO onlyEndTimeRequest = new SellerInfoRequestDTO(
                     "종료시간만 설정",
-                    "https://example.com/logo.jpg",
                     "999-99-99999",
                     "신한은행",
                     "110-123-456789",
@@ -887,7 +870,6 @@ class SellerInfoServiceImplTest {
             // given
             SellerInfoRequestDTO bothTimesNullRequest = new SellerInfoRequestDTO(
                     "시간 미설정",
-                    "https://example.com/logo.jpg",
                     "000-00-00000",
                     "신한은행",
                     "110-123-456789",
