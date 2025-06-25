@@ -30,10 +30,8 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
     @Override
     @JpaTransactional
     public SellerBrandImageResponseDTO uploadBrandImage(UserPrincipal userPrincipal, MultipartFile imageFile) {
-        // 1. 파일 검증 - null이면 예외 발생
+        // 1. 파일 검증
         validateImageFile(imageFile);
-
-        validateFileSignature(imageFile);
 
         // 2. 사용자 및 판매자 조회
         Users user = findUserByPrincipal(userPrincipal);
@@ -85,36 +83,28 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
     }
 
     /**
-     * 이미지 파일 유효성 검증
+     * ️   통합 이미지 파일 검증
+     * - 기본 속성 검사 (크기, NULL 등)
+     * - 실제 파일 내용 검증 (Magic Number)
+     * - 보안 강화된 단일 검증 메서드
      */
     private void validateImageFile(MultipartFile imageFile) {
-        // 파일 존재 여부 확인
+        // 기본 검사
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("이미지 파일이 비어있습니다.");
         }
 
-        // 파일 크기 확인 (10MB 제한)
+        // 파일 크기 검사
         long maxFileSize = 10 * 1024 * 1024; // 10MB
         if (imageFile.getSize() > maxFileSize) {
             throw new IllegalArgumentException("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
         }
 
-        // Content-Type 확인
-        String contentType = imageFile.getContentType();
-        if (contentType == null || !contentType.startsWith("image/")) {
-            throw new IllegalArgumentException("이미지 파일만 업로드 가능합니다.");
-        }
+        // 실제 파일 내용 검증 (핵심 보안)
+        validateFileSignature(imageFile);
 
-        // 지원하는 이미지 형식 확인
-        if (!contentType.equals("image/jpeg") &&
-                !contentType.equals("image/png") &&
-                !contentType.equals("image/jpg") &&
-                !contentType.equals("image/webp")) {
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. (JPEG, PNG, JPG, WebP만 지원)");
-        }
-
-        log.debug("이미지 파일 유효성 검증 완료 - fileName: {}, size: {}, contentType: {}",
-                imageFile.getOriginalFilename(), imageFile.getSize(), contentType);
+        log.debug("이미지 파일 검증 완료 - fileName: {}, size: {}",
+                imageFile.getOriginalFilename(), imageFile.getSize());
     }
 
     /**
@@ -224,36 +214,39 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         return String.format("brand_%s_%s.%s", shortUserId, uuid, extension);
     }
 
+
     /**
-     * 파일 확장자 추출
+     * 🧹 안전한 파일 확장자 추출
      */
     private String getFileExtension(String fileName) {
         if (fileName == null || fileName.trim().isEmpty()) {
             return "jpg"; // 기본값
         }
 
-        // 파일명 정화
+        // 파일명 정화 (위험한 문자 제거)
         String safeName = fileName.replaceAll("[^a-zA-Z0-9._-]", "");
 
         int lastDotIndex = safeName.lastIndexOf('.');
         if (lastDotIndex != -1 && lastDotIndex < safeName.length() - 1) {
             String ext = safeName.substring(lastDotIndex + 1).toLowerCase();
 
-            // 허용된 확장자만 반환
+            // 허용된 확장자만 반환 (화이트리스트)
             if (ext.matches("^(jpg|jpeg|png|webp)$")) {
                 return ext;
             }
         }
 
-        return "jpg"; // 기본값
+        return "jpg"; // 안전한 기본값
     }
 
     /**
-     * 파일 시그니처 검증
+     *   파일 시그니처 검증 (Magic Number)
+     * - JPEG, PNG, WebP 실제 파일 형식 확인
+     * - Content-Type 조작 공격 방어
      */
     private void validateFileSignature(MultipartFile file) {
         try (InputStream is = file.getInputStream()) {
-            byte[] header = new byte[8];
+            byte[] header = new byte[12]; // WebP 확인을 위해 12바이트
             int bytesRead = is.read(header);
 
             if (bytesRead < 4) {
@@ -262,18 +255,29 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
 
             // JPEG: FF D8 FF
             if (header[0] == (byte) 0xFF && header[1] == (byte) 0xD8 && header[2] == (byte) 0xFF) {
-                return;
-            }
-            // PNG: 89 50 4E 47
-            if (header[0] == (byte) 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) {
-                return;
+                return; // 진짜 JPEG
             }
 
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+            // PNG: 89 50 4E 47
+            if (header[0] == (byte) 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) {
+                return; // 진짜 PNG
+            }
+
+            // WebP: RIFF....WEBP
+            // RIFF
+            if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50) { // WEBP
+                return; // 진짜 WebP
+            }
+
+            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. (JPEG, PNG, WebP만 지원)");
+
         } catch (IOException e) {
             throw new IllegalArgumentException("파일 형식 검증 중 오류가 발생했습니다.", e);
         }
     }
+
+
+
 
 
 }
