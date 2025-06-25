@@ -15,12 +15,11 @@ import lombok.*;
 public class ReviewsImages extends BaseEntity {
     @Id
     @Column(length = 36)
-    @GeneratedValue(strategy = GenerationType.UUID)
     private String id;  // 이 id는 reviews 테이블의 id를 FK로 참조
 
     @OneToOne(fetch = FetchType.LAZY)
     @MapsId
-    @JoinColumn(name = "id", nullable = false,
+    @JoinColumn(name = "review_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_reviews_images_review_id"))
     private Reviews reviews;
 

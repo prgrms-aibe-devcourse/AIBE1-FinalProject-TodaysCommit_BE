@@ -5,7 +5,9 @@ import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.dto.PageResponseDto;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.reviews.domain.dto.ReviewCreateRequestDto;
+import com.team5.catdogeats.reviews.domain.dto.ReviewDeleteRequestDto;
 import com.team5.catdogeats.reviews.domain.dto.ReviewResponseDto;
+import com.team5.catdogeats.reviews.domain.dto.ReviewUpdateRequestDto;
 import com.team5.catdogeats.reviews.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -97,6 +99,41 @@ public class ReviewController {
                     reviews.isLast()
             );
             return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, reviewPageResponse));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
+                    .body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "리뷰 수정", description = "구매자가 자신의 리뷰를 수정합니다.")
+    @PatchMapping
+    public ResponseEntity<ApiResponse<Void>> updateReview(@RequestBody @Valid @Parameter(description = "수정할 리뷰 내용", required = true) ReviewUpdateRequestDto dto) {
+        try {
+            reviewService.updateReview(dto);
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
+                    .body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, e.getMessage()));
+        }
+    }
+
+    @Operation(summary = "리뷰 삭제", description = "구매자가 자신의 리뷰를 삭제합니다.")
+    @DeleteMapping
+    public ResponseEntity<ApiResponse<Void>> deleteReview(
+            @RequestBody @Valid @Parameter(description = "삭제할 리뷰 id", required = true) ReviewDeleteRequestDto dto) {
+        try {
+            reviewService.deleteReview(dto);
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())

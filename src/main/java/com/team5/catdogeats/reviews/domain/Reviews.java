@@ -3,6 +3,7 @@ package com.team5.catdogeats.reviews.domain;
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.reviews.domain.dto.ReviewCreateRequestDto;
+import com.team5.catdogeats.reviews.domain.dto.ReviewUpdateRequestDto;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import jakarta.persistence.*;
 import lombok.*;
@@ -47,5 +48,11 @@ public class Reviews extends BaseEntity {
                 .contents(dto.contents())
                 .summary(dto.summary())
                 .build();
+    }
+
+    public void updateFromDto(ReviewUpdateRequestDto dto) {
+        if (dto.star() != null) this.star = dto.star();
+        if (dto.contents() != null) this.contents = dto.contents();
+        if (dto.summary() != null) this.summary = dto.summary();
     }
 }

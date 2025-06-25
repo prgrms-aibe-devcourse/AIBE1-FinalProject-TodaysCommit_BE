@@ -1,13 +1,18 @@
 package com.team5.catdogeats.reviews.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.reviews.domain.Reviews;
 import com.team5.catdogeats.reviews.domain.dto.ReviewCreateRequestDto;
+import com.team5.catdogeats.reviews.domain.dto.ReviewDeleteRequestDto;
 import com.team5.catdogeats.reviews.domain.dto.ReviewResponseDto;
+import com.team5.catdogeats.reviews.domain.dto.ReviewUpdateRequestDto;
 import com.team5.catdogeats.reviews.repository.ReviewRepository;
 import com.team5.catdogeats.reviews.service.ReviewService;
+import com.team5.catdogeats.storage.repository.ImageRepository;
+import com.team5.catdogeats.storage.repository.ReviewImageRepository;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
@@ -41,6 +46,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .build();
 
         Reviews review = Reviews.fromDto(dto, buyer, product);
+
         return reviewRepository.save(review).getId();
     }
 
@@ -69,5 +75,22 @@ public class ReviewServiceImpl implements ReviewService {
 
         return reviewRepository.findByProductId(productId, pageable)
                 .map(ReviewResponseDto::fromEntity);
+    }
+
+    @JpaTransactional
+    @Override
+    public void updateReview(ReviewUpdateRequestDto dto) {
+        Reviews review = reviewRepository.findById(dto.reviewId())
+                .orElseThrow(() -> new NoSuchElementException("해당 리뷰를 찾을 수 없습니다."));
+
+        review.updateFromDto(dto);
+    }
+
+    @Override
+    public void deleteReview(ReviewDeleteRequestDto dto) {
+        Reviews review = reviewRepository.findById(dto.reviewId())
+                .orElseThrow(() -> new NoSuchElementException("해당 리뷰를 찾을 수 없습니다."));
+
+        reviewRepository.deleteById(dto.reviewId());
     }
 }
