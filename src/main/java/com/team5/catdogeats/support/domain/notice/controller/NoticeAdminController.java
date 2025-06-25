@@ -123,11 +123,10 @@ public class NoticeAdminController {
     }
 
     // ========== 파일 업로드 ==========
-    @PostMapping(value = "/{noticeId}/files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(value = "/{noticeId}/files")
     @Operation(
             summary = "공지사항 첨부파일 업로드",
             description = "관리자가 공지사항의 첨부파일을 업로드합니다."
-
     )
     public ResponseEntity<ApiResponse<NoticeResponseDTO>> uploadFile(
             @PathVariable String noticeId,
@@ -265,7 +264,7 @@ public class NoticeAdminController {
         return List.of("pdf", "doc", "docx", "xls", "xlsx").contains(extension);
     }
 
-    // ========== 파일 삭제 ========== (파일 다운로드 메서드 뒤에 추가)
+    // ========== 파일 삭제 ==========
     @DeleteMapping("/{noticeId}/files/{fileId}")
     @Operation(
             summary = "공지사항 첨부파일 삭제",
@@ -294,7 +293,7 @@ public class NoticeAdminController {
     }
 
     // ========== 파일 수정(교체) ==========
-    @PutMapping(value = "/{noticeId}/files/{fileId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PutMapping(value = "/{noticeId}/files/{fileId}")
     @Operation(
             summary = "공지사항 첨부파일 수정(교체)",
             description = "관리자가 공지사항의 첨부파일을 새 파일로 수정(교체)합니다."
