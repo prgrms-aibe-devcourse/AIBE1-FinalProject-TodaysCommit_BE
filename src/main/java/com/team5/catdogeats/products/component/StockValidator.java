@@ -1,5 +1,6 @@
 package com.team5.catdogeats.products.component;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.dto.StockAvailabilityDto;
 import com.team5.catdogeats.products.repository.ProductRepository;
@@ -21,7 +22,7 @@ import java.util.NoSuchElementException;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@JpaTransactional
 public class StockValidator {
 
     private final ProductRepository productRepository;

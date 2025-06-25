@@ -13,6 +13,7 @@ import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.domain.StockReservation;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.products.service.StockReservationService;
+import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
 import com.team5.catdogeats.users.repository.BuyerRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,13 +31,9 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
- * 주문 이벤트 리스너 (Record DTO 적용)
+ * 주문 이벤트 리스너
  * 주문 생성 이벤트를 처리하는 이벤트 리스너입니다.
  * 재고 예약 시스템을 통해 안전하고 확장 가능한 재고 관리를 제공합니다.
- * Record DTO 적용으로 개선된 사항:
- * 1. OrderItemInfo Record 사용으로 타입 안정성 향상
- * 2. 불변성 보장으로 이벤트 데이터 무결성 확보
- * 3. 메서드 호출 방식 변경 (.getField() → .field())
  * 처리 순서:
  * 1. 재고 예약 처리 (TransactionalEventListener)
  * 2. 결제 정보 생성 (TransactionalEventListener)
@@ -144,22 +141,19 @@ public class OrderEventListener {
     }
 
     /**
-     * 결제 정보 생성 처리 리스너 (수정된 버전)
+     * 결제 정보 생성 처리 리스너
      * 주문 생성 트랜잭션이 커밋된 후에 실행되어 결제 정보를 생성합니다.
-     *
-     * 수정사항:
-     * - BuyerRepository.findById() 대신 Users ID로 Buyers 엔티티 직접 조회
-     * - @MapsId로 인해 Buyers.userId == Users.id이므로 올바른 조회 가능
-     * - 더 명확한 로깅과 예외 처리 추가
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentInfoCreation(OrderCreatedEvent event) {
         String orderId = event.getOrderId();
         String userId = event.getUserId();
+        String provider = event.getUserProvider();
+        String providerId = event.getUserProviderId();
 
-        log.info("결제 정보 생성 처리 시작: orderId={}, orderNumber={}, userId={}",
-                orderId, event.getOrderNumber(), userId);
+        log.info("결제 정보 생성 처리 시작: orderId={}, orderNumber={}, userId={}, provider={}, providerId={}",
+                orderId, event.getOrderNumber(), userId, provider, providerId);
 
         try {
             // 1. 주문 상태 확인 (취소된 주문은 건너뜀)
@@ -171,22 +165,28 @@ public class OrderEventListener {
                 return;
             }
 
-            // 2. 구매자 정보 조회 (수정된 부분)
-            // @MapsId로 인해 Buyers.userId == Users.id이므로 직접 findById 사용 가능
-            Buyers buyer = buyerRepository.findById(userId)
+            // 2. 구매자 정보 조회 (수정된 부분 - 올바른 메서드 사용)
+            BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(provider, providerId)
                     .orElseThrow(() -> new NoSuchElementException(
-                            String.format("구매자를 찾을 수 없습니다: userId=%s, provider=%s, providerId=%s",
-                                    userId, event.getUserProvider(), event.getUserProviderId())));
+                            String.format("구매자를 찾을 수 없습니다: provider=%s, providerId=%s", provider, providerId)));
 
-            log.debug("구매자 조회 성공: userId={}, buyerMasking={}", userId, buyer.isNameMaskingStatus());
+            log.debug("구매자 조회 성공: userId={}, buyerMasking={}", buyerDTO.userId(), buyerDTO.nameMaskingStatus());
 
-            // 3. 기존 결제 정보 중복 확인
+            // 3. Buyers 엔티티 생성 (BuyerDTO → Buyers 변환)
+            Buyers buyer = Buyers.builder()
+                    .userId(buyerDTO.userId())
+                    .nameMaskingStatus(buyerDTO.nameMaskingStatus())
+                    .isDeleted(buyerDTO.isDeleted())
+                    .deledAt(buyerDTO.deletedAt())  // BuyerDTO.deletedAt() → Buyers.deledAt 필드
+                    .build();
+
+            // 4. 기존 결제 정보 중복 확인
             if (paymentRepository.findByOrdersId(orderId).isPresent()) {
                 log.warn("이미 결제 정보가 존재함 - 건너뜀: orderId={}", orderId);
                 return;
             }
 
-            // 4. 결제 정보 생성 (토스 페이먼츠 기본 설정)
+            // 5. 결제 정보 생성 (토스 페이먼츠 기본 설정)
             Payments payment = Payments.builder()
                     .orders(order)
                     .buyers(buyer)
@@ -202,8 +202,8 @@ public class OrderEventListener {
 
         } catch (NoSuchElementException e) {
             // 주문 또는 구매자를 찾을 수 없는 경우
-            log.error("결제 정보 생성 실패 (엔티티 없음): orderId={}, userId={}, error={}",
-                    orderId, userId, e.getMessage());
+            log.error("결제 정보 생성 실패 (엔티티 없음): orderId={}, userId={}, provider={}, providerId={}, error={}",
+                    orderId, userId, provider, providerId, e.getMessage());
             // 이 경우 보상 트랜잭션을 수행하지 않음 (데이터 정합성 문제)
 
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.team5.catdogeats.products.service.impl;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.products.component.StockValidator;
 import com.team5.catdogeats.products.domain.StockReservation;
@@ -22,7 +23,7 @@ import java.util.NoSuchElementException;
 /**
  * 재고 예약 서비스 구현체 (리팩토링)
  * - 재고 예약의 생성, 확정, 취소 등 상태 변경 로직에만 집중합니다.
- * - 재고 검증은 StockValidator에 위임합니다.
+ * - 재고 검증은 StockValidator에 위임
  */
 @Slf4j
 @Service
@@ -36,7 +37,7 @@ public class StockReservationServiceImpl implements StockReservationService {
     private int reservationExpirationMinutes;
 
     @Override
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     @Retryable(retryFor = {OptimisticLockingFailureException.class}, backoff = @Backoff(delay = 100))
     public List<StockReservation> createBulkReservations(Orders order, List<ReservationRequest> reservationRequests) {
         log.info("일괄 재고 예약 생성 시작: orderId={}, 상품 개수={}", order.getId(), reservationRequests.size());
@@ -62,7 +63,7 @@ public class StockReservationServiceImpl implements StockReservationService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public List<StockReservation> confirmReservations(String orderId) {
         log.info("재고 예약 확정 시작: orderId={}", orderId);
 
@@ -80,7 +81,7 @@ public class StockReservationServiceImpl implements StockReservationService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public List<StockReservation> cancelReservations(String orderId) {
         log.info("재고 예약 취소 시작: orderId={}", orderId);
 

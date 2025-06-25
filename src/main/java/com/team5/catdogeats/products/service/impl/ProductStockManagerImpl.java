@@ -1,5 +1,6 @@
 package com.team5.catdogeats.products.service.impl;
 
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.domain.StockReservation;
 import com.team5.catdogeats.products.domain.enums.ReservationStatus;
@@ -22,7 +23,7 @@ public class ProductStockManagerImpl implements ProductStockManager {
     private final StockReservationRepository stockReservationRepository;
 
     @Override
-    @Transactional
+    @JpaTransactional
     public void decrementStockForConfirmedReservations(String orderId) {
         log.info("확정된 재고 차감 시작: orderId={}", orderId);
 
