@@ -30,29 +30,21 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
     @Override
     @JpaTransactional
     public SellerBrandImageResponseDTO uploadBrandImage(UserPrincipal userPrincipal, MultipartFile imageFile) {
-        // 1. 이미지 파일 유효성 검증
+        // 1. 파일 검증 - null이면 예외 발생
         validateImageFile(imageFile);
 
-        log.info("판매자 브랜드 이미지 업로드 요청 - provider: {}, providerId: {}, fileName: {}",
-                userPrincipal.provider(), userPrincipal.providerId(), imageFile.getOriginalFilename());
-
-        // 2. 사용자 조회
+        // 2. 사용자 및 판매자 조회
         Users user = findUserByPrincipal(userPrincipal);
-
-        // 3. 판매자 정보 조회
         Sellers seller = findSellerByUserId(user.getId());
 
-        // 4. 기존 이미지 삭제 (있는 경우)
+        // 3. 기존 이미지 삭제(있는 경우만)
         deleteExistingImage(seller.getVendorProfileImage());
 
-        // 5. 새 이미지 업로드
+        // 4. 새 이미지 업로드
         String newImageUrl = uploadNewImage(imageFile, seller.getUserId());
 
-        // 6. 판매자 정보 업데이트
-        seller.updateVendorProfileImage(newImageUrl);
+        seller.updateVendorProfileImage(newImageUrl); // Entity 메서드 사용
         Sellers savedSeller = sellersRepository.save(seller);
-
-        log.info("판매자 브랜드 이미지 업로드 완료 - userId: {}, imageUrl: {}", user.getId(), newImageUrl);
 
         return SellerBrandImageResponseDTO.from(savedSeller);
     }
@@ -79,15 +71,16 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         }
 
         // 4. DB에서 이미지 URL을 null로 설정
-        seller.updateVendorProfileImage(null);
-        Sellers savedSeller = sellersRepository.save(seller);
+        int updateCount = sellersRepository.deleteVendorProfileImage(seller.getUserId());
 
-        log.info("판매자 브랜드 이미지 삭제 완료 - userId: {}", user.getId());
+        if (updateCount == 0) {
+            throw new RuntimeException("브랜드 이미지 삭제에 실패했습니다.");
+        }
 
-        return SellerBrandImageResponseDTO.from(savedSeller);
+        Sellers updatedSeller = findSellerByUserId(user.getId());
+
+        return SellerBrandImageResponseDTO.from(updatedSeller);
     }
-
-
 
     /**
      * 이미지 파일 유효성 검증
@@ -230,7 +223,7 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
 
         String shortUserId = cleanUserId.length() > 8 ? cleanUserId.substring(0, 8) : cleanUserId;
 
-       // 처음 8자리만 사용 (너무 길어지는 것 방지)
+        // 처음 8자리만 사용 (너무 길어지는 것 방지)
         return String.format("brand_%s_%s.%s", shortUserId, uuid, extension);
     }
 
