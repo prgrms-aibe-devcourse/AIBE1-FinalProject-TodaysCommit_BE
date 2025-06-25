@@ -18,7 +18,6 @@ import java.util.Optional;
  * 기본 CRUD 기능과 주문 관련 조회 기능을 제공합니다.
  * Orders 엔티티의 실제 ID 타입(String)에 맞게 수정되었습니다.
  */
-@Repository
 public interface OrderRepository extends JpaRepository<Orders, String> {
 
     /**
