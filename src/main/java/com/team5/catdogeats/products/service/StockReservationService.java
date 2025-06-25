@@ -3,6 +3,7 @@ package com.team5.catdogeats.products.service;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.domain.StockReservation;
+import lombok.Builder;
 
 import java.util.List;
 
@@ -31,6 +32,7 @@ public interface StockReservationService {
     /**
      * 예약 요청 정보를 담는 내부 DTO
      */
+    @Builder
     record ReservationRequest(Products product, Integer quantity) {
     }
 }

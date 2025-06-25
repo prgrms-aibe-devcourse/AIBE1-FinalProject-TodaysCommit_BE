@@ -117,7 +117,7 @@ public class OrderCreateRequest {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    @Builder
+    @Builder(toBuilder = true)
     public static class PaymentInfoRequest {
 
         /**

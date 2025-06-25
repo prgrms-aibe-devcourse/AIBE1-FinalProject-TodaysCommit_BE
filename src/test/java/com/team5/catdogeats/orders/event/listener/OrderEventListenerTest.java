@@ -126,7 +126,9 @@ class OrderEventListenerTest {
                 "user123",
                 "google",
                 "google123",
-                65000L,
+                65000L,   // originalTotalPrice
+                null,     // couponDiscountRate (없으면 null)
+                65000L,   // finalTotalPrice
                 orderItems
         );
 
@@ -396,7 +398,15 @@ class OrderEventListenerTest {
         void handleOrderProcessingComplete_RecordMethodsVerification() {
             // Given
             OrderCreatedEvent emptyEvent = OrderCreatedEvent.of(
-                    "order456", 123456L, "user456", "google", "google456", 0L, List.of()
+                    "order456",
+                    123456L,
+                    "user456",
+                    "google",
+                    "google456",
+                    0L,      // originalTotalPrice
+                    null,    // couponDiscountRate
+                    0L,      // finalTotalPrice
+                    List.of()
             );
 
             // When

@@ -24,7 +24,6 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -132,7 +131,6 @@ class OrderServiceTest {
                 .user(user)
                 .orderStatus(OrderStatus.PAYMENT_PENDING)
                 .totalPrice(51_000L)  // 15% 할인 적용된 금액 (60,000 * 0.85)
-                .createdAt(ZonedDateTime.now())
                 .build();
 
         // 응답 데이터
@@ -191,7 +189,6 @@ class OrderServiceTest {
                 .user(user)
                 .orderStatus(OrderStatus.PAYMENT_PENDING)
                 .totalPrice(25_000L)  // 할인 없음
-                .createdAt(ZonedDateTime.now())
                 .build();
 
         OrderCreateResponse responseWithoutDiscount = OrderCreateResponse.builder()
@@ -245,7 +242,14 @@ class OrderServiceTest {
                 .user(user)
                 .orderStatus(OrderStatus.PAYMENT_PENDING)
                 .totalPrice(1L)  // 최소 결제 금액 1원
-                .createdAt(ZonedDateTime.now())
+                .build();
+
+        // 이 테스트 케이스에 맞는 mockResponse를 생성합니다.
+        OrderCreateResponse specificMockResponse = OrderCreateResponse.builder()
+                .orderId("order789")
+                .orderNumber(20250625123456791L)
+                .orderStatus(OrderStatus.PAYMENT_PENDING)
+                .totalPrice(1L)
                 .build();
 
         given(buyerRepository.findOnlyBuyerByProviderAndProviderId("google", "google123"))
@@ -254,13 +258,22 @@ class OrderServiceTest {
         given(productRepository.findById("product1")).willReturn(Optional.of(product1));
         given(productRepository.findById("product2")).willReturn(Optional.of(product2));
         given(orderRepository.save(any(Orders.class))).willReturn(orderWith1Won);
+        // buildTossPaymentResponse가 이 테스트에 맞는 응답을 반환하도록 설정합니다.
         given(tossPaymentResponseBuilder.buildTossPaymentResponse(any(Orders.class), any(), anyString()))
-                .willReturn(mockResponse);
+                .willReturn(specificMockResponse);
 
         // When
         OrderCreateResponse response = orderService.createOrderByUserPrincipal(principal, request100Percent);
 
         // Then
+
+        // 1. 반환된 response 객체를 직접 검증하는 코드 (추가된 부분)
+        assertThat(response).isNotNull();
+        assertThat(response.getOrderId()).isEqualTo("order789");
+        assertThat(response.getTotalPrice()).isEqualTo(1L);
+        assertThat(response.getOrderStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+
+        // 2. 발행된 이벤트를 검증하는 코드 (기존 코드)
         ArgumentCaptor<OrderCreatedEvent> eventCaptor = ArgumentCaptor.forClass(OrderCreatedEvent.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
 

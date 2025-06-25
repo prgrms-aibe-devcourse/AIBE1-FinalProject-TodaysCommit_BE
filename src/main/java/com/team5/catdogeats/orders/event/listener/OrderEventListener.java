@@ -29,18 +29,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.stream.Collectors;
 
-/**
- * 주문 이벤트 리스너 (쿠폰 할인 지원)
- * 주문 생성 이벤트를 처리하는 이벤트 리스너입니다.
- * 재고 예약 시스템을 통해 안전하고 확장 가능한 재고 관리를 제공합니다.
- * 쿠폰 할인 정보를 활용하여 더 풍부한 알림 및 로깅을 제공합니다.
- * 처리 순서:
- * 1. 재고 예약 처리 (TransactionalEventListener)
- * 2. 결제 정보 생성 (TransactionalEventListener)
- * 3. 사용자 알림 처리 (비동기, 할인 정보 포함)
- * 4. 감사 로깅 (동기, 할인 정보 포함)
- */
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -52,11 +42,6 @@ public class OrderEventListener {
     private final PaymentRepository paymentRepository;
     private final BuyerRepository buyerRepository;
 
-    /**
-     * 재고 예약 처리 리스너 (Record DTO 적용)
-     * 주문 생성 트랜잭션이 커밋된 후에 실행되어 재고를 예약합니다.
-     * OrderItemInfo Record의 메서드를 사용하여 타입 안전한 데이터 접근을 수행합니다.
-     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void handleStockReservation(OrderCreatedEvent event) {
@@ -66,64 +51,50 @@ public class OrderEventListener {
                 event.isCouponApplied() ? event.getCouponDiscountRate() + "%" : "없음");
 
         try {
-            // 주문 정보 조회
             Orders order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + orderId));
 
-            // 예약 요청 목록 생성 (Record DTO 메서드 활용)
             List<StockReservationService.ReservationRequest> reservationRequests = createReservationRequests(event.getOrderItems());
 
-            // 일괄 재고 예약 생성
             List<StockReservation> reservations = stockReservationService.createBulkReservations(order, reservationRequests);
 
             log.info("재고 예약 완료: orderId={}, 예약된 상품 개수={}, 총 수량={}",
                     orderId, reservations.size(), event.getTotalQuantity());
 
         } catch (NoSuchElementException e) {
-            // 주문을 찾을 수 없는 경우 - 보상 트랜잭션 불필요
             log.error("재고 예약 실패 (주문 없음): orderId={}, error={}", orderId, e.getMessage());
 
         } catch (IllegalArgumentException e) {
-            // 재고 부족 등 비즈니스 로직 예외
             log.error("재고 예약 실패 (재고 부족): orderId={}, error={}", orderId, e.getMessage());
             performStockReservationCompensation(orderId, "재고 부족: " + e.getMessage());
 
         } catch (OptimisticLockingFailureException e) {
-            // 동시성 제어 실패
             log.error("재고 예약 실패 (동시성 충돌): orderId={}, error={}", orderId, e.getMessage());
             performStockReservationCompensation(orderId, "동시성 충돌로 인한 재고 예약 실패");
 
         } catch (Exception e) {
-            // 기타 예외
             log.error("재고 예약 실패 (시스템 오류): orderId={}, error={}", orderId, e.getMessage(), e);
             performStockReservationCompensation(orderId, "시스템 오류: " + e.getMessage());
         }
     }
 
-    /**
-     * 주문 아이템 목록으로부터 예약 요청 목록 생성 (Record DTO 적용)
-     * OrderItemInfo Record의 메서드를 사용하여 타입 안전한 데이터 접근을 수행합니다.
-     */
     private List<StockReservationService.ReservationRequest> createReservationRequests(List<OrderItemInfo> orderItems) {
         return orderItems.stream()
-                .map(orderItem -> StockReservationService.ReservationRequest.builder()
-                        .productId(orderItem.productId())
-                        .quantity(orderItem.quantity())
-                        .build())
-                .toList();
+                .map(orderItem -> {
+                    Products product = productRepository.findById(orderItem.productId())
+                            .orElseThrow(() -> new NoSuchElementException("상품을 찾을 수 없습니다: " + orderItem.productId()));
+                    return new StockReservationService.ReservationRequest(product, orderItem.quantity());
+                })
+                .collect(Collectors.toList());
     }
 
-    /**
-     * 재고 예약 실패에 대한 보상 트랜잭션
-     * 별도의 트랜잭션에서 실행되어 주문 상태를 CANCELLED로 변경합니다.
-     */
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void performStockReservationCompensation(String orderId, String reason) {
         try {
             Orders order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new NoSuchElementException("보상 처리할 주문을 찾을 수 없습니다: " + orderId));
 
-            order.changeOrderStatus(OrderStatus.CANCELLED);
+            order.setOrderStatus(OrderStatus.CANCELLED);
             orderRepository.save(order);
 
             log.warn("재고 예약 실패 보상 처리 완료: orderId={}, reason={}", orderId, reason);
@@ -134,11 +105,6 @@ public class OrderEventListener {
         }
     }
 
-    /**
-     * 결제 정보 생성 리스너 (쿠폰 할인 정보 포함)
-     * 주문 생성 트랜잭션이 커밋된 후에 결제 정보를 생성합니다.
-     * 취소된 주문은 건너뛰는 스마트 처리로 불필요한 작업을 방지합니다.
-     */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentInfoCreation(OrderCreatedEvent event) {
@@ -148,7 +114,6 @@ public class OrderEventListener {
                 orderId, event.getOrderNumber(), event.getTotalPrice());
 
         try {
-            // 주문 상태 확인 (재고 예약 실패로 취소된 주문은 건너뜀)
             Orders order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + orderId));
 
@@ -157,17 +122,26 @@ public class OrderEventListener {
                 return;
             }
 
-            // 구매자 정보 조회
-            BuyerDTO buyer = buyerRepository.findOnlyBuyerByProviderAndProviderId(
+            // 1. DTO로 구매자 정보 조회
+            BuyerDTO buyerInfo = buyerRepository.findOnlyBuyerByProviderAndProviderId(
                             event.getUserProvider(), event.getUserProviderId())
                     .orElseThrow(() -> new NoSuchElementException("구매자 정보를 찾을 수 없습니다"));
 
-            // 결제 정보 생성 (쿠폰 할인 적용된 최종 금액으로)
+            // 2. DTO에서 ID를 사용하여 Buyers 엔티티 참조 가져오기
+            Buyers buyer = buyerRepository.getReferenceById(buyerInfo.userId());
+
+            if (paymentRepository.findByOrdersId(orderId).isPresent()) {
+                log.warn("이미 결제 정보가 존재하여 생성 건너뜀: orderId={}", orderId);
+                return;
+            }
+
+            // 3. 빌더에 DTO가 아닌 엔티티 참조를 전달
             Payments payment = Payments.builder()
                     .orders(order)
-                    .amount(event.getTotalPrice())  // 최종 할인 적용 금액
-                    .paymentMethod(PaymentMethod.CARD)  // 기본값
-                    .paymentStatus(PaymentStatus.PENDING)
+                    .buyers(buyer)
+                    .amount(event.getTotalPrice())
+                    .method(PaymentMethod.TOSS)
+                    .status(PaymentStatus.PENDING)
                     .build();
 
             paymentRepository.save(payment);
@@ -183,11 +157,6 @@ public class OrderEventListener {
         }
     }
 
-    /**
-     * 사용자 알림 처리 (쿠폰 할인 정보 포함)
-     * 비동기로 처리되어 메인 플로우에 영향을 주지 않습니다.
-     * OrderCreatedEvent의 편의 메서드를 활용하여 알림 메시지를 구성합니다.
-     */
     @Async
     @EventListener
     public void handleUserNotification(OrderCreatedEvent event) {
@@ -196,7 +165,6 @@ public class OrderEventListener {
                 orderId, event.getOrderNumber());
 
         try {
-            // 주문 상태 확인 (취소된 주문은 알림 발송하지 않음)
             Orders order = orderRepository.findById(orderId)
                     .orElseThrow(() -> new NoSuchElementException("주문을 찾을 수 없습니다: " + orderId));
 
@@ -205,11 +173,9 @@ public class OrderEventListener {
                 return;
             }
 
-            // Record의 편의 메서드를 활용한 알림 메시지 구성 및 발송
             String productInfo = event.getFirstProductName() +
                     (event.getOrderItemCount() > 1 ? String.format(" 외 %d개", event.getOrderItemCount() - 1) : "");
 
-            // 쿠폰 할인 정보 포함한 메시지 구성
             String discountInfo = "";
             if (event.isCouponApplied()) {
                 Long discountAmount = event.getOriginalTotalPrice() - event.getTotalPrice();
@@ -236,24 +202,16 @@ public class OrderEventListener {
 
         } catch (Exception e) {
             log.error("사용자 알림 발송 실패: orderId={}, error={}", orderId, e.getMessage(), e);
-            // 알림 발송 실패는 치명적이지 않으므로 예외를 던지지 않음
         }
     }
 
-    /**
-     * 주문 처리 완료 감사 로깅 (쿠폰 할인 정보 포함)
-     * 주문 생성 프로세스의 모든 단계가 완료된 후 감사 로그를 기록합니다.
-     * 모니터링 및 비즈니스 분석 목적으로 사용됩니다.
-     */
     @EventListener
     public void handleOrderProcessingComplete(OrderCreatedEvent event) {
-        // Record의 편의 메서드들을 활용한 상세 로깅
         log.info("=== 주문 처리 감사 로그 ===");
         log.info("주문 ID: {}", event.getOrderId());
         log.info("주문 번호: {}", event.getOrderNumber());
         log.info("사용자 ID: {}", event.getUserId());
 
-        // 쿠폰 할인 정보 포함한 금액 정보
         if (event.isCouponApplied()) {
             Long discountAmount = event.getOriginalTotalPrice() - event.getTotalPrice();
             log.info("원가 금액: {}원", String.format("%,d", event.getOriginalTotalPrice()));
@@ -268,7 +226,6 @@ public class OrderEventListener {
         log.info("첫 번째 상품: {}", event.getFirstProductName());
         log.info("이벤트 발생 시각: {}", event.getEventOccurredAt());
 
-        // 주문 아이템 상세 정보 (Record의 불변성 활용)
         event.getOrderItems().forEach(item ->
                 log.debug("- 상품: {} (ID: {}), 수량: {}개, 단가: {}원, 총가격: {}원",
                         item.productName(), item.productId(), item.quantity(),

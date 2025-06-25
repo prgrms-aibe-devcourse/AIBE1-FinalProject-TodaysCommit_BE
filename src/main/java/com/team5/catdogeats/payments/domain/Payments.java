@@ -34,6 +34,9 @@ public class Payments extends BaseEntity {
             foreignKey = @ForeignKey(name = "fk_payments_order_id"))
     private Orders orders;
 
+    @Column(nullable = false)
+    private Long amount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private PaymentMethod method;
