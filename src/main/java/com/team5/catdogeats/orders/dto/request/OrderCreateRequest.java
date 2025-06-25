@@ -4,6 +4,8 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +14,7 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 /**
- * 주문 생성 요청 DTO
+ * 주문 생성 요청 DTO (쿠폰 할인 적용)
  * API: POST /v1/buyers/orders
  */
 @Getter
@@ -109,7 +111,7 @@ public class OrderCreateRequest {
     }
 
     /**
-     * 결제 정보
+     * 결제 정보 (쿠폰 할인 적용)
      * 토스 페이먼츠 연동을 위한 정보 포함
      */
     @Getter
@@ -124,6 +126,15 @@ public class OrderCreateRequest {
          */
         @NotBlank(message = "주문명은 필수입니다")
         private String orderName;
+
+        /**
+         * 쿠폰 할인률 (%) - 전체 주문 금액에 적용
+         * 0~100 사이의 값, null이면 할인 없음
+         * 예: 10.0 = 10% 할인
+         */
+        @DecimalMin(value = "0.0", message = "쿠폰 할인률은 0% 이상이어야 합니다")
+        @DecimalMax(value = "100.0", message = "쿠폰 할인률은 100% 이하여야 합니다")
+        private Double couponDiscountRate;
 
         /**
          * 구매자 이메일 (토스 페이먼츠 결제창에 미리 입력)

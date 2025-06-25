@@ -31,15 +31,14 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (EDA + Record DTO + 할인 적용 + 토스 Util 분리)
+ * 주문 관리 서비스 구현체 (EDA + 쿠폰 할인 방식)
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
- * Record DTO 도입으로 개선된 사항:
- * 1. Lombok 어노테이션 제거 → Record 타입으로 대체
- * 2. 내부 클래스 제거 → 공통 DTO 패키지로 분리
- * 3. 불변성 보장 → Record의 자동 불변성 활용
- * 4. 할인 로직 유지 → 기존 비즈니스 로직 그대로 보존
+ * 쿠폰 할인 방식 개선사항:
+ * 1. 상품별 할인 제거 → 전체 주문 금액에 쿠폰 할인률 적용
+ * 2. 단순화된 가격 계산 로직
+ * 3. 할인 정보의 명확한 분리 (원가 vs 최종 가격)
  */
 @Slf4j
 @Service
@@ -54,42 +53,50 @@ public class OrderServiceImpl implements OrderService {
     private final TossPaymentResponseBuilder tossPaymentResponseBuilder;
 
     /**
-     * UserPrincipal을 사용한 주문 생성 (EDA + Record DTO + 할인 적용)
+     * UserPrincipal을 사용한 주문 생성 (EDA + 쿠폰 할인 방식)
      * 변경된 처리 흐름:
      * 1. 구매자 검증 (BuyerRepository 활용)
-     * 2. 상품 정보 수집 및 할인 적용된 가격 계산
-     * 3. 주문 엔티티 저장 (할인 반영된 총 금액)
-     * 4. 토스 페이먼츠 응답 생성 (유틸리티 클래스 활용)
-     * 5. OrderCreatedEvent 발행 (할인 적용된 금액 정보 포함)
+     * 2. 상품 정보 수집 (원가 기준)
+     * 3. 전체 주문 금액 계산 (원가 총합)
+     * 4. 쿠폰 할인 적용 (전체 금액에서 할인)
+     * 5. 주문 엔티티 저장 (할인 적용된 최종 금액)
+     * 6. 토스 페이먼츠 응답 생성
+     * 7. OrderCreatedEvent 발행 (할인 정보 포함)
      */
     @Override
     @JpaTransactional
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
-        log.info("주문 생성 시작 (EDA + Record DTO + 할인 적용): provider={}, providerId={}, 상품 개수={}",
-                userPrincipal.provider(), userPrincipal.providerId(), request.getOrderItems().size());
+        log.info("주문 생성 시작 (EDA + 쿠폰 할인): provider={}, providerId={}, 상품 개수={}, 쿠폰 할인률={}%",
+                userPrincipal.provider(), userPrincipal.providerId(),
+                request.getOrderItems().size(), request.getPaymentInfo().getCouponDiscountRate());
 
         // 1. 구매자 검증 (BuyerRepository 활용)
         BuyerDTO buyer = findBuyerByPrincipal(userPrincipal);
         Users user = userRepository.getReferenceById(buyer.userId());
 
-        // 2. 주문 상품들 검증 및 할인 적용된 정보 수집
+        // 2. 주문 상품들 검증 및 정보 수집 (원가 기준)
         List<DetailedOrderItemInfo> detailedOrderItems = validateAndCollectOrderItems(request.getOrderItems());
 
-        // 3. 총 주문 금액 계산 (할인 적용)
-        Long totalPrice = calculateTotalPrice(detailedOrderItems);
+        // 3. 원가 총 금액 계산
+        Long originalTotalPrice = calculateOriginalTotalPrice(detailedOrderItems);
 
-        // 4. 주문 엔티티 생성 및 저장
-        Orders savedOrder = createAndSaveOrder(user, totalPrice);
+        // 4. 쿠폰 할인 적용
+        Double couponDiscountRate = request.getPaymentInfo().getCouponDiscountRate();
+        Long finalTotalPrice = applyCouponDiscount(originalTotalPrice, couponDiscountRate);
 
-        // 5. 토스 페이먼츠 응답 생성
+        // 5. 주문 엔티티 생성 및 저장 (최종 할인 금액으로)
+        Orders savedOrder = createAndSaveOrder(user, finalTotalPrice);
+
+        // 6. 토스 페이먼츠 응답 생성
         OrderCreateResponse response = buildTossPaymentResponse(savedOrder, request.getPaymentInfo());
 
-        // 6. OrderCreatedEvent 발행 (DetailedOrderItemInfo → OrderItemInfo 변환)
-        publishOrderCreatedEvent(savedOrder, user, userPrincipal, detailedOrderItems);
+        // 7. OrderCreatedEvent 발행 (할인 정보 포함)
+        publishOrderCreatedEvent(savedOrder, user, userPrincipal, detailedOrderItems,
+                originalTotalPrice, couponDiscountRate, finalTotalPrice);
 
-        log.info("주문 생성 완료: orderId={}, orderNumber={}, totalPrice={}, 할인적용={}",
-                savedOrder.getId(), savedOrder.getOrderNumber(), totalPrice,
-                detailedOrderItems.stream().anyMatch(DetailedOrderItemInfo::isDiscounted));
+        log.info("주문 생성 완료: orderId={}, orderNumber={}, 원가={}원, 쿠폰할인={}%, 최종금액={}원",
+                savedOrder.getId(), savedOrder.getOrderNumber(), originalTotalPrice,
+                couponDiscountRate != null ? couponDiscountRate : 0, finalTotalPrice);
 
         return response;
     }
@@ -105,41 +112,36 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 상품들 검증 및 할인 적용된 정보 수집
-     * DetailedOrderItemInfo Record 타입을 사용하여 할인 정보를 포함한 상세 정보를 수집합니다.
+     * 주문 상품들 검증 및 정보 수집 (원가 기준)
+     * 상품별 할인을 제거하고 모든 상품을 원가로 계산합니다.
      * 재고 차감은 StockEventListener에서 처리됩니다.
      */
     private List<DetailedOrderItemInfo> validateAndCollectOrderItems(List<OrderCreateRequest.OrderItemRequest> orderItems) {
-        log.debug("주문 상품 검증 시작 (재고 차감 제외, 할인 적용): 상품 개수={}", orderItems.size());
-
         List<DetailedOrderItemInfo> detailedOrderItems = new ArrayList<>();
 
-        for (OrderCreateRequest.OrderItemRequest item : orderItems) {
-            // 상품 존재 여부 확인
-            Products product = productRepository.findById(item.getProductId())
-                    .orElseThrow(() -> new NoSuchElementException(
-                            "상품을 찾을 수 없습니다: " + item.getProductId()));
+        for (OrderCreateRequest.OrderItemRequest orderItem : orderItems) {
+            // 상품 존재 여부 및 기본 정보 검증
+            Products product = productRepository.findById(orderItem.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            String.format("상품을 찾을 수 없습니다: %s", orderItem.getProductId())));
 
-            // 수량 유효성 검증
-            if (item.getQuantity() <= 0) {
+            // 수량 검증
+            if (orderItem.getQuantity() <= 0) {
                 throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다");
             }
 
-            // 재고 부족 여부 확인
-            if (product.getStock() < item.getQuantity()) {
-                throw new IllegalArgumentException(
-                        String.format("재고가 부족한 상품입니다: 상품=%s, 요청수량=%d, 현재고=%d",
-                                product.getTitle(), item.getQuantity(), product.getStock()));
-            }
+            // DetailedOrderItemInfo 생성 (원가 기준)
+            DetailedOrderItemInfo detailedItem = DetailedOrderItemInfo.of(
+                    product.getId(),
+                    product.getTitle(),
+                    orderItem.getQuantity(),
+                    product.getPrice()  // 원가 사용
+            );
 
-            // 할인 적용된 상세 주문 아이템 정보 생성 (Record 정적 팩토리 메서드 활용)
-            DetailedOrderItemInfo detailedItem = createDetailedOrderItem(product, item.getQuantity());
             detailedOrderItems.add(detailedItem);
 
-            log.debug("상품 검증 완료: productId={}, name={}, quantity={}, 원가={}, 할인가={}, 할인율={}%",
-                    item.getProductId(), product.getTitle(), item.getQuantity(),
-                    product.getPrice(), detailedItem.unitPrice(),
-                    detailedItem.isDiscounted() ? detailedItem.discountRate() : 0);
+            log.debug("상품 정보 수집 완료: 상품={}, 수량={}, 단가={}원",
+                    product.getTitle(), orderItem.getQuantity(), product.getPrice());
         }
 
         log.debug("전체 주문 상품 검증 완료: 상품 개수={}", detailedOrderItems.size());
@@ -147,159 +149,138 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 상품 정보를 기반으로 DetailedOrderItemInfo 생성
-     * 할인 적용 여부에 따라 적절한 정적 팩토리 메서드를 선택합니다.
+     * 원가 기준 총 주문 금액 계산
      */
-    private DetailedOrderItemInfo createDetailedOrderItem(Products product, Integer quantity) {
-        if (product.isDiscounted() && product.getDiscountRate() != null) {
-            // 할인 적용 상품
-            validateDiscountRate(product.getDiscountRate());
-            Long discountedPrice = calculateDiscountedPrice(product);
-
-            return DetailedOrderItemInfo.withDiscount(
-                    product.getId(),
-                    product.getTitle(),
-                    quantity,
-                    product.getPrice(),
-                    discountedPrice,
-                    product.getDiscountRate()
-            );
-        } else {
-            // 할인 없는 상품
-            return DetailedOrderItemInfo.withoutDiscount(
-                    product.getId(),
-                    product.getTitle(),
-                    quantity,
-                    product.getPrice()
-            );
-        }
-    }
-
-    /**
-     * 상품의 할인 적용된 가격 계산
-     */
-    private Long calculateDiscountedPrice(Products product) {
-        // 할인이 적용되지 않은 경우 원가 반환
-        if (!product.isDiscounted() || product.getDiscountRate() == null) {
-            return product.getPrice();
-        }
-
-        // 할인 적용 계산 (소수점 반올림)
-        double discountMultiplier = 1.0 - (product.getDiscountRate() / 100.0);
-        Long discountedPrice = Math.round(product.getPrice() * discountMultiplier);
-
-        log.debug("할인 가격 계산: 상품={}, 원가={}원, 할인율={}%, 할인가={}원",
-                product.getTitle(), product.getPrice(), product.getDiscountRate(), discountedPrice);
-
-        return discountedPrice;
-    }
-
-    /**
-     * 할인율 유효성 검증
-     */
-    private void validateDiscountRate(Double discountRate) {
-        if (discountRate < 0 || discountRate > 100) {
-            throw new IllegalArgumentException(
-                    String.format("할인율은 0~100 사이여야 합니다: %.2f", discountRate));
-        }
-    }
-
-    /**
-     * 총 주문 금액 계산 (할인 적용)
-     * DetailedOrderItemInfo Record의 totalPrice를 사용합니다.
-     */
-    private Long calculateTotalPrice(List<DetailedOrderItemInfo> detailedOrderItems) {
-        Long totalPrice = detailedOrderItems.stream()
+    private Long calculateOriginalTotalPrice(List<DetailedOrderItemInfo> detailedOrderItems) {
+        Long originalTotalPrice = detailedOrderItems.stream()
                 .mapToLong(DetailedOrderItemInfo::totalPrice)
                 .sum();
 
-        // 할인 적용 통계 로깅
-        long totalOriginalPrice = detailedOrderItems.stream()
-                .mapToLong(item -> item.originalPrice() * item.quantity())
-                .sum();
-        long totalDiscountAmount = totalOriginalPrice - totalPrice;
+        log.debug("원가 총 금액 계산 완료: {}원", originalTotalPrice);
+        return originalTotalPrice;
+    }
 
-        if (totalDiscountAmount > 0) {
-            log.debug("총 주문 금액 계산 완료: 할인전={}원, 할인후={}원, 할인금액={}원",
-                    totalOriginalPrice, totalPrice, totalDiscountAmount);
-        } else {
-            log.debug("총 주문 금액 계산 완료: {}원 (할인 없음)", totalPrice);
+    /**
+     * 쿠폰 할인 적용
+     * 전체 주문 금액에서 쿠폰 할인률만큼 할인합니다.
+     *
+     * @param originalTotalPrice 원가 총 금액
+     * @param couponDiscountRate 쿠폰 할인률 (%, null이면 할인 없음)
+     * @return 할인 적용된 최종 금액
+     */
+    private Long applyCouponDiscount(Long originalTotalPrice, Double couponDiscountRate) {
+        // 쿠폰 할인이 없는 경우
+        if (couponDiscountRate == null || couponDiscountRate <= 0) {
+            log.debug("쿠폰 할인 없음: 최종 금액 = {}원", originalTotalPrice);
+            return originalTotalPrice;
         }
 
-        return totalPrice;
+        // 할인율 유효성 검증
+        if (couponDiscountRate > 100) {
+            throw new IllegalArgumentException("쿠폰 할인률은 100%를 초과할 수 없습니다: " + couponDiscountRate);
+        }
+
+        // 할인 금액 계산 (소수점 반올림)
+        double discountMultiplier = 1.0 - (couponDiscountRate / 100.0);
+        long finalTotalPrice = Math.round(originalTotalPrice * discountMultiplier);
+
+        // 최소 결제 금액 검증 (1원 이상)
+        if (finalTotalPrice < 1) {
+            finalTotalPrice = 1L;
+        }
+
+        Long discountAmount = originalTotalPrice - finalTotalPrice;
+
+        log.debug("쿠폰 할인 적용 완료: 원가={}원, 할인률={}%, 할인금액={}원, 최종금액={}원",
+                originalTotalPrice, couponDiscountRate, discountAmount, finalTotalPrice);
+
+        return finalTotalPrice;
     }
 
     /**
      * 주문 엔티티 생성 및 저장
      */
-    private Orders createAndSaveOrder(Users user, Long totalPrice) {
+    private Orders createAndSaveOrder(Users user, Long finalTotalPrice) {
         Orders order = Orders.builder()
                 .user(user)
                 .orderNumber(generateOrderNumber())
                 .orderStatus(OrderStatus.PAYMENT_PENDING)
-                .totalPrice(totalPrice)
+                .totalPrice(finalTotalPrice)  // 할인 적용된 최종 금액
                 .build();
 
         Orders savedOrder = orderRepository.save(order);
-        log.debug("주문 엔티티 저장 완료: orderId={}, orderNumber={}",
-                savedOrder.getId(), savedOrder.getOrderNumber());
+        log.debug("주문 엔티티 저장 완료: orderId={}, orderNumber={}, finalPrice={}원",
+                savedOrder.getId(), savedOrder.getOrderNumber(), finalTotalPrice);
 
         return savedOrder;
     }
 
     /**
-     * OrderCreatedEvent 발행 (DetailedOrderItemInfo → OrderItemInfo 변환)
-     * Record의 toOrderItemInfo() 메서드를 활용하여 이벤트용 DTO로 변환합니다.
+     * 토스 페이먼츠 응답 생성 (할인 적용된 금액으로)
      */
-    private void publishOrderCreatedEvent(Orders order, Users user, UserPrincipal userPrincipal,
-                                          List<DetailedOrderItemInfo> detailedOrderItems) {
+    private OrderCreateResponse buildTossPaymentResponse(Orders savedOrder,
+                                                         OrderCreateRequest.PaymentInfoRequest paymentInfo) {
 
-        // DetailedOrderItemInfo → OrderItemInfo 변환 (Record 메서드 활용)
-        List<OrderItemInfo> eventOrderItems = detailedOrderItems.stream()
+        // 주문명 생성
+        String orderName = generateOrderName(paymentInfo.getOrderName(), savedOrder.getOrderNumber());
+
+        // TossPaymentResponseBuilder의 실제 메서드 호출
+        return tossPaymentResponseBuilder.buildTossPaymentResponse(savedOrder, paymentInfo, orderName);
+    }
+
+    /**
+     * OrderCreatedEvent 발행 (쿠폰 할인 정보 포함)
+     */
+    private void publishOrderCreatedEvent(Orders savedOrder, Users user, UserPrincipal userPrincipal,
+                                          List<DetailedOrderItemInfo> detailedOrderItems, Long originalTotalPrice,
+                                          Double couponDiscountRate, Long finalTotalPrice) {
+
+        // DetailedOrderItemInfo → OrderItemInfo 변환
+        List<OrderItemInfo> orderItems = detailedOrderItems.stream()
                 .map(DetailedOrderItemInfo::toOrderItemInfo)
                 .toList();
 
-        // OrderCreatedEvent 생성 및 발행
+        // 쿠폰 할인 정보를 포함한 이벤트 생성
         OrderCreatedEvent event = OrderCreatedEvent.of(
-                order.getId(),
-                order.getOrderNumber(),
+                savedOrder.getId(),
+                savedOrder.getOrderNumber(),
                 user.getId(),
                 userPrincipal.provider(),
                 userPrincipal.providerId(),
-                order.getTotalPrice(),
-                eventOrderItems
+                originalTotalPrice,      // 원가 총 금액
+                couponDiscountRate,      // 쿠폰 할인률
+                finalTotalPrice,         // 최종 할인 금액
+                orderItems
         );
 
         eventPublisher.publishEvent(event);
-        log.info("OrderCreatedEvent 발행 완료: {}", event);
+
+        log.debug("OrderCreatedEvent 발행 완료: orderId={}, 원가={}원, 쿠폰할인={}%, 최종={}원",
+                savedOrder.getId(), originalTotalPrice,
+                couponDiscountRate != null ? couponDiscountRate : 0, finalTotalPrice);
     }
 
     /**
-     * 토스 페이먼츠 응답 생성 (TossPaymentResponseBuilder 활용)
-     */
-    private OrderCreateResponse buildTossPaymentResponse(Orders order, OrderCreateRequest.PaymentInfoRequest paymentInfo) {
-        String orderName = generateOrderName(order);
-        return tossPaymentResponseBuilder.buildTossPaymentResponse(order, paymentInfo, orderName);
-    }
-
-    /**
-     * 고유한 주문 번호 생성
+     * 주문 번호 생성 (기존 로직 유지)
+     * 현재 시간 기반으로 고유한 주문 번호를 생성합니다.
      */
     private Long generateOrderNumber() {
-        String timestamp = DateTimeFormatter.ofPattern("yyMMddHHmmss")
-                .format(LocalDateTime.now());
-        int randomNum = ThreadLocalRandom.current().nextInt(1000, 10000);
-
-        Long orderNumber = Long.parseLong(timestamp + randomNum);
-        log.debug("주문 번호 생성: {}", orderNumber);
-
-        return orderNumber;
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        int randomSuffix = ThreadLocalRandom.current().nextInt(100, 1000);
+        return Long.parseLong(timestamp + randomSuffix);
     }
 
     /**
-     * 주문명 생성
+     * 토스 페이먼츠용 주문명 생성
+     *
+     * @param requestOrderName 요청에서 받은 주문명
+     * @param orderNumber 생성된 주문 번호
+     * @return 토스 페이먼츠에 표시될 주문명
      */
-    private String generateOrderName(Orders order) {
-        return "반려동물 용품 주문 #" + order.getOrderNumber();
+    private String generateOrderName(String requestOrderName, Long orderNumber) {
+        if (requestOrderName != null && !requestOrderName.trim().isEmpty()) {
+            return requestOrderName;
+        }
+        return "반려동물 용품 주문 #" + orderNumber;
     }
 }
