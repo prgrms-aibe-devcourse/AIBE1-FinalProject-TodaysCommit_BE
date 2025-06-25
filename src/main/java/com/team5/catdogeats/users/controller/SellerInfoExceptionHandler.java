@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.web.multipart.MaxUploadSizeExceededException;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -92,35 +90,6 @@ public class SellerInfoExceptionHandler {
         return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
                 .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
     }
-
-
-
-
-    /**
-     * 이미지 업로드 크기 초과 예외 처리
-     */
-    @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ApiResponse<Object>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException e) {
-        log.warn("파일 업로드 크기 초과 - Message: {}", e.getMessage());
-        return ResponseEntity.status(ResponseCode.INVALID_INPUT_VALUE.getStatus())
-                .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, "이미지 크기가 너무 큽니다. 최대 10MB까지 업로드 가능합니다."));
-    }
-
-    /**
-     * 이미지 업로드 관련 I/O 예외 처리
-     */
-    @ExceptionHandler(java.io.IOException.class)
-    public ResponseEntity<ApiResponse<Object>> handleIOException(java.io.IOException e) {
-        log.error("이미지 처리 중 I/O 오류", e);
-        return ResponseEntity.status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
-                .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, "이미지 처리 중 오류가 발생했습니다."));
-    }
-
-
-
-
-
-
 
     /**
      * 기타 예상치 못한 예외 처리
