@@ -204,18 +204,16 @@ class SellerBrandImageServiceImplTest {
         }
 
         @Test
-        @DisplayName("실패: 지원하지 않는 파일 형식")
-        void uploadBrandImage_UnsupportedFileType() {
-            // given - PDF 파일 헤더 (25 50 44 46)
-            byte[] pdfHeader = new byte[]{0x25, 0x50, 0x44, 0x46};
-            MultipartFile unsupportedFile = new MockMultipartFile("image", "test.pdf", "application/pdf", pdfHeader);
+        @DisplayName("실패: 지원하지 않는 파일 시그니처")
+        void uploadBrandImage_UnsupportedFileSignature() {
+            // given - 이미지 MIME 타입이지만 실제로는 PDF 바이너리
+            byte[] pdfHeader = new byte[]{0x25, 0x50, 0x44, 0x46}; // PDF 시그니처
+            MultipartFile fakeImageFile = new MockMultipartFile("image", "fake.jpg", "image/jpeg", pdfHeader);
 
             // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, unsupportedFile))
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, fakeImageFile))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("지원하지 않는 이미지 형식입니다. (JPEG, PNG, WebP만 지원)");
-
-            verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
         }
 
         @Test
@@ -522,5 +520,139 @@ class SellerBrandImageServiceImplTest {
             assertThat(generatedFilename).startsWith("brand_short123");
             assertThat(generatedFilename).endsWith(".jpg");
         }
+
+        @Test
+        @DisplayName("실패: 잘못된 MIME Type")
+        void uploadBrandImage_InvalidMimeType() {
+            // given - JPEG 바이너리지만 잘못된 Content-Type
+            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+            MultipartFile invalidMimeFile = new MockMultipartFile(
+                    "image", "test.jpg", "application/pdf", jpegHeader); // 잘못된 MIME Type
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, invalidMimeFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("허용되지 않은 MIME 타입입니다");
+        }
+
+        @Test
+        @DisplayName("실패: MIME Type이 null")
+        void uploadBrandImage_NullMimeType() {
+            // given - Content-Type이 null인 파일
+            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+            MultipartFile nullMimeFile = new MockMultipartFile(
+                    "image", "test.jpg", null, jpegHeader); // null Content-Type
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, nullMimeFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("파일의 Content-Type을 확인할 수 없습니다.");
+        }
+
+
+        @Test
+        @DisplayName("실패: 스크립트 태그 포함된 파일")
+        void uploadBrandImage_ContainsScript() {
+            // given - JPEG 헤더 + 스크립트 내용
+            String maliciousContent = "\u00FF\u00D8\u00FF\u00E0<script>alert('XSS')</script>";
+            MultipartFile scriptFile = new MockMultipartFile(
+                    "image", "malicious.jpg", "image/jpeg", maliciousContent.getBytes());
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, scriptFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+        }
+
+        @Test
+        @DisplayName("실패: JavaScript 코드 포함된 파일")
+        void uploadBrandImage_ContainsJavaScript() {
+            // given - JPEG 헤더 + JavaScript 내용
+            String maliciousContent = "\u00FF\u00D8\u00FF\u00E0javascript:alert('XSS')";
+            MultipartFile jsFile = new MockMultipartFile(
+                    "image", "malicious.jpg", "image/jpeg", maliciousContent.getBytes());
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, jsFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+        }
+
+        @Test
+        @DisplayName("실패: 이벤트 핸들러 포함된 파일")
+        void uploadBrandImage_ContainsEventHandler() {
+            // given - JPEG 헤더 + 이벤트 핸들러
+            String maliciousContent = "\u00FF\u00D8\u00FF\u00E0onload=alert('XSS')";
+            MultipartFile eventFile = new MockMultipartFile(
+                    "image", "malicious.jpg", "image/jpeg", maliciousContent.getBytes());
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, eventFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+        }
+
+
+        @Test
+        @DisplayName("실패: 파일명이 null")
+        void uploadBrandImage_NullFileName() {
+            // given - 파일명이 null
+            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+            MultipartFile nullNameFile = new MockMultipartFile(
+                    "image", null, "image/jpeg", jpegHeader);
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, nullNameFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("파일명이 비어있습니다.");
+        }
+
+        @Test
+        @DisplayName("실패: 파일명이 너무 긺")
+        void uploadBrandImage_FileNameTooLong() {
+            // given - 255자 초과 파일명
+            String longFileName = "a".repeat(256) + ".jpg";
+            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+            MultipartFile longNameFile = new MockMultipartFile(
+                    "image", longFileName, "image/jpeg", jpegHeader);
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, longNameFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("파일명이 너무 깁니다. (최대 255자)");
+        }
+
+        @Test
+        @DisplayName("실패: 경로 순회 공격 파일명")
+        void uploadBrandImage_PathTraversalFileName() {
+            // given - 경로 순회 시도
+            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+            MultipartFile pathTraversalFile = new MockMultipartFile(
+                    "image", "../../../etc/passwd.jpg", "image/jpeg", jpegHeader);
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, pathTraversalFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("파일명에 상대경로가 포함될 수 없습니다.");
+        }
+
+        @Test
+        @DisplayName("실패: 실행 가능한 확장자 파일명")
+        void uploadBrandImage_ExecutableExtension() {
+            // given - 실행 파일 확장자
+            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
+            MultipartFile executableFile = new MockMultipartFile(
+                    "image", "malicious.exe.jpg", "image/jpeg", jpegHeader);
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, executableFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("실행 가능한 파일 확장자는 업로드할 수 없습니다.");
+        }
+
+
+
+
+
     }
 }

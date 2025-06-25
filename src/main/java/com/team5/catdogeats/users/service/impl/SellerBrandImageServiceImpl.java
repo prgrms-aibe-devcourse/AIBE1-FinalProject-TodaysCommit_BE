@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Slf4j
@@ -100,7 +101,16 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
             throw new IllegalArgumentException("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
         }
 
-        // 실제 파일 내용 검증 (핵심 보안)
+        // MIME Type 검증 -HTTP 해더 검증
+        validateMimeType(imageFile);
+
+        // 파일명 보안 검증
+        validateFileName(imageFile.getOriginalFilename());
+
+        // 스크립트 공격 방지
+        validateNoScriptContent(imageFile);
+
+        // 실제 파일 내용 검증
         validateFileSignature(imageFile);
 
         log.debug("이미지 파일 검증 완료 - fileName: {}, size: {}",
@@ -273,6 +283,75 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
 
         } catch (IOException e) {
             throw new IllegalArgumentException("파일 형식 검증 중 오류가 발생했습니다.", e);
+        }
+    }
+
+    /**
+     * MIME Type 검증
+     */
+    private void validateMimeType(MultipartFile file) {
+        String contentType = file.getContentType();
+
+        if (contentType == null) {
+            throw new IllegalArgumentException("파일의 Content-Type을 확인할 수 없습니다.");
+        }
+
+        if (!contentType.matches("^image/(jpeg|jpg|png|webp)$")) {
+            throw new IllegalArgumentException(
+                    String.format("허용되지 않은 MIME 타입입니다: %s", contentType));
+        }
+    }
+
+    /**
+     * 파일명 보안 검증
+     */
+    private void validateFileName(String fileName) {
+        if (fileName == null || fileName.trim().isEmpty()) {
+            throw new IllegalArgumentException("파일명이 비어있습니다.");
+        }
+
+        // 파일명 길이 제한
+        if (fileName.length() > 255) {
+            throw new IllegalArgumentException("파일명이 너무 깁니다. (최대 255자)");
+        }
+
+        // 경로 순회 공격 방지
+        if (fileName.contains("..") || fileName.contains("./") || fileName.contains(".\\")) {
+            throw new IllegalArgumentException("파일명에 상대경로가 포함될 수 없습니다.");
+        }
+
+        // 위험한 확장자 차단
+        if (fileName.toLowerCase().matches(".*\\.(js|html|htm|php|jsp|asp|exe|bat|cmd).*")) {
+            throw new IllegalArgumentException("실행 가능한 파일 확장자는 업로드할 수 없습니다.");
+        }
+    }
+
+
+    /**
+     * 스크립트 공격 방지
+     */
+    private void validateNoScriptContent(MultipartFile file) {
+        try (InputStream is = file.getInputStream()) {
+            byte[] buffer = new byte[2048];
+            int bytesRead = is.read(buffer);
+
+            if (bytesRead > 0) {
+                String content = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8).toLowerCase();
+
+                String[] dangerousPatterns = {
+                        "<script", "javascript:", "onload=", "onerror=",
+                        "onclick=", "eval(", "document.", "alert("
+                };
+
+                for (String pattern : dangerousPatterns) {
+                    if (content.contains(pattern)) {
+                        throw new IllegalArgumentException(
+                                "보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+                    }
+                }
+            }
+        } catch (IOException e) {
+            throw new IllegalArgumentException("파일 내용 검증 중 오류가 발생했습니다.", e);
         }
     }
 
