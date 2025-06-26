@@ -62,6 +62,9 @@ dependencies {
 	implementation platform('software.amazon.awssdk:bom:2.31.68')
 	implementation 'software.amazon.awssdk:s3'
 
+	implementation 'org.springframework.boot:spring-boot-starter-mail'  // 이메일 발송용 추가
+	implementation 'org.springframework.session:spring-session-data-redis'  // Redis 세션 추가
+
 }
 
 tasks.named('test') {

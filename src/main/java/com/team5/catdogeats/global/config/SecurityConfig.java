@@ -50,11 +50,33 @@ public class SecurityConfig {
                     .securityMatcher("/v1/admin/**") // 관리자 체인 설정 지정
                     .csrf(AbstractHttpConfigurer::disable) // 개발이 끝나면 반드시 활성화 시킬것!
                     .sessionManagement(session ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                                    .sessionFixation().migrateSession()
+                                    .maximumSessions(1)
+                                    .maxSessionsPreventsLogin(false))
                     .authorizeHttpRequests(authorize -> authorize
-                            .requestMatchers("/v1/admin/login").permitAll()
-                            .requestMatchers("/v1/admin/**").hasRole("ADMIN")
-                            .anyRequest().authenticated());
+                            .requestMatchers("/v1/admin/login").permitAll()          // 로그인 페이지
+                            .requestMatchers("/v1/admin/verify").permitAll()         // 계정 인증 페이지
+                            .requestMatchers("/v1/admin/resend-code").permitAll()    // 인증코드 재발송
+                            .requestMatchers("/v1/admin/**").authenticated()         // 🔧 세션 인증 필요
+                            .anyRequest().authenticated())
+                    .httpBasic(AbstractHttpConfigurer::disable)
+                    .formLogin(AbstractHttpConfigurer::disable)                     // Spring Security 기본 로그인 비활성화
+                    .logout(logout -> logout
+                            .logoutUrl("/v1/admin/logout")
+                            .logoutSuccessUrl("/v1/admin/login?logout=true")
+                            .invalidateHttpSession(true)
+                            .deleteCookies("JSESSIONID")
+                            .permitAll())
+                    .securityContext(securityContext ->
+                            securityContext.requireExplicitSave(false))  // 🔧 SecurityContext 자동 저장 활성화
+                    .exceptionHandling(exceptions -> exceptions
+                            .authenticationEntryPoint((request, response, authException) -> {
+                                // 인증되지 않은 사용자를 로그인 페이지로 리다이렉트
+                                if (request.getRequestURI().startsWith("/v1/admin/")) {
+                                    response.sendRedirect("/v1/admin/login");
+                                }
+                            }));
             return http.build();
         } catch (Exception e) {
             log.error("Admin SecurityFilterChain 설정 중 예외 발생: ", e);

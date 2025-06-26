@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>계정 인증 - 고양이강아지잇츠</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+        }
+        .verify-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo i {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            padding: 12px;
+            font-weight: 600;
+        }
+        .btn-outline-secondary {
+            border-color: #6c757d;
+        }
+        .verification-code {
+            font-size: 1.5rem;
+            text-align: center;
+            letter-spacing: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+        .instruction {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="verify-container">
+                <div class="logo">
+                    <i class="fas fa-shield-alt"></i>
+                    <h3 class="fw-bold text-primary">계정 인증</h3>
+                    <p class="text-muted">이메일로 발송된 인증코드를 입력해주세요</p>
+                </div>
+
+                <div class="instruction">
+                    <h6><i class="fas fa-info-circle me-2 text-info"></i>인증 안내</h6>
+                    <ul class="mb-0 small">
+                        <li>이메일로 발송된 6자리 인증코드를 입력해주세요</li>
+                        <li>인증코드는 1시간 동안만 유효합니다</li>
+                        <li>인증 완료 후 로그인하여 비밀번호를 변경해주세요</li>
+                    </ul>
+                </div>
+
+                <!-- 알림 메시지 -->
+                <div id="alertContainer"></div>
+
+                <!-- 인증 폼 -->
+                <form id="verifyForm">
+                    <div class="mb-3">
+                        <label for="email" class="form-label">
+                            <i class="fas fa-envelope me-2"></i>이메일
+                        </label>
+                        <input type="email"
+                               class="form-control"
+                               id="email"
+                               name="email"
+                               th:value="${email}"
+                               required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="verificationCode" class="form-label">
+                            <i class="fas fa-key me-2"></i>인증코드 (6자리)
+                        </label>
+                        <input type="text"
+                               class="form-control verification-code"
+                               id="verificationCode"
+                               name="verificationCode"
+                               maxlength="6"
+                               pattern="\d{6}"
+                               placeholder="000000"
+                               required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-check me-2"></i>계정 인증
+                        </button>
+
+                        <button type="button" class="btn btn-outline-secondary" id="resendBtn">
+                            <i class="fas fa-redo me-2"></i>인증코드 재발송
+                        </button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <a href="/v1/admin/login" class="text-decoration-none">로그인 페이지로 돌아가기</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('verifyForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const verificationCode = document.getElementById('verificationCode').value;
+
+        if (verificationCode.length !== 6 || !/^\d{6}$/.test(verificationCode)) {
+            showAlert('6자리 숫자 인증코드를 입력해주세요.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/v1/admin/verify', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, verificationCode })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('계정 인증이 완료되었습니다!', 'success');
+                setTimeout(() => {
+                    window.location.href = result.data.redirectUrl;
+                }, 1500);
+            } else {
+                showAlert(result.message, 'danger');
+            }
+        } catch (error) {
+            showAlert('인증 중 오류가 발생했습니다.', 'danger');
+        }
+    });
+
+    document.getElementById('resendBtn').addEventListener('click', async function() {
+        const email = document.getElementById('email').value;
+
+        if (!email) {
+            showAlert('이메일을 입력해주세요.', 'warning');
+            return;
+        }
+
+        try {
+            const response = await fetch('/v1/admin/resend-code', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `email=${encodeURIComponent(email)}`
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showAlert('인증코드가 재발송되었습니다.', 'info');
+            } else {
+                showAlert(result.message, 'danger');
+            }
+        } catch (error) {
+            showAlert('재발송 중 오류가 발생했습니다.', 'danger');
+        }
+    });
+
+    // 인증코드 입력 시 숫자만 허용
+    document.getElementById('verificationCode').addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    function showAlert(message, type) {
+        const alertContainer = document.getElementById('alertContainer');
+        alertContainer.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+    }
+</script>
+</body>
+</html>
