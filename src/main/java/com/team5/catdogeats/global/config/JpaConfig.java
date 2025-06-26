@@ -20,7 +20,7 @@ import javax.sql.DataSource;
                 "com.team5.catdogeats.products.repository",
                 "com.team5.catdogeats.pets.repository",
                 "com.team5.catdogeats.reviews.repository",
-                "com.team5.catdogeats.storage.repository"},
+                "com.team5.catdogeats.storage.repository",
                 "com.team5.catdogeats.payments.repository"},
         entityManagerFactoryRef = "entityManagerFactory",
         transactionManagerRef = "jpaTransactionManager"
