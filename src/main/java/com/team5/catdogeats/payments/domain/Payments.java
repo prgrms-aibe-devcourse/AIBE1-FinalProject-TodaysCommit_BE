@@ -34,6 +34,9 @@ public class Payments extends BaseEntity {
             foreignKey = @ForeignKey(name = "fk_payments_order_id"))
     private Orders orders;
 
+    @Column(nullable = false)
+    private Long amount;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private PaymentMethod method;
@@ -42,7 +45,7 @@ public class Payments extends BaseEntity {
     @Column(nullable = false, length = 10)
     private PaymentStatus status = PaymentStatus.PENDING;
 
-    @Column(name = "toss_payment_key", nullable = false, length = 255)
+    @Column(name = "toss_payment_key")
     private String tossPaymentKey;
 
     @Column(name = "paid_at")
