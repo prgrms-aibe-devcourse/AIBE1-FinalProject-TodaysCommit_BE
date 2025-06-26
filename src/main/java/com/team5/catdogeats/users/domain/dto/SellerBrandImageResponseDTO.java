@@ -2,6 +2,8 @@ package com.team5.catdogeats.users.domain.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.time.ZonedDateTime;
+
 @Schema(description = "판매자 브랜드 이미지 업로드 응답 DTO")
 public record SellerBrandImageResponseDTO(
         @Schema(description = "사용자 ID", example = "2ceb807f-586f-4450-b470-d1ece7173749")
@@ -14,14 +16,14 @@ public record SellerBrandImageResponseDTO(
         String vendorProfileImage,
 
         @Schema(description = "이미지 업로드 시간", example = "2024-01-20T14:20:00")
-        java.time.LocalDateTime updatedAt
+        ZonedDateTime updatedAt
 ) {
     public static SellerBrandImageResponseDTO from(com.team5.catdogeats.users.domain.mapping.Sellers seller) {
         return new SellerBrandImageResponseDTO(
                 seller.getUserId(),
                 seller.getVendorName(),
                 seller.getVendorProfileImage(),
-                seller.getUpdatedAt() != null ? seller.getUpdatedAt().toLocalDateTime() : null
+                seller.getUpdatedAt()
         );
     }
 }
