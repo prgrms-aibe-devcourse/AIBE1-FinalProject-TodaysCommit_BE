@@ -4,5 +4,5 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.chats.domain.ChatRooms;
 
 public interface ChatRoomService {
-    ChatRooms CreateRoom(UserPrincipal userPrincipal, String vendorName);
+    ChatRooms createRoom(UserPrincipal userPrincipal, String vendorName);
 }

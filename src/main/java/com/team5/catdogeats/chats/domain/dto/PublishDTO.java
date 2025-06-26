@@ -11,5 +11,8 @@ public record PublishDTO(String roomId,
                          String senderId,
                          String message,
                          boolean isRead,
-                         Instant sentAt) {
+                         Instant sentAt,
+                         boolean isMe,          // 항상 false
+                         int     unreadCount    // 상대방에게 보여줄 '안읽음 +1'
+                        ) {
 }

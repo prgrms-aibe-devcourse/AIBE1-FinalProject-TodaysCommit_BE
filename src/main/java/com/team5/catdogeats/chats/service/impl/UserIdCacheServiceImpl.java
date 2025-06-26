@@ -21,25 +21,40 @@ public class UserIdCacheServiceImpl implements UserIdCacheService {
     private final UserRepository userRepository;
 
     @Override
-    public void cacheUserId(String provider, String providerId) {
-        String key = MakeKeyString.makeKeyProviderAndProviderId(provider, providerId);
-        String userId = getUserId(provider, providerId);
-        redisTemplate.opsForValue().setIfAbsent(key, userId,  EXPIRATION);
-        log.debug("Cached userId={} under key={}", userId, key);
+    public void cacheUserIdAndRole(String provider, String providerId) {
+        Users user = getUser(provider, providerId);          // ↓ userId·role 둘 다 갖고 옴
+        String baseKey = MakeKeyString.makeKeyProviderAndProviderId(provider, providerId);
 
+        // 1) userId
+        redisTemplate.opsForValue()
+                .set(baseKey + ":userId", user.getId(), EXPIRATION);
+
+        // 2) role
+        redisTemplate.opsForValue()
+                .set(user.getId() , user.getRole().name(), EXPIRATION);
+
+        log.debug("Cached userId={} & role={} under baseKey={}",
+                user.getId(), user.getRole(), baseKey);
     }
 
     @Override
+    public String getCachedRoleByUserId(String userId) {
+
+        return redisTemplate.opsForValue().get(userId);
+    }
+
+
+
+    @Override
     public String getCachedUserId(String provider, String providerId) {
-        String key = MakeKeyString.makeKeyProviderAndProviderId(provider, providerId);
+        String key = MakeKeyString.makeKeyProviderAndProviderId(provider, providerId) + ":userId";
         return redisTemplate.opsForValue().get(key);
     }
 
-
-    private String getUserId(String provider, String providerId) {
-        Users users = userRepository.findByProviderAndProviderId(provider, providerId)
+    private Users getUser(String provider, String providerId) {
+        return userRepository.findByProviderAndProviderId(provider, providerId)
                 .orElseThrow(() -> new NoSuchElementException("유저 정보가 없습니다."));
-        return users.getId();
     }
+
 
 }

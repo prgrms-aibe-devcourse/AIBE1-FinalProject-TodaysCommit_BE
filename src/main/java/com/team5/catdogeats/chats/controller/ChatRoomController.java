@@ -39,7 +39,7 @@ public class ChatRoomController {
         }
 
         try {
-            ChatRooms room = chatRoomService.CreateRoom(userPrincipal, requestDTO.vendorName());
+            ChatRooms room = chatRoomService.createRoom(userPrincipal, requestDTO.vendorName());
             return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, new ChatRoomResponseDTO(room.getId(), room.getCreatedAt(), room.getUpdatedAt())));
         } catch (NoSuchElementException e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND));

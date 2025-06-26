@@ -1,6 +1,8 @@
 package com.team5.catdogeats.chats.interceptor;
 
 import com.team5.catdogeats.auth.util.JwtUtils;
+import com.team5.catdogeats.chats.service.UserIdCacheService;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,6 +21,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
     private final JwtUtils jwtUtils;
+    private final UserIdCacheService userIdCacheService;
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response,
@@ -31,6 +34,16 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
             if(StringUtils.hasText(token) && jwtUtils.validateToken(token)) {
                 attributes.put("token", token);
+                log.debug("1번 이터센터에 토큰이 나오는가 {}", token);
+                Claims claims = jwtUtils.parseToken(token);
+                String provider = claims.get("provider", String.class);
+                String providerId = claims.getSubject();
+                String userId = userIdCacheService.getCachedUserId(provider, providerId);
+                if (userId == null) {
+                    userIdCacheService.cacheUserIdAndRole(provider, providerId);
+                    userId = userIdCacheService.getCachedUserId(provider, providerId);
+                }
+                attributes.put("userId", userId);
                 return true;
             }
         }

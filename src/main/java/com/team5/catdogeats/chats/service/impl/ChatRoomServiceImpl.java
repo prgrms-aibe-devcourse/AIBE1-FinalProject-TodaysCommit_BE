@@ -5,16 +5,12 @@ import com.team5.catdogeats.chats.domain.ChatRooms;
 import com.team5.catdogeats.chats.mongo.repository.ChatRoomRepository;
 import com.team5.catdogeats.chats.service.ChatRoomService;
 import com.team5.catdogeats.chats.service.UserIdCacheService;
-import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Slf4j
@@ -25,32 +21,25 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final UserIdCacheService userIdCacheService;
     private final SellersRepository sellersRepository;
 
-    public ChatRooms CreateRoom(UserPrincipal userPrincipal, String vendorName) {
+    public ChatRooms createRoom(UserPrincipal principal, String vendorName) {
         try {
+        String buyerId  = validateUserPrincipal(principal);      // 로그인-사용자 = Buyer
+        String sellerId = sellersRepository.findByVendorName(vendorName)
+                .orElseThrow(() -> new NoSuchElementException("판매자 정보를 찾을 수 없습니다."))
+                .getUserId();
 
-            String userId = validateUserPrincipal(userPrincipal);
+        if (buyerId.equals(sellerId)) {
+            throw new IllegalArgumentException("본인과의 채팅 방은 생성할 수 없습니다.");
+        }
 
-            Sellers seller = sellersRepository.findByVendorName(vendorName)
-                    .orElseThrow(() -> new NoSuchElementException("판매자 정보를 찾을 수 없습니다."));
-            String sellerId = seller.getUserId();
 
-            // 1) 자기 자신과의 채팅 방 생성 방지
-            if (userId.equals(sellerId)) {
-                throw new IllegalArgumentException("본인과의 채팅 방은 생성할 수 없습니다.");
-            }
-
-            List<String> ids = new ArrayList<>(List.of(userId, sellerId));
-            ids.sort(Comparator.naturalOrder());
-            String firstId = ids.get(0);
-            String secondId = ids.get(1);
-
-            // 2) 기존 방 조회
+            // 4) buyerId/sellerId 순서 그대로 find or create
             return chatRoomRepository
-                    .findByBuyerIdAndSellerId(firstId, secondId)
+                    .findByBuyerIdAndSellerId(buyerId, sellerId)
                     .orElseGet(() -> {
                         ChatRooms room = ChatRooms.builder()
-                                .buyerId(firstId)
-                                .sellerId(secondId)
+                                .buyerId(buyerId)
+                                .sellerId(sellerId)
                                 .createdAt(Instant.now())
                                 .build();
                         return chatRoomRepository.save(room);
@@ -65,7 +54,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private String validateUserPrincipal(UserPrincipal userPrincipal) {
         String userId = userIdCacheService.getCachedUserId(userPrincipal.provider(), userPrincipal.providerId());
         if (userId == null) {
-            userIdCacheService.cacheUserId(userPrincipal.provider(), userPrincipal.providerId());
+            userIdCacheService.cacheUserIdAndRole(userPrincipal.provider(), userPrincipal.providerId());
             userId = userIdCacheService.getCachedUserId(userPrincipal.provider(), userPrincipal.providerId());
             if (userId == null) {
                 throw new IllegalStateException("userId 캐싱에 실패했습니다.");

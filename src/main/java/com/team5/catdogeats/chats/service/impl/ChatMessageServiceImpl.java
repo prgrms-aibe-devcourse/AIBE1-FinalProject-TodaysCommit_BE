@@ -1,21 +1,22 @@
 package com.team5.catdogeats.chats.service.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.team5.catdogeats.auth.dto.UserPrincipal;
+import com.team5.catdogeats.chats.domain.ChatRooms;
 import com.team5.catdogeats.chats.domain.dto.ChatMessageDTO;
 import com.team5.catdogeats.chats.domain.dto.PublishDTO;
+import com.team5.catdogeats.chats.domain.dto.SelfDTO;
 import com.team5.catdogeats.chats.domain.mapping.ChatMessages;
 import com.team5.catdogeats.chats.mongo.repository.ChatMessageRepository;
+import com.team5.catdogeats.chats.mongo.repository.ChatRoomRepository;
 import com.team5.catdogeats.chats.service.ChatMessageService;
 import com.team5.catdogeats.chats.service.UserIdCacheService;
-import com.team5.catdogeats.chats.util.MakeKeyString;
+import com.team5.catdogeats.users.domain.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @Slf4j
@@ -23,46 +24,82 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ChatMessageServiceImpl implements ChatMessageService {
     private final ChatMessageRepository chatMessageRepository;
-    private final ObjectMapper objectMapper;
-    private final RedisTemplate<String, String> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
     private final UserIdCacheService userIdCacheService;
-
+    private final ChatRoomRepository chatRoomRepository;
     @Override
-    public ChatMessageDTO saveAndPublish(ChatMessageDTO dto, UserPrincipal userPrincipal) {
+    public ChatMessageDTO saveAndPublish(ChatMessageDTO dto, String userId) {
         try {
-            String userId = userIdCacheService.getCachedUserId(userPrincipal.provider(),
-                                                            userPrincipal.providerId());
-            if (userId == null) throw new IllegalStateException("유저 정보를 찯을 수 없습니다.");
+            // 1) 발신자 ID: WebSocket 세션에서 직접 전달된 userId
+            String senderId = userId;
 
-            // 1. MongoDB 영속
-            String id = UUID.randomUUID().toString();
+            // 2) 전송 시간
+            Instant sentAt = dto.sentAt() != null ? dto.sentAt() : Instant.now();
+
+            // 3) 채팅방 존재 확인
+            ChatRooms chatRooms = chatRoomRepository.findById(dto.roomId())
+                    .orElseThrow(() -> new NoSuchElementException("존재하지 않는 방입니다."));
+
+            // 4) 발신자 Role 조회 (userId 기준)
+            String role = userIdCacheService.getCachedRoleByUserId(senderId);
+
+            // 5) 수신자 ID 결정
+            String targetId;
+            if (Role.ROLE_BUYER.toString().equals(role)) {
+                targetId = chatRooms.getSellerId();
+            } else if (Role.ROLE_SELLER.toString().equals(role)) {
+                targetId = chatRooms.getBuyerId();
+            } else {
+                throw new IllegalStateException("허용되지 않은 역할(Role)입니다.");
+            }
+
+            log.debug("메시지 전송 준비: senderId={}, targetId={}, roomId={}",
+                    senderId, targetId, dto.roomId());
+
+            // 6) MongoDB에 메시지 저장
+            String messageId = UUID.randomUUID().toString();
             ChatMessages messages = ChatMessages.builder()
-                                    .id(id)
-                                    .roomId(dto.roomId())
-                                    .senderId(userId)
-                                    .message(dto.message())
-                                    .behaviorType(dto.behaviorType())
-                                    .sentAt(dto.sentAt())
-                                    .isRead(false)
-                                    .sentAt(dto.sentAt() != null ? dto.sentAt() : Instant.now())
-                                    .build();
-            chatMessageRepository.save(messages);
-
-            // 2. Redis Pub/Sub 발행
-            PublishDTO publish = PublishDTO.builder()
+                    .id(messageId)
                     .roomId(dto.roomId())
-                    .senderId(userId)  // 👈 senderId 추가!
+                    .senderId(senderId)
                     .message(dto.message())
                     .behaviorType(dto.behaviorType())
-                    .sentAt(dto.sentAt() != null ? dto.sentAt() : Instant.now())
+                    .isRead(false)
+                    .sentAt(sentAt)
                     .build();
-            String channel = MakeKeyString.makeRoomId("chat-room" , dto.roomId());
-            redisTemplate.convertAndSend(channel, objectMapper.writeValueAsString(publish));
+            chatMessageRepository.save(messages);
+            log.debug("메시지 저장 완료: id={}", messageId);
+
+            // 7) 발신자에게 SelfDTO 전송
+            SelfDTO self = SelfDTO.builder()
+                    .roomId(dto.roomId())
+                    .senderId(senderId)
+                    .message(dto.message())
+                    .behaviorType(dto.behaviorType())
+                    .sentAt(sentAt)
+                    .isMe(true)
+                    .unreadCount(0)
+                    .build();
+            redisTemplate.convertAndSend("user:" + senderId, self);
+            log.debug("Redis 발신자 채널 전송: user:{} -> {}", senderId, self);
+
+            // 8) 수신자에게 PublishDTO 전송
+            PublishDTO publish = PublishDTO.builder()
+                    .roomId(dto.roomId())
+                    .senderId(senderId)
+                    .message(dto.message())
+                    .behaviorType(dto.behaviorType())
+                    .sentAt(sentAt)
+                    .isMe(false)
+                    .unreadCount(1)
+                    .build();
+            redisTemplate.convertAndSend("user:" + targetId, publish);
+            log.debug("Redis 수신자 채널 전송: user:{} -> {}", targetId, publish);
+
             return dto;
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("Redis publish failed");
+        } catch (Exception e) {
+            log.error("메시지 저장 및 전송 실패", e);
+            throw e;
         }
-
     }
-
 }
