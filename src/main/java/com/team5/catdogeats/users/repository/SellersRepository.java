@@ -3,6 +3,7 @@ package com.team5.catdogeats.users.repository;
 import com.team5.catdogeats.users.domain.dto.SellerDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -25,6 +26,14 @@ public interface SellersRepository extends JpaRepository<Sellers, String> {
      * 상점명으로 판매자 정보 조회
      */
     Optional<Sellers> findByVendorName(String vendorName);
+
+
+    /**
+     * 브랜드 이미지 삭제 (null로 설정)
+     */
+    @Modifying
+    @Query("UPDATE Sellers s SET s.vendorProfileImage = NULL WHERE s.userId = :userId")
+    int deleteVendorProfileImage(@Param("userId") String userId);
 
 
     @Query("""

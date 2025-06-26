@@ -15,10 +15,6 @@ public record SellerInfoRequestDTO(
         String vendorName,
 
 
-        @Schema(description = "업체 프로필 이미지 URL", example = "https://example.com/profile.jpg" )
-        @Size(max = 255, message = "이미지 URL은 최대 255자까지 입력 가능합니다.")
-        String vendorProfileImage,
-
         @Schema(description = "사업자 등록번호", example = "123-45-67890", required = true)
         @Size(max = 20, message = "사업자 등록번호는 최대 20자까지 입력 가능합니다.")
         @Pattern(regexp = "^[0-9\\-]+$", message = "사업자 등록번호는 숫자와 하이픈만 입력 가능합니다.")
