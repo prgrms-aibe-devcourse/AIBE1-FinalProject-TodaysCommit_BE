@@ -51,7 +51,7 @@ public class SecurityConfig {
                             session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers("/v1/admin/login").permitAll()
-                            .requestMatchers("/v1/admin/**").hasRole("ADMIN") // 테스트 시, 임시 permitAll()
+                            .requestMatchers("/v1/admin/**").permitAll() // 테스트 시, permitAll() / 기존, hasRole("ADMIN")
                             .anyRequest().authenticated());
             return http.build();
         } catch (Exception e) {

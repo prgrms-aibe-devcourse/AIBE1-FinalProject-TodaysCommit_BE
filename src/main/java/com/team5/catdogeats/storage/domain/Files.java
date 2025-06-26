@@ -7,7 +7,6 @@ import lombok.*;
 @Entity
 @Table(name = "files")
 @Getter
-@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Builder
