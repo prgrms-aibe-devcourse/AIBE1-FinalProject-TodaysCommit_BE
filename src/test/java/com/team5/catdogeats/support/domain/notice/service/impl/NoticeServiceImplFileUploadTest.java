@@ -3,6 +3,7 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
+import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
 import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
@@ -20,6 +21,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -41,6 +43,9 @@ class NoticeServiceImplFileUploadTest {
 
     @Mock
     private ObjectStorageService objectStorageService;
+
+    @Mock
+    private NoticeFileManagementService noticeFileManagementService; // 🆕 추가
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
@@ -67,16 +72,14 @@ class NoticeServiceImplFileUploadTest {
         String noticeId = "test-notice-id";
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "test.txt",
-                "text/plain",
+                "test.pdf",
+                "application/pdf",
                 "테스트 파일 내용".getBytes()
         );
 
-        String s3FileUrl = "https://cdn.example.com/files/notice_12345678_20250625_120000_test.txt";
-
         Files savedFile = Files.builder()
                 .id("file-id")
-                .fileUrl(s3FileUrl)
+                .fileUrl("https://cdn.example.com/files/notice_12345678_20250625_120000_test.pdf")
                 .build();
         setTimeFields(savedFile);
 
@@ -88,13 +91,7 @@ class NoticeServiceImplFileUploadTest {
         setTimeFields(noticeFile);
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(objectStorageService.uploadFile(
-                anyString(), // key (파일명)
-                any(), // inputStream
-                anyLong(), // contentLength
-                anyString() // contentType
-        )).willReturn(s3FileUrl);
-        given(filesRepository.save(any(Files.class))).willReturn(savedFile);
+        given(noticeFileManagementService.uploadNoticeFile(file)).willReturn(savedFile);
         given(noticeFilesRepository.save(any(NoticeFiles.class))).willReturn(noticeFile);
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
 
@@ -104,14 +101,11 @@ class NoticeServiceImplFileUploadTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getAttachments()).hasSize(1);
-        verify(objectStorageService).uploadFile(
-                anyString(),
-                any(),
-                eq(file.getSize()),
-                eq(file.getContentType())
-        );
-        verify(filesRepository).save(any(Files.class));
+
+        verify(noticeRepository).findById(noticeId);
+        verify(noticeFileManagementService).uploadNoticeFile(file);
         verify(noticeFilesRepository).save(any(NoticeFiles.class));
+        verify(noticeFilesRepository).findByNoticesId(noticeId);
     }
 
     @Test
@@ -121,8 +115,8 @@ class NoticeServiceImplFileUploadTest {
         String noticeId = "non-existing-id";
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "test.txt",
-                "text/plain",
+                "test.pdf",
+                "application/pdf",
                 "테스트 파일 내용".getBytes()
         );
 
@@ -130,34 +124,75 @@ class NoticeServiceImplFileUploadTest {
 
         // when & then
         assertThatThrownBy(() -> noticeService.uploadFile(noticeId, file))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 업로드 중 오류가 발생했습니다");
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("공지사항을 찾을 수 없습니다");
     }
 
     @Test
-    @DisplayName("파일 업로드 - RuntimeException 발생")
-    void uploadFile_RuntimeException() throws IOException {
+    @DisplayName("파일 업로드 - 허용되지 않는 파일 형식")
+    void uploadFile_InvalidFileType() {
         // given
         String noticeId = "test-notice-id";
         MockMultipartFile file = new MockMultipartFile(
                 "file",
-                "test.txt",
-                "text/plain",
+                "test.exe", // 허용되지 않는 확장자
+                "application/x-executable",
+                "테스트 파일 내용".getBytes()
+        );
+
+        // noticeRepository.findById() 스터빙 제거
+        // 파일 검증이 먼저 일어나서 이 메서드가 호출되지 않음
+
+        // when & then
+        assertThatThrownBy(() -> noticeService.uploadFile(noticeId, file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("허용되지 않는 파일 형식입니다");
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - 파일 크기 초과")
+    void uploadFile_FileSizeExceeded() {
+        // given
+        String noticeId = "test-notice-id";
+
+        // 10MB를 초과하는 파일 크기 시뮬레이션
+        byte[] largeFileContent = new byte[11 * 1024 * 1024]; // 11MB
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "large-file.pdf",
+                "application/pdf",
+                largeFileContent
+        );
+
+        // noticeRepository.findById() 스터빙 제거
+        // 파일 크기 검증이 먼저 일어나서 이 메서드가 호출되지 않음
+
+        // when & then
+        assertThatThrownBy(() -> noticeService.uploadFile(noticeId, file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("파일 크기는 10MB를 초과할 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - 서비스 업로드 실패")
+    void uploadFile_ServiceUploadFailure() {
+        // given
+        String noticeId = "test-notice-id";
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.pdf",
+                "application/pdf",
                 "테스트 파일 내용".getBytes()
         );
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(objectStorageService.uploadFile(
-                anyString(),
-                any(),
-                anyLong(),
-                anyString()
-        )).willThrow(new RuntimeException("S3 업로드 실패"));
+        given(noticeFileManagementService.uploadNoticeFile(file))
+                .willThrow(new RuntimeException("파일 업로드 서비스 실패"));
 
         // when & then
         assertThatThrownBy(() -> noticeService.uploadFile(noticeId, file))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 업로드 중 오류가 발생했습니다");
+                .hasMessageContaining("파일 업로드 서비스 실패");
     }
 
     // ========== 헬퍼 메서드 ==========

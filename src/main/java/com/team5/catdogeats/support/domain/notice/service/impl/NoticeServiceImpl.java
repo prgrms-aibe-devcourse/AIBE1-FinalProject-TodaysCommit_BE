@@ -126,8 +126,13 @@ public class NoticeServiceImpl implements NoticeService {
             for (NoticeFiles noticeFile : noticeFiles) {
                 String fileUrl = noticeFile.getFiles().getFileUrl();
                 String fileId = noticeFile.getFiles().getId();
-                log.info("S3 파일 삭제 시도 - URL: {}", fileUrl); // 🆕 추가
-                noticeFileManagementService.deleteNoticeFileCompletely(fileId);
+                log.info("S3 파일 삭제 시도 - URL: {}", fileUrl);
+
+                try {
+                    noticeFileManagementService.deleteNoticeFileCompletely(fileId);
+                } catch (Exception e) {
+                    log.warn("파일 삭제 실패 (계속 진행) - ID: {}, 오류: {}", fileId, e.getMessage());
+                }
             }
         }
 

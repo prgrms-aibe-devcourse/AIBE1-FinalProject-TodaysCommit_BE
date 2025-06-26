@@ -2,12 +2,10 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
-import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
-import com.team5.catdogeats.support.domain.notice.repository.NoticeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,9 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -32,21 +28,17 @@ import static org.mockito.BDDMockito.*;
 class NoticeServiceImplFileManagementTest {
 
     @Mock
-    private NoticeRepository noticeRepository;
-
-    @Mock
-    private FilesRepository filesRepository;
-
-    @Mock
     private NoticeFilesRepository noticeFilesRepository;
 
     @Mock
-    private ObjectStorageService objectStorageService;
+    private NoticeFileManagementService noticeFileManagementService;
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
 
     private Notices testNotice;
+    private Files testFile;
+    private NoticeFiles testNoticeFile;
 
     @BeforeEach
     void setUp() {
@@ -56,11 +48,23 @@ class NoticeServiceImplFileManagementTest {
                 .content("테스트 내용입니다.")
                 .viewCount(5L)
                 .build();
-
         setTimeFields(testNotice);
+
+        testFile = Files.builder()
+                .id("test-file-id")
+                .fileUrl("https://cdn.example.com/files/test-file.txt")
+                .build();
+        setTimeFields(testFile);
+
+        testNoticeFile = NoticeFiles.builder()
+                .id("notice-file-id")
+                .notices(testNotice)
+                .files(testFile)
+                .build();
+        setTimeFields(testNoticeFile);
     }
 
-    // ========== 파일 삭제 테스트 (4개) ==========
+    // ========== 파일 삭제 테스트 ==========
     @Test
     @DisplayName("파일 삭제 - 성공")
     void deleteFile_Success() {
@@ -68,62 +72,16 @@ class NoticeServiceImplFileManagementTest {
         String noticeId = "test-notice-id";
         String fileId = "test-file-id";
 
-        Files fileEntity = Files.builder()
-                .id(fileId)
-                .fileUrl("https://cdn.example.com/files/test-file.txt")
-                .build();
-
-        NoticeFiles noticeFile = NoticeFiles.builder()
-                .id("notice-file-id")
-                .notices(testNotice)
-                .files(fileEntity)
-                .build();
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.of(fileEntity));
-        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
+        given(noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId))
+                .willReturn(Optional.of(testNoticeFile));
 
         // when
         noticeService.deleteFile(noticeId, fileId);
 
         // then
-        verify(noticeRepository).findById(noticeId);
-        verify(filesRepository).findById(fileId);
-
-        // S3에서 파일 삭제 확인 (extractKeyFromUrl로 추출된 key 사용)
-        verify(objectStorageService).deleteFile("files/test-file.txt");
-        verify(filesRepository).deleteById(fileId);
-    }
-
-    @Test
-    @DisplayName("파일 삭제 - 존재하지 않는 공지사항")
-    void deleteFile_NoticeNotFound() {
-        // given
-        String noticeId = "non-existing-notice-id";
-        String fileId = "test-file-id";
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> noticeService.deleteFile(noticeId, fileId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 삭제 중 오류가 발생했습니다");
-    }
-
-    @Test
-    @DisplayName("파일 삭제 - 존재하지 않는 파일")
-    void deleteFile_FileNotFound() {
-        // given
-        String noticeId = "test-notice-id";
-        String fileId = "non-existing-file-id";
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> noticeService.deleteFile(noticeId, fileId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 삭제 중 오류가 발생했습니다");
+        verify(noticeFilesRepository).findByNoticesIdAndFilesId(noticeId, fileId);
+        verify(noticeFilesRepository).deleteById(testNoticeFile.getId());
+        verify(noticeFileManagementService).deleteNoticeFileCompletely(fileId);
     }
 
     @Test
@@ -133,22 +91,42 @@ class NoticeServiceImplFileManagementTest {
         String noticeId = "test-notice-id";
         String fileId = "test-file-id";
 
-        Files fileEntity = Files.builder()
-                .id(fileId)
-                .fileUrl("https://cdn.example.com/files/test-file.txt")
-                .build();
+        given(noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId))
+                .willReturn(Optional.empty());
 
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.of(fileEntity));
-        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(new ArrayList<>());
+        // when & then
+        assertThatThrownBy(() -> noticeService.deleteFile(noticeId, fileId))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("해당 공지사항에 연결되지 않은 파일입니다");
+
+        verify(noticeFilesRepository).findByNoticesIdAndFilesId(noticeId, fileId);
+        verifyNoInteractions(noticeFileManagementService);
+    }
+
+    @Test
+    @DisplayName("파일 삭제 - 파일 관리 서비스 오류")
+    void deleteFile_ManagementServiceError() {
+        // given
+        String noticeId = "test-notice-id";
+        String fileId = "test-file-id";
+
+        given(noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId))
+                .willReturn(Optional.of(testNoticeFile));
+
+        doThrow(new RuntimeException("파일 삭제 서비스 오류"))
+                .when(noticeFileManagementService).deleteNoticeFileCompletely(fileId);
 
         // when & then
         assertThatThrownBy(() -> noticeService.deleteFile(noticeId, fileId))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 삭제 중 오류가 발생했습니다");
+                .hasMessageContaining("파일 삭제 서비스 오류");
+
+        verify(noticeFilesRepository).findByNoticesIdAndFilesId(noticeId, fileId);
+        verify(noticeFilesRepository).deleteById(testNoticeFile.getId());
+        verify(noticeFileManagementService).deleteNoticeFileCompletely(fileId);
     }
 
-    // ========== 파일 수정(교체) 테스트 (5개) ==========
+    // ========== 파일 수정(교체) 테스트 ==========
     @Test
     @DisplayName("파일 수정(교체) - 성공")
     void replaceFile_Success() {
@@ -157,105 +135,74 @@ class NoticeServiceImplFileManagementTest {
         String fileId = "test-file-id";
         MockMultipartFile newFile = new MockMultipartFile(
                 "file",
-                "new-test.txt",
-                "text/plain",
+                "new-test.pdf",
+                "application/pdf",
                 "새로운 파일 내용".getBytes()
         );
 
-        String oldFileUrl = "https://cdn.example.com/files/old-file.txt";
-        String newFileUrl = "https://cdn.example.com/files/notice_12345678_20250625_120000_new-test.txt";
-
-        Files oldFileEntity = Files.builder()
-                .id(fileId)
-                .fileUrl(oldFileUrl)
-                .build();
-        setTimeFields(oldFileEntity);
-
-        NoticeFiles noticeFile = NoticeFiles.builder()
-                .id("notice-file-id")
-                .notices(testNotice)
-                .files(oldFileEntity)
-                .build();
-        setTimeFields(noticeFile);
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.of(oldFileEntity));
-        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
-
-        // 새 파일 업로드 성공
-        given(objectStorageService.uploadFile(
-                anyString(),
-                any(),
-                anyLong(),
-                anyString()
-        )).willReturn(newFileUrl);
-
-        given(filesRepository.save(any(Files.class))).willReturn(oldFileEntity);
-        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
+        given(noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId))
+                .willReturn(Optional.of(testNoticeFile));
+        given(noticeFilesRepository.findByNoticesId(noticeId))
+                .willReturn(List.of(testNoticeFile));
 
         // when
         NoticeResponseDTO result = noticeService.replaceFile(noticeId, fileId, newFile);
 
         // then
         assertThat(result).isNotNull();
-        verify(noticeRepository).findById(noticeId);
-        verify(filesRepository).findById(fileId);
 
-        // 새 파일 업로드 확인
-        verify(objectStorageService).uploadFile(
-                anyString(),
-                any(),
-                eq(newFile.getSize()),
-                eq(newFile.getContentType())
-        );
-
-        // 기존 파일 삭제 확인
-        verify(objectStorageService).deleteFile("files/old-file.txt");
-
-        verify(filesRepository).save(oldFileEntity);
+        verify(noticeFilesRepository).findByNoticesIdAndFilesId(noticeId, fileId);
+        verify(noticeFileManagementService).replaceNoticeFile(fileId, newFile);
+        verify(noticeFilesRepository).findByNoticesId(noticeId);
     }
 
     @Test
-    @DisplayName("파일 수정(교체) - 존재하지 않는 공지사항")
-    void replaceFile_NoticeNotFound() {
+    @DisplayName("파일 수정(교체) - 허용되지 않는 파일 형식")
+    void replaceFile_InvalidFileType() {
         // given
-        String noticeId = "non-existing-notice-id";
+        String noticeId = "test-notice-id";
         String fileId = "test-file-id";
         MockMultipartFile newFile = new MockMultipartFile(
                 "file",
-                "new-test.txt",
-                "text/plain",
-                "새로운 파일 내용".getBytes()
+                "malicious.exe", // 허용되지 않는 확장자
+                "application/x-executable",
+                "악성 파일 내용".getBytes()
         );
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> noticeService.replaceFile(noticeId, fileId, newFile))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessageContaining("공지사항을 찾을 수 없습니다");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("허용되지 않는 파일 형식입니다");
+
+        // 파일 검증이 먼저 일어나므로 다른 메서드들은 호출되지 않음
+        verifyNoInteractions(noticeFilesRepository);
+        verifyNoInteractions(noticeFileManagementService);
     }
 
     @Test
-    @DisplayName("파일 수정(교체) - 존재하지 않는 파일")
-    void replaceFile_FileNotFound() {
+    @DisplayName("파일 수정(교체) - 파일 크기 초과")
+    void replaceFile_FileSizeExceeded() {
         // given
         String noticeId = "test-notice-id";
-        String fileId = "non-existing-file-id";
+        String fileId = "test-file-id";
+
+        // 10MB를 초과하는 파일 크기 시뮬레이션
+        byte[] largeFileContent = new byte[11 * 1024 * 1024]; // 11MB
         MockMultipartFile newFile = new MockMultipartFile(
                 "file",
-                "new-test.txt",
-                "text/plain",
-                "새로운 파일 내용".getBytes()
+                "large-file.pdf",
+                "application/pdf",
+                largeFileContent
         );
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> noticeService.replaceFile(noticeId, fileId, newFile))
-                .isInstanceOf(NoSuchElementException.class)
-                .hasMessageContaining("파일을 찾을 수 없습니다");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("파일 크기는 10MB를 초과할 수 없습니다");
+
+        // 파일 검증이 먼저 일어나므로 다른 메서드들은 호출되지 않음
+        verifyNoInteractions(noticeFilesRepository);
+        verifyNoInteractions(noticeFileManagementService);
     }
 
     @Test
@@ -266,66 +213,49 @@ class NoticeServiceImplFileManagementTest {
         String fileId = "test-file-id";
         MockMultipartFile newFile = new MockMultipartFile(
                 "file",
-                "new-test.txt",
-                "text/plain",
+                "new-test.pdf",
+                "application/pdf",
                 "새로운 파일 내용".getBytes()
         );
 
-        Files fileEntity = Files.builder()
-                .id(fileId)
-                .fileUrl("https://cdn.example.com/files/test-file.txt")
-                .build();
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.of(fileEntity));
-        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(new ArrayList<>());
+        given(noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId))
+                .willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> noticeService.replaceFile(noticeId, fileId, newFile))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("해당 공지사항에 연결되지 않은 파일입니다");
+
+        verify(noticeFilesRepository).findByNoticesIdAndFilesId(noticeId, fileId);
+        verifyNoInteractions(noticeFileManagementService);
     }
 
     @Test
-    @DisplayName("파일 수정(교체) - S3 업로드 실패")
-    void replaceFile_S3UploadFailure() {
+    @DisplayName("파일 수정(교체) - 파일 관리 서비스 오류")
+    void replaceFile_ManagementServiceError() {
         // given
         String noticeId = "test-notice-id";
         String fileId = "test-file-id";
         MockMultipartFile newFile = new MockMultipartFile(
                 "file",
-                "new-test.txt",
-                "text/plain",
+                "new-test.pdf",
+                "application/pdf",
                 "새로운 파일 내용".getBytes()
         );
 
-        Files oldFileEntity = Files.builder()
-                .id(fileId)
-                .fileUrl("https://cdn.example.com/files/old-file.txt")
-                .build();
+        given(noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId))
+                .willReturn(Optional.of(testNoticeFile));
 
-        NoticeFiles noticeFile = NoticeFiles.builder()
-                .id("notice-file-id")
-                .notices(testNotice)
-                .files(oldFileEntity)
-                .build();
-
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(filesRepository.findById(fileId)).willReturn(Optional.of(oldFileEntity));
-        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
-
-        // S3 업로드 실패 시뮬레이션
-        given(objectStorageService.uploadFile(
-                anyString(),
-                any(),
-                anyLong(),
-                anyString()
-        )).willThrow(new RuntimeException("S3 업로드 실패"));
+        doThrow(new RuntimeException("파일 교체 서비스 오류"))
+                .when(noticeFileManagementService).replaceNoticeFile(fileId, newFile);
 
         // when & then
         assertThatThrownBy(() -> noticeService.replaceFile(noticeId, fileId, newFile))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("S3 업로드 실패");
+                .hasMessageContaining("파일 교체 서비스 오류");
+
+        verify(noticeFilesRepository).findByNoticesIdAndFilesId(noticeId, fileId);
+        verify(noticeFileManagementService).replaceNoticeFile(fileId, newFile);
     }
 
     // ========== 헬퍼 메서드 ==========
