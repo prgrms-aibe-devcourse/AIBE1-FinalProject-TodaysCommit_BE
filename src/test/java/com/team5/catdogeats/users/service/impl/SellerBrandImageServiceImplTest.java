@@ -2,6 +2,7 @@ package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.storage.service.ObjectStorageService;
+import com.team5.catdogeats.storage.util.ImageValidationUtil;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.SellerBrandImageResponseDTO;
 import com.team5.catdogeats.users.domain.enums.Role;
@@ -18,11 +19,13 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
@@ -31,7 +34,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("SellerBrandImageServiceImpl 테스트")
+@MockitoSettings(strictness = Strictness.LENIENT) 
+@DisplayName("SellerBrandImageServiceImpl 테스트 - 업데이트 버전")
 class SellerBrandImageServiceImplTest {
 
     @Mock
@@ -42,6 +46,9 @@ class SellerBrandImageServiceImplTest {
 
     @Mock
     private ObjectStorageService objectStorageService;
+
+    @Mock
+    private ImageValidationUtil imageValidationUtil;
 
     @InjectMocks
     private SellerBrandImageServiceImpl sellerBrandImageService;
@@ -92,6 +99,10 @@ class SellerBrandImageServiceImplTest {
             // given
             String newImageUrl = "https://cdn.example.com/images/brand_user-uuid_new123.jpg";
 
+            // ImageValidationUtil이 성공적으로 검증 완료 (예외 없음)
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension(anyString())).thenReturn("jpg");
+
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
             when(sellersRepository.findByUserId("user-uuid-123"))
@@ -119,6 +130,7 @@ class SellerBrandImageServiceImplTest {
             assertThat(result.vendorProfileImage()).isEqualTo(newImageUrl);
 
             // verify interactions
+            verify(imageValidationUtil).validateImageFile(validImageFile); // 추가 검증
             verify(userRepository).findByProviderAndProviderId("google", "12345");
             verify(sellersRepository).findByUserId("user-uuid-123");
             verify(objectStorageService).deleteImage("old_image.jpg"); // 기존 이미지 삭제
@@ -130,6 +142,7 @@ class SellerBrandImageServiceImplTest {
         @DisplayName("실패: 사용자를 찾을 수 없음")
         void uploadBrandImage_UserNotFound() {
             // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.empty());
 
@@ -138,6 +151,7 @@ class SellerBrandImageServiceImplTest {
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("사용자를 찾을 수 없습니다");
 
+            verify(imageValidationUtil).validateImageFile(validImageFile);
             verify(userRepository).findByProviderAndProviderId("google", "12345");
             verifyNoInteractions(sellersRepository, objectStorageService);
         }
@@ -146,6 +160,7 @@ class SellerBrandImageServiceImplTest {
         @DisplayName("실패: 판매자 정보를 찾을 수 없음")
         void uploadBrandImage_SellerNotFound() {
             // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
             when(sellersRepository.findByUserId("user-uuid-123"))
@@ -156,70 +171,92 @@ class SellerBrandImageServiceImplTest {
                     .isInstanceOf(EntityNotFoundException.class)
                     .hasMessageContaining("판매자 정보를 찾을 수 없습니다");
 
+            verify(imageValidationUtil).validateImageFile(validImageFile);
             verify(userRepository).findByProviderAndProviderId("google", "12345");
             verify(sellersRepository).findByUserId("user-uuid-123");
             verifyNoInteractions(objectStorageService);
         }
 
         @Test
-        @DisplayName("실패: 이미지 파일이 null")
-        void uploadBrandImage_NullFile() {
+        @DisplayName("실패: ImageValidationUtil에서 파일 검증 실패 - null 파일")
+        void uploadBrandImage_ValidationFailed_NullFile() {
+            // given
+            doThrow(new IllegalArgumentException("이미지 파일이 비어있습니다."))
+                    .when(imageValidationUtil).validateImageFile(null);
+
             // when & then
             assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, null))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("이미지 파일이 비어있습니다.");
 
+            verify(imageValidationUtil).validateImageFile(null);
             verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
         }
 
         @Test
-        @DisplayName("실패: 이미지 파일이 비어있음")
-        void uploadBrandImage_EmptyFile() {
-            // given
-            MultipartFile emptyFile = new MockMultipartFile("image", "empty.jpg", "image/jpeg", new byte[0]);
+        @DisplayName("실패: ImageValidationUtil에서 파일 크기 초과")
+        void uploadBrandImage_ValidationFailed_FileSizeExceeded() {
+            // given - MockMultipartFile로 실제 큰 파일 생성
+            byte[] largeContent = new byte[11 * 1024 * 1024]; // 11MB
+            MultipartFile largeFile = new MockMultipartFile("image", "large.jpg", "image/jpeg", largeContent);
+
+            doThrow(new IllegalArgumentException("이미지 파일 크기는 10MB를 초과할 수 없습니다."))
+                    .when(imageValidationUtil).validateImageFile(largeFile);
 
             // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, emptyFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("이미지 파일이 비어있습니다.");
-
-            verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
-        }
-
-        @Test
-        @DisplayName("실패: 파일 크기가 10MB 초과")
-        void uploadBrandImage_FileSizeExceeded() {
-            // given
-            byte[] largeFile = new byte[11 * 1024 * 1024]; // 11MB
-            largeFile[0] = (byte) 0xFF; largeFile[1] = (byte) 0xD8; largeFile[2] = (byte) 0xFF; // JPEG header
-
-            MultipartFile largeSizeFile = new MockMultipartFile("image", "large.jpg", "image/jpeg", largeFile);
-
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, largeSizeFile))
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, largeFile))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
 
+            verify(imageValidationUtil).validateImageFile(largeFile);
             verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
         }
 
         @Test
-        @DisplayName("실패: 지원하지 않는 파일 시그니처")
-        void uploadBrandImage_UnsupportedFileSignature() {
-            // given - 이미지 MIME 타입이지만 실제로는 PDF 바이너리
-            byte[] pdfHeader = new byte[]{0x25, 0x50, 0x44, 0x46}; // PDF 시그니처
-            MultipartFile fakeImageFile = new MockMultipartFile("image", "fake.jpg", "image/jpeg", pdfHeader);
+        @DisplayName("실패: ImageValidationUtil에서 지원하지 않는 파일 형식")
+        void uploadBrandImage_ValidationFailed_UnsupportedFormat() {
+            // given
+            MultipartFile unsupportedFile = new MockMultipartFile(
+                    "image", "test.gif", "image/gif", new byte[]{0x47, 0x49, 0x46}); // GIF header
+
+            doThrow(new IllegalArgumentException("지원하지 않는 이미지 형식입니다. (JPEG, PNG, WebP만 지원)"))
+                    .when(imageValidationUtil).validateImageFile(unsupportedFile);
 
             // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, fakeImageFile))
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, unsupportedFile))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("지원하지 않는 이미지 형식입니다. (JPEG, PNG, WebP만 지원)");
+
+            verify(imageValidationUtil).validateImageFile(unsupportedFile);
+            verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
         }
 
         @Test
-        @DisplayName("실패: S3 업로드 중 IOException 발생")
+        @DisplayName("실패: ImageValidationUtil에서 보안 검증 실패")
+        void uploadBrandImage_ValidationFailed_SecurityCheck() {
+            // given
+            MultipartFile maliciousFile = new MockMultipartFile(
+                    "image", "script.jpg", "image/jpeg", "<script>alert('xss')</script>".getBytes());
+
+            doThrow(new IllegalArgumentException("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다."))
+                    .when(imageValidationUtil).validateImageFile(maliciousFile);
+
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, maliciousFile))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+
+            verify(imageValidationUtil).validateImageFile(maliciousFile);
+            verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
+        }
+
+        @Test
+        @DisplayName("실패: S3 업로드 중 예외 발생")
         void uploadBrandImage_S3UploadFailed() throws IOException {
             // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension(anyString())).thenReturn("jpg");
+
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
             when(sellersRepository.findByUserId("user-uuid-123"))
@@ -232,6 +269,7 @@ class SellerBrandImageServiceImplTest {
                     .isInstanceOf(RuntimeException.class)
                     .hasMessage("이미지 업로드 실패");
 
+            verify(imageValidationUtil).validateImageFile(validImageFile);
             verify(userRepository).findByProviderAndProviderId("google", "12345");
             verify(sellersRepository).findByUserId("user-uuid-123");
             verify(objectStorageService).deleteImage("old_image.jpg");
@@ -242,10 +280,13 @@ class SellerBrandImageServiceImplTest {
         @Test
         @DisplayName("성공: PNG 파일 업로드")
         void uploadBrandImage_PngFile() throws IOException {
-            // given - PNG magic number: 89 50 4E 47
-            byte[] pngHeader = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47};
-            MultipartFile pngFile = new MockMultipartFile("image", "test.png", "image/png", pngHeader);
+            // given
+            MultipartFile pngFile = new MockMultipartFile("image", "test.png", "image/png",
+                    new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47});
             String newImageUrl = "https://cdn.example.com/images/brand_user-uuid_new123.png";
+
+            doNothing().when(imageValidationUtil).validateImageFile(pngFile);
+            when(imageValidationUtil.getFileExtension(anyString())).thenReturn("png");
 
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
@@ -260,16 +301,20 @@ class SellerBrandImageServiceImplTest {
 
             // then
             assertThat(result).isNotNull();
+            verify(imageValidationUtil).validateImageFile(pngFile);
             verify(objectStorageService).uploadImage(anyString(), any(InputStream.class), anyLong(), eq("image/png"));
         }
 
         @Test
         @DisplayName("성공: WebP 파일 업로드")
         void uploadBrandImage_WebPFile() throws IOException {
-            // given - WebP magic number: RIFF....WEBP
-            byte[] webpHeader = new byte[]{0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50};
-            MultipartFile webpFile = new MockMultipartFile("image", "test.webp", "image/webp", webpHeader);
+            // given
+            MultipartFile webpFile = new MockMultipartFile("image", "test.webp", "image/webp",
+                    new byte[]{0x52, 0x49, 0x46, 0x46, 0x00, 0x00, 0x00, 0x00, 0x57, 0x45, 0x42, 0x50});
             String newImageUrl = "https://cdn.example.com/images/brand_user-uuid_new123.webp";
+
+            doNothing().when(imageValidationUtil).validateImageFile(webpFile);
+            when(imageValidationUtil.getFileExtension(anyString())).thenReturn("webp");
 
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
@@ -284,6 +329,7 @@ class SellerBrandImageServiceImplTest {
 
             // then
             assertThat(result).isNotNull();
+            verify(imageValidationUtil).validateImageFile(webpFile);
             verify(objectStorageService).uploadImage(anyString(), any(InputStream.class), anyLong(), eq("image/webp"));
         }
     }
@@ -420,13 +466,16 @@ class SellerBrandImageServiceImplTest {
     }
 
     @Nested
-    @DisplayName("Private 메서드 간접 테스트")
-    class PrivateMethodIndirectTest {
+    @DisplayName("파일명 생성 및 키 추출 테스트")
+    class FileHandlingTest {
 
         @Test
         @DisplayName("파일명 생성 검증 - UUID 형식")
         void generateUniqueFileName_Verification() throws IOException {
             // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension("test.jpg")).thenReturn("jpg");
+
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
             when(sellersRepository.findByUserId("user-uuid-123"))
@@ -451,7 +500,7 @@ class SellerBrandImageServiceImplTest {
         @Test
         @DisplayName("이미지 키 추출 검증")
         void extractImageKeyFromUrl_Verification() throws IOException {
-            // given - 여러 다른 URL 형식으로 seller 설정
+            // given
             Sellers sellerWithDifferentUrl = Sellers.builder()
                     .userId("user-uuid-123")
                     .user(user)
@@ -459,6 +508,9 @@ class SellerBrandImageServiceImplTest {
                     .vendorProfileImage("https://cdn.example.com/images/some_image_key.jpg")
                     .businessNumber("123-45-67890")
                     .build();
+
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension("test.jpg")).thenReturn("jpg");
 
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(user));
@@ -482,7 +534,7 @@ class SellerBrandImageServiceImplTest {
         @Test
         @DisplayName("8자리 이하 userId 파일명 생성 검증")
         void generateUniqueFileName_ShortUserId() throws IOException {
-            // given - 짧은 userId로 새로운 user 생성
+            // given
             Users shortUser = Users.builder()
                     .id("short123")  // 8자리 이하
                     .provider("google")
@@ -499,6 +551,9 @@ class SellerBrandImageServiceImplTest {
                     .vendorProfileImage("https://cdn.example.com/images/old_image.jpg")
                     .businessNumber("123-45-67890")
                     .build();
+
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension("test.jpg")).thenReturn("jpg");
 
             when(userRepository.findByProviderAndProviderId("google", "12345"))
                     .thenReturn(Optional.of(shortUser));
@@ -520,139 +575,183 @@ class SellerBrandImageServiceImplTest {
             assertThat(generatedFilename).startsWith("brand_short123");
             assertThat(generatedFilename).endsWith(".jpg");
         }
+    }
+
+    @Nested
+    @DisplayName("ImageValidationUtil 통합 테스트")
+    class ImageValidationUtilIntegrationTest {
 
         @Test
-        @DisplayName("실패: 잘못된 MIME Type")
-        void uploadBrandImage_InvalidMimeType() {
-            // given - JPEG 바이너리지만 잘못된 Content-Type
-            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
-            MultipartFile invalidMimeFile = new MockMultipartFile(
-                    "image", "test.jpg", "application/pdf", jpegHeader); // 잘못된 MIME Type
+        @DisplayName("getFileExtension 메서드 호출 검증")
+        void getFileExtension_Called() throws IOException {
+            // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension("test.jpg")).thenReturn("jpg");
 
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, invalidMimeFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("허용되지 않은 MIME 타입입니다");
+            when(userRepository.findByProviderAndProviderId("google", "12345"))
+                    .thenReturn(Optional.of(user));
+            when(sellersRepository.findByUserId("user-uuid-123"))
+                    .thenReturn(Optional.of(seller));
+            when(sellersRepository.save(any(Sellers.class))).thenReturn(seller);
+            when(objectStorageService.uploadImage(anyString(), any(InputStream.class), anyLong(), anyString()))
+                    .thenReturn("https://cdn.example.com/images/new_image.jpg");
+
+            // when
+            sellerBrandImageService.uploadBrandImage(userPrincipal, validImageFile);
+
+            // then
+            verify(imageValidationUtil).validateImageFile(validImageFile);
+            verify(imageValidationUtil).getFileExtension("test.jpg");
         }
 
         @Test
-        @DisplayName("실패: MIME Type이 null")
-        void uploadBrandImage_NullMimeType() {
-            // given - Content-Type이 null인 파일
-            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
-            MultipartFile nullMimeFile = new MockMultipartFile(
-                    "image", "test.jpg", null, jpegHeader); // null Content-Type
+        @DisplayName("다양한 확장자에 대한 getFileExtension 호출")
+        void getFileExtension_DifferentExtensions() throws IOException {
+            // given - PNG 파일
+            MultipartFile pngFile = new MockMultipartFile("image", "test.png", "image/png", new byte[4]);
 
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, nullMimeFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("파일의 Content-Type을 확인할 수 없습니다.");
-        }
+            doNothing().when(imageValidationUtil).validateImageFile(pngFile);
+            when(imageValidationUtil.getFileExtension("test.png")).thenReturn("png");
 
+            when(userRepository.findByProviderAndProviderId("google", "12345"))
+                    .thenReturn(Optional.of(user));
+            when(sellersRepository.findByUserId("user-uuid-123"))
+                    .thenReturn(Optional.of(seller));
+            when(sellersRepository.save(any(Sellers.class))).thenReturn(seller);
+            when(objectStorageService.uploadImage(anyString(), any(InputStream.class), anyLong(), anyString()))
+                    .thenReturn("https://cdn.example.com/images/new_image.png");
 
-        @Test
-        @DisplayName("실패: 스크립트 태그 포함된 파일")
-        void uploadBrandImage_ContainsScript() {
-            // given - JPEG 헤더 + 스크립트 내용
-            String maliciousContent = "\u00FF\u00D8\u00FF\u00E0<script>alert('XSS')</script>";
-            MultipartFile scriptFile = new MockMultipartFile(
-                    "image", "malicious.jpg", "image/jpeg", maliciousContent.getBytes());
+            // when
+            sellerBrandImageService.uploadBrandImage(userPrincipal, pngFile);
 
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, scriptFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+            // then
+            verify(imageValidationUtil).validateImageFile(pngFile);
+            verify(imageValidationUtil).getFileExtension("test.png");
         }
 
         @Test
-        @DisplayName("실패: JavaScript 코드 포함된 파일")
-        void uploadBrandImage_ContainsJavaScript() {
-            // given - JPEG 헤더 + JavaScript 내용
-            String maliciousContent = "\u00FF\u00D8\u00FF\u00E0javascript:alert('XSS')";
-            MultipartFile jsFile = new MockMultipartFile(
-                    "image", "malicious.jpg", "image/jpeg", maliciousContent.getBytes());
+        @DisplayName("파일명이 null일 때 getFileExtension 호출")
+        void getFileExtension_NullFileName() throws IOException {
+            // given - 파일명이 null인 경우
+            MultipartFile nullNameFile = new MockMultipartFile("image", null, "image/jpeg", new byte[4]);
 
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, jsFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
+            doNothing().when(imageValidationUtil).validateImageFile(nullNameFile);
+
+            when(imageValidationUtil.getFileExtension(anyString())).thenReturn("jpg");
+
+            when(userRepository.findByProviderAndProviderId("google", "12345"))
+                    .thenReturn(Optional.of(user));
+            when(sellersRepository.findByUserId("user-uuid-123"))
+                    .thenReturn(Optional.of(seller));
+            when(sellersRepository.save(any(Sellers.class))).thenReturn(seller);
+            when(objectStorageService.uploadImage(anyString(), any(InputStream.class), anyLong(), anyString()))
+                    .thenReturn("https://cdn.example.com/images/new_image.jpg");
+
+            // when
+            sellerBrandImageService.uploadBrandImage(userPrincipal, nullNameFile);
+
+            // then
+            verify(imageValidationUtil).validateImageFile(nullNameFile);
+            verify(imageValidationUtil).getFileExtension(anyString());
         }
 
         @Test
-        @DisplayName("실패: 이벤트 핸들러 포함된 파일")
-        void uploadBrandImage_ContainsEventHandler() {
-            // given - JPEG 헤더 + 이벤트 핸들러
-            String maliciousContent = "\u00FF\u00D8\u00FF\u00E0onload=alert('XSS')";
-            MultipartFile eventFile = new MockMultipartFile(
-                    "image", "malicious.jpg", "image/jpeg", maliciousContent.getBytes());
+        @DisplayName("ImageValidationUtil에서 예외 발생 시 전파 확인")
+        void validation_ExceptionPropagation() {
+            // given
+            RuntimeException validationException = new IllegalArgumentException("Custom validation error");
+            doThrow(validationException).when(imageValidationUtil).validateImageFile(validImageFile);
 
             // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, eventFile))
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, validImageFile))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
-        }
+                    .hasMessage("Custom validation error");
 
+            verify(imageValidationUtil).validateImageFile(validImageFile);
+            verifyNoInteractions(userRepository, sellersRepository, objectStorageService);
+        }
+    }
+
+    @Nested
+    @DisplayName("Service 레이어 경계 테스트")
+    class ServiceBoundaryTest {
 
         @Test
-        @DisplayName("실패: 파일명이 null")
-        void uploadBrandImage_NullFileName() {
-            // given - 파일명이 null
-            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
-            MultipartFile nullNameFile = new MockMultipartFile(
-                    "image", null, "image/jpeg", jpegHeader);
+        @DisplayName("모든 의존성 호출 순서 검증")
+        void verifyCallOrder() throws IOException {
+            // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension("test.jpg")).thenReturn("jpg");
 
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, nullNameFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("파일명이 비어있습니다.");
-        }
+            when(userRepository.findByProviderAndProviderId("google", "12345"))
+                    .thenReturn(Optional.of(user));
+            when(sellersRepository.findByUserId("user-uuid-123"))
+                    .thenReturn(Optional.of(seller));
+            when(sellersRepository.save(any(Sellers.class))).thenReturn(seller);
+            when(objectStorageService.uploadImage(anyString(), any(InputStream.class), anyLong(), anyString()))
+                    .thenReturn("https://cdn.example.com/images/new_image.jpg");
 
-        @Test
-        @DisplayName("실패: 파일명이 너무 긺")
-        void uploadBrandImage_FileNameTooLong() {
-            // given - 255자 초과 파일명
-            String longFileName = "a".repeat(256) + ".jpg";
-            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
-            MultipartFile longNameFile = new MockMultipartFile(
-                    "image", longFileName, "image/jpeg", jpegHeader);
+            // when
+            sellerBrandImageService.uploadBrandImage(userPrincipal, validImageFile);
 
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, longNameFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("파일명이 너무 깁니다. (최대 255자)");
-        }
+            // then - 호출 순서 검증
+            var inOrder = inOrder(imageValidationUtil, userRepository, sellersRepository, objectStorageService);
 
-        @Test
-        @DisplayName("실패: 경로 순회 공격 파일명")
-        void uploadBrandImage_PathTraversalFileName() {
-            // given - 경로 순회 시도
-            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
-            MultipartFile pathTraversalFile = new MockMultipartFile(
-                    "image", "../../../etc/passwd.jpg", "image/jpeg", jpegHeader);
-
-            // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, pathTraversalFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("파일명에 상대경로가 포함될 수 없습니다.");
+            inOrder.verify(imageValidationUtil).validateImageFile(validImageFile);
+            inOrder.verify(userRepository).findByProviderAndProviderId("google", "12345");
+            inOrder.verify(sellersRepository).findByUserId("user-uuid-123");
+            inOrder.verify(objectStorageService).deleteImage("old_image.jpg");
+            inOrder.verify(imageValidationUtil).getFileExtension("test.jpg");
+            inOrder.verify(objectStorageService).uploadImage(anyString(), any(InputStream.class), anyLong(), anyString());
+            inOrder.verify(sellersRepository).save(any(Sellers.class));
         }
 
         @Test
-        @DisplayName("실패: 실행 가능한 확장자 파일명")
-        void uploadBrandImage_ExecutableExtension() {
-            // given - 실행 파일 확장자
-            byte[] jpegHeader = new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0};
-            MultipartFile executableFile = new MockMultipartFile(
-                    "image", "malicious.exe.jpg", "image/jpeg", jpegHeader);
+        @DisplayName("중간 단계 실패 시 후속 작업 미실행 확인")
+        void verifyNoSubsequentCallsOnFailure() throws IOException {
+            // given - 사용자 조회에서 실패
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(userRepository.findByProviderAndProviderId("google", "12345"))
+                    .thenReturn(Optional.empty());
 
             // when & then
-            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, executableFile))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("실행 가능한 파일 확장자는 업로드할 수 없습니다.");
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, validImageFile))
+                    .isInstanceOf(EntityNotFoundException.class);
+
+            // then - 실패 후 호출되지 않아야 하는 메서드들 검증
+            verify(imageValidationUtil).validateImageFile(validImageFile);
+            verify(userRepository).findByProviderAndProviderId("google", "12345");
+
+            // 이후 작업들은 호출되지 않아야 함
+            verifyNoInteractions(sellersRepository, objectStorageService);
+            verify(imageValidationUtil, never()).getFileExtension(anyString());
         }
 
+        @Test
+        @DisplayName("S3 업로드 실패 시 rollback 동작 확인")
+        void verifyRollbackOnS3Failure() throws IOException {
+            // given
+            doNothing().when(imageValidationUtil).validateImageFile(validImageFile);
+            when(imageValidationUtil.getFileExtension("test.jpg")).thenReturn("jpg");
 
+            when(userRepository.findByProviderAndProviderId("google", "12345"))
+                    .thenReturn(Optional.of(user));
+            when(sellersRepository.findByUserId("user-uuid-123"))
+                    .thenReturn(Optional.of(seller));
 
+            // S3 업로드에서 실패
+            when(objectStorageService.uploadImage(anyString(), any(InputStream.class), anyLong(), anyString()))
+                    .thenThrow(new RuntimeException("S3 connection failed"));
 
+            // when & then
+            assertThatThrownBy(() -> sellerBrandImageService.uploadBrandImage(userPrincipal, validImageFile))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("이미지 업로드 실패");
 
+            // then - 기존 이미지는 삭제되었지만, DB는 저장되지 않아야 함
+            verify(objectStorageService).deleteImage("old_image.jpg"); // 기존 이미지 삭제는 실행됨
+            verify(objectStorageService).uploadImage(anyString(), any(InputStream.class), anyLong(), anyString());
+            verify(sellersRepository, never()).save(any(Sellers.class)); // DB 저장은 실행되지 않음
+        }
     }
 }

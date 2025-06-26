@@ -3,6 +3,7 @@ package com.team5.catdogeats.users.service.impl;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.storage.service.ObjectStorageService;
+import com.team5.catdogeats.storage.util.ImageValidationUtil;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.SellerBrandImageResponseDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
@@ -27,12 +28,13 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
     private final SellersRepository sellersRepository;
     private final UserRepository userRepository;
     private final ObjectStorageService objectStorageService;
+    private final ImageValidationUtil imageValidationUtil;
 
     @Override
     @JpaTransactional
     public SellerBrandImageResponseDTO uploadBrandImage(UserPrincipal userPrincipal, MultipartFile imageFile) {
         // 1. 파일 검증
-        validateImageFile(imageFile);
+        imageValidationUtil.validateImageFile(imageFile);
 
         // 2. 사용자 및 판매자 조회
         Users user = findUserByPrincipal(userPrincipal);
@@ -83,39 +85,7 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         return SellerBrandImageResponseDTO.from(updatedSeller);
     }
 
-    /**
-     * ️   통합 이미지 파일 검증
-     * - 기본 속성 검사 (크기, NULL 등)
-     * - 실제 파일 내용 검증 (Magic Number)
-     * - 보안 강화된 단일 검증 메서드
-     */
-    private void validateImageFile(MultipartFile imageFile) {
-        // 기본 검사
-        if (imageFile == null || imageFile.isEmpty()) {
-            throw new IllegalArgumentException("이미지 파일이 비어있습니다.");
-        }
 
-        // 파일 크기 검사
-        long maxFileSize = 10 * 1024 * 1024; // 10MB
-        if (imageFile.getSize() > maxFileSize) {
-            throw new IllegalArgumentException("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
-        }
-
-        // MIME Type 검증 -HTTP 해더 검증
-        validateMimeType(imageFile);
-
-        // 파일명 보안 검증
-        validateFileName(imageFile.getOriginalFilename());
-
-        // 스크립트 공격 방지
-        validateNoScriptContent(imageFile);
-
-        // 실제 파일 내용 검증
-        validateFileSignature(imageFile);
-
-        log.debug("이미지 파일 검증 완료 - fileName: {}, size: {}",
-                imageFile.getOriginalFilename(), imageFile.getSize());
-    }
 
     /**
      * UserPrincipal로 Users 엔티티 조회
@@ -215,7 +185,7 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
      * 형식: brand_{userId}_{UUID}.{확장자}
      */
     private String generateUniqueFileName(String originalFileName, String userId) {
-        String extension = getFileExtension(originalFileName);
+        String extension = imageValidationUtil.getFileExtension(originalFileName);
         String uuid = UUID.randomUUID().toString().replace("-", "");
 
         String shortUserId = userId.length() > 8 ? userId.substring(0, 8) : userId;
@@ -223,140 +193,6 @@ public class SellerBrandImageServiceImpl implements SellerBrandImageService {
         // 처음 8자리만 사용 (너무 길어지는 것 방지)
         return String.format("brand_%s_%s.%s", shortUserId, uuid, extension);
     }
-
-
-    /**
-     * 🧹 안전한 파일 확장자 추출
-     */
-    private String getFileExtension(String fileName) {
-        if (fileName == null || fileName.trim().isEmpty()) {
-            return "jpg"; // 기본값
-        }
-
-        // 파일명 정화 (위험한 문자 제거)
-        String safeName = fileName.replaceAll("[^a-zA-Z0-9._-]", "");
-
-        int lastDotIndex = safeName.lastIndexOf('.');
-        if (lastDotIndex != -1 && lastDotIndex < safeName.length() - 1) {
-            String ext = safeName.substring(lastDotIndex + 1).toLowerCase();
-
-            // 허용된 확장자만 반환 (화이트리스트)
-            if (ext.matches("^(jpg|jpeg|png|webp)$")) {
-                return ext;
-            }
-        }
-
-        return "jpg"; // 안전한 기본값
-    }
-
-    /**
-     *   파일 시그니처 검증 (Magic Number)
-     * - JPEG, PNG, WebP 실제 파일 형식 확인
-     * - Content-Type 조작 공격 방어
-     */
-    private void validateFileSignature(MultipartFile file) {
-        try (InputStream is = file.getInputStream()) {
-            byte[] header = new byte[12]; // WebP 확인을 위해 12바이트
-            int bytesRead = is.read(header);
-
-            if (bytesRead < 4) {
-                throw new IllegalArgumentException("파일 형식을 확인할 수 없습니다.");
-            }
-
-            // JPEG: FF D8 FF
-            if (header[0] == (byte) 0xFF && header[1] == (byte) 0xD8 && header[2] == (byte) 0xFF) {
-                return; // 진짜 JPEG
-            }
-
-            // PNG: 89 50 4E 47
-            if (header[0] == (byte) 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47) {
-                return; // 진짜 PNG
-            }
-
-            // WebP: RIFF....WEBP
-            // RIFF
-            if (header[0] == 0x52 && header[1] == 0x49 && header[2] == 0x46 && header[3] == 0x46 && header[8] == 0x57 && header[9] == 0x45 && header[10] == 0x42 && header[11] == 0x50) { // WEBP
-                return; // 진짜 WebP
-            }
-
-            throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다. (JPEG, PNG, WebP만 지원)");
-
-        } catch (IOException e) {
-            throw new IllegalArgumentException("파일 형식 검증 중 오류가 발생했습니다.", e);
-        }
-    }
-
-    /**
-     * MIME Type 검증
-     */
-    private void validateMimeType(MultipartFile file) {
-        String contentType = file.getContentType();
-
-        if (contentType == null) {
-            throw new IllegalArgumentException("파일의 Content-Type을 확인할 수 없습니다.");
-        }
-
-        if (!contentType.matches("^image/(jpeg|jpg|png|webp)$")) {
-            throw new IllegalArgumentException(
-                    String.format("허용되지 않은 MIME 타입입니다: %s", contentType));
-        }
-    }
-
-    /**
-     * 파일명 보안 검증
-     */
-    private void validateFileName(String fileName) {
-        if (fileName == null || fileName.trim().isEmpty()) {
-            throw new IllegalArgumentException("파일명이 비어있습니다.");
-        }
-
-        // 파일명 길이 제한
-        if (fileName.length() > 255) {
-            throw new IllegalArgumentException("파일명이 너무 깁니다. (최대 255자)");
-        }
-
-        // 경로 순회 공격 방지
-        if (fileName.contains("..") || fileName.contains("./") || fileName.contains(".\\")) {
-            throw new IllegalArgumentException("파일명에 상대경로가 포함될 수 없습니다.");
-        }
-
-        // 위험한 확장자 차단
-        if (fileName.toLowerCase().matches(".*\\.(js|html|htm|php|jsp|asp|exe|bat|cmd).*")) {
-            throw new IllegalArgumentException("실행 가능한 파일 확장자는 업로드할 수 없습니다.");
-        }
-    }
-
-
-    /**
-     * 스크립트 공격 방지
-     */
-    private void validateNoScriptContent(MultipartFile file) {
-        try (InputStream is = file.getInputStream()) {
-            byte[] buffer = new byte[2048];
-            int bytesRead = is.read(buffer);
-
-            if (bytesRead > 0) {
-                String content = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8).toLowerCase();
-
-                String[] dangerousPatterns = {
-                        "<script", "javascript:", "onload=", "onerror=",
-                        "onclick=", "eval(", "document.", "alert("
-                };
-
-                for (String pattern : dangerousPatterns) {
-                    if (content.contains(pattern)) {
-                        throw new IllegalArgumentException(
-                                "보안상 위험한 스크립트가 포함된 파일은 업로드할 수 없습니다.");
-                    }
-                }
-            }
-        } catch (IOException e) {
-            throw new IllegalArgumentException("파일 내용 검증 중 오류가 발생했습니다.", e);
-        }
-    }
-
-
-
 
 
 }
