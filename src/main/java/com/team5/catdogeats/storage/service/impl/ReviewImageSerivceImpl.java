@@ -10,6 +10,7 @@ import com.team5.catdogeats.storage.repository.ImageRepository;
 import com.team5.catdogeats.storage.repository.ReviewImageRepository;
 import com.team5.catdogeats.storage.service.ObjectStorageService;
 import com.team5.catdogeats.storage.service.ReviewImageService;
+import com.team5.catdogeats.storage.util.ImageValidationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -25,6 +26,7 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
     private final ImageRepository imageRepository;
     private final ReviewImageRepository reviewImageRepository;
     private final ReviewRepository reviewRepository;
+    private final ImageValidationUtil imageValidationUtil;
 
     @JpaTransactional
     @Override
@@ -35,12 +37,10 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
         List<ReviewImageUploadResponseDto> result = new ArrayList<>();
 
         for (MultipartFile file : images) {
-            if (!isImage(file)) {
-                throw new IllegalArgumentException("이미지 파일만 업로드할 수 있습니다.");
-            }
+            imageValidationUtil.validateImageFile(file);
 
             // 동일한 이름을 가진 이미지 파일 덮어쓰기 방지
-            String uniqueKey = UUID.randomUUID() + "_" + file.getOriginalFilename();
+            String uniqueKey = generateUniqueFileName(file.getOriginalFilename(), reviewId);
 
             // S3 업로드
             String s3Url = objectStorageService.uploadImage(
@@ -98,13 +98,17 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
         imageRepository.deleteById(imageId);
     }
 
-    private boolean isImage(MultipartFile file) {
-        String filename = file.getOriginalFilename();
-        if (filename == null) return false;
-        // 허용 확장자 목록 (소문자로만 체크)
-        String lower = filename.toLowerCase();
-        return lower.endsWith(".jpg") || lower.endsWith(".jpeg")
-                || lower.endsWith(".png") || lower.endsWith(".gif")
-                || lower.endsWith(".bmp") || lower.endsWith(".webp");
+    /**
+     * 고유한 파일명 생성
+     * 형식: brand_{userId}_{UUID}.{확장자}
+     */
+    private String generateUniqueFileName(String originalFileName, String reviewId) {
+        String extension = imageValidationUtil.getFileExtension(originalFileName);
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+
+        String shortReviewId = reviewId.length() > 8 ? reviewId.substring(0, 8) : reviewId;
+
+        // 처음 8자리만 사용 (너무 길어지는 것 방지)
+        return String.format("brand_%s_%s.%s", shortReviewId, uuid, extension);
     }
 }
