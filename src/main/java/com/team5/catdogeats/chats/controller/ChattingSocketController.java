@@ -2,11 +2,11 @@ package com.team5.catdogeats.chats.controller;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.chats.domain.dto.ChatMessageDTO;
-import com.team5.catdogeats.chats.domain.mapping.ChatMessages;
-import com.team5.catdogeats.chats.service.ChatService;
+import com.team5.catdogeats.chats.service.ChatMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -18,11 +18,11 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class ChattingSocketController {
 
-    private final ChatService chatService;
+    private final ChatMessageService chatService;
     private final SimpMessagingTemplate messagingTemplate;
 
     @MessageMapping("/chat/message")
-    public void onMessage(ChatMessageDTO dto, Principal principal) {
+    public void onMessage(@Payload ChatMessageDTO dto, Principal principal) {
         log.debug("🔔 메시지 수신됨. DTO: {}, Principal: {}", dto, principal);
 
         if (principal == null) {
@@ -41,7 +41,7 @@ public class ChattingSocketController {
             return;
         }
 
-        ChatMessages saved = chatService.save(dto, userPrincipal);
-        messagingTemplate.convertAndSend("/sub/chat/room/" + saved.getRoomId(), dto);
+
+        chatService.saveAndPublish(dto, userPrincipal);
     }
 }

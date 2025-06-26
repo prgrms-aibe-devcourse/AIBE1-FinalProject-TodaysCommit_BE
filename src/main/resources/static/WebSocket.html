@@ -1,47 +1,113 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>Chat Test</title>
+  <meta charset="utf-8" />
+  <title>1-대-1 채팅 실시간 테스트</title>
+  <style>
+    body { font-family:sans-serif; max-width:480px; margin:40px auto; }
+    input,button{ padding:6px; font-size:14px; }
+    #log{ margin-top:15px; height:240px; overflow-y:auto;
+      border:1px solid #ccc; font:12px/1.4 monospace; padding:6px; }
+    .me   { color:#0078ff; font-weight:bold; }
+    .peer { color:#f40; }
+    .system{ color:#666; font-style:italic; }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
 </head>
 <body>
-<h1>웹소켓 채팅 테스트</h1>
+<h2>⚡ 1-대-1 채팅 실시간 테스트</h2>
 
-<button onclick="connect()">Connect</button>
-<button onclick="sendMessage()">Send</button>
+<label>WebSocket URL:
+  <input id="wsUrl" value="ws://localhost:8080/v1/users/chat" style="width:300px">
+</label><br><br>
+
+<label>내 실제 userId:
+  <!-- ① readOnly 로 바꿔 두어 오타 방지 -->
+  <input id="myUserId" value="" readonly style="width:300px">
+</label><br><br>
+
+<label>roomId:
+  <input id="roomId" placeholder="채팅방 ID 입력" style="width:200px">
+</label>
+<button id="connectBtn">연결</button><br><br>
+
+<label>메시지:
+  <input id="msg" placeholder="내용" style="width:320px">
+</label>
+<button id="sendBtn">Send</button>
+
+<pre id="log"></pre>
 
 <script>
-  let client = null;
+  const $ = id => document.getElementById(id);
+  const log = (txt, css='') =>{
+    const div=document.createElement('div');
+    if(css)div.className=css;
+    div.textContent=`[${new Date().toLocaleTimeString()}] ${txt}`;
+    $("log").appendChild(div);
+    $("log").scrollTop=$("log").scrollHeight;
+  };
 
-  function connect() {
-    const socket = new WebSocket("ws://localhost:8080/v1/users/chat");
-    client = Stomp.over(socket);
+  let stomp=null, myUserId=null;
 
-    client.connect({}, function (frame) {
-      console.log("✅ 연결됨:", frame);
+  function connect(){
+    if(stomp?.connected){ log("이미 연결되어 있습니다.","system"); return; }
 
-      const roomId = "test-room-123"; // 테스트용 채팅방 ID
+    const wsUrl=$("wsUrl").value;
+    const roomId=$("roomId").value.trim();
+    if(!roomId){ alert("roomId를 입력하세요"); return; }
 
-      client.subscribe("/sub/chat/room/" + roomId, function (message) {
-        console.log("📥 받은 메시지:", JSON.parse(message.body));
+    log("연결 시도 중...","system");
+    const socket=new WebSocket(wsUrl);
+    stomp=Stomp.over(socket);
+    stomp.debug=str=>console.log('STOMP',str);
+
+    stomp.connect({}, frame=>{
+      log("✅ WebSocket 연결 성공","system");
+      /* ② CONNECT 헤더에서 providerId 자동 추출 */
+      const raw=frame.headers['user-name']; //UserPrincipal[… providerId=123…]
+      const m=/providerId=([^,\]]+)/.exec(raw);
+      myUserId=m?m[1]:raw;
+      $("myUserId").value=myUserId;        // 화면에도 노출
+
+      const dest=`/sub/chat/room/${roomId}`;
+      log(`구독 시작: ${dest}`,"system");
+      stomp.subscribe(dest,msg=>{
+        const payload=JSON.parse(msg.body);
+        const senderId=String(payload.senderId);
+        const text=payload.message;
+        if(!text) return;
+
+        const isMine=senderId===String(myUserId);
+        log(`${isMine?"나":`상대방(${senderId})`}: ${text}`, isMine?"me":"peer");
       });
-    }, function (error) {
-      console.error("❌ 연결 실패:", error);
+    }, err=>{
+      console.error("STOMP error",err);
+      log(`❌ 연결 실패: ${err}`,"system");
     });
   }
 
-  function sendMessage() {
-    const roomId = "test-room-123";
+  function send(){
+    if(!stomp?.connected){ alert("먼저 연결하세요"); return; }
+    const message=$("msg").value.trim();
+    if(!message){ alert("메시지를 입력하세요"); return; }
 
-    const payload = {
-      roomId: roomId,
-      behaviorType: "TALK",
-      message: "테스트 메시지입니다"
+    const body={
+      roomId:$("roomId").value.trim(),
+      behaviorType:"TALK",
+      message,
+      sentAt:new Date().toISOString()
     };
-
-    client.send("/pub/v1/chat/message", {}, JSON.stringify(payload));
+    /* ③ UX: 즉시 화면 표시 후 서버 전송 */
+    log(`나: ${message}`,"me");
+    stomp.send("/pub/chat/message",{},JSON.stringify(body));
+    $("msg").value="";
   }
+
+  $("connectBtn").onclick=connect;
+  $("sendBtn").onclick=send;
+  $("msg").addEventListener('keypress',e=>{ if(e.key==="Enter") send(); });
+  window.addEventListener('beforeunload',()=>stomp?.disconnect());
 </script>
 </body>
 </html>

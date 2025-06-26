@@ -1,8 +1,8 @@
 package com.team5.catdogeats.chats.interceptor;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
-import com.team5.catdogeats.auth.service.JwtService;
 import com.team5.catdogeats.auth.util.JwtUtils;
+import com.team5.catdogeats.chats.service.UserIdCacheService;
 import com.team5.catdogeats.users.domain.enums.Role;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import java.util.Objects;
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
-    private final JwtService jwtService;
+    private final UserIdCacheService userIdCacheService;
     private final JwtUtils jwtUtils;
 
     @Override
@@ -45,6 +45,9 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             // Step 3: SecurityContext에 저장
             accessor.setUser(auth); // principal 전달용
             SecurityContextHolder.getContext().setAuthentication(auth);
+
+            cacheUserIdIfAbsent(token);
+
 
             if (StompCommand.SEND.equals(cmd)) {
                 log.debug("  – SEND frame, Principal = {}", accessor.getUser());
@@ -76,6 +79,17 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                 .map(SimpleGrantedAuthority::new)
                 .toList();
         return new UsernamePasswordAuthenticationToken(userPrincipal, token, grantedAuthorities);
+    }
+
+    private void cacheUserIdIfAbsent(String token) {
+        Claims claims = jwtUtils.parseToken(token);
+        String providerId = claims.getSubject();
+        String provider = (String) claims.get("provider");
+
+        if (userIdCacheService.getCachedUserId(provider, providerId) == null) {
+            userIdCacheService.cacheUserId(provider, providerId);
+        }
+        log.debug("Cached user id: {}", userIdCacheService.getCachedUserId(provider, providerId));
     }
 
 }
