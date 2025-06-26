@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZonedDateTime;
 
 @Schema(description = "판매자 정보 응답 DTO")
 public record SellerInfoResponseDTO(
@@ -40,10 +41,10 @@ public record SellerInfoResponseDTO(
         String closedDays,
 
         @Schema(description = "생성일시", example = "2024-01-15T10:30:00")
-        LocalDateTime createdAt,
+        ZonedDateTime createdAt,
 
         @Schema(description = "수정일시", example = "2024-01-20T14:20:00")
-        LocalDateTime updatedAt
+        ZonedDateTime updatedAt
 
 ) {
     public static SellerInfoResponseDTO from(Sellers seller) {
@@ -62,8 +63,8 @@ public record SellerInfoResponseDTO(
                 seller.getOperatingStartTime(),
                 seller.getOperatingEndTime(),
                 seller.getClosedDays(),
-                seller.getCreatedAt() != null ? seller.getCreatedAt().toLocalDateTime() : null,
-                seller.getUpdatedAt() != null ? seller.getUpdatedAt().toLocalDateTime() : null
+                seller.getCreatedAt(),
+                seller.getUpdatedAt()
         );
     }
 }
