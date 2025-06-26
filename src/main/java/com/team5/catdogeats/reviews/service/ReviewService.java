@@ -12,7 +12,7 @@ public interface ReviewService {
 
     Page<ReviewResponseDto> getReviewsByBuyer(UserPrincipal userPrincipal, int page, int size);
 
-    Page<ReviewResponseDto> getReviewsByProductId(String productId, int page, int size);
+    Page<ReviewResponseDto> getReviewsByProductNumber(Long productNumber, int page, int size);
 
     void updateReview(ReviewUpdateRequestDto dto);
 

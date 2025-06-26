@@ -9,6 +9,8 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Products, String> {
     Optional<Products> findById(String productId);
 
+    Optional<Products> findByProductNumber(Long productNumber);
+
     Boolean existsByProductNumber(Long productNumber);
 
     void deleteById(String productId);

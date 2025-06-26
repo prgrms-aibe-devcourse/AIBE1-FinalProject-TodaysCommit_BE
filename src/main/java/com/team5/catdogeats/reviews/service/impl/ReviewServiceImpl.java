@@ -11,10 +11,9 @@ import com.team5.catdogeats.reviews.domain.dto.ReviewResponseDto;
 import com.team5.catdogeats.reviews.domain.dto.ReviewUpdateRequestDto;
 import com.team5.catdogeats.reviews.repository.ReviewRepository;
 import com.team5.catdogeats.reviews.service.ReviewService;
+import com.team5.catdogeats.storage.domain.dto.ReviewImageResponseDto;
 import com.team5.catdogeats.storage.domain.mapping.ReviewsImages;
-import com.team5.catdogeats.storage.repository.ImageRepository;
 import com.team5.catdogeats.storage.repository.ReviewImageRepository;
-import com.team5.catdogeats.storage.service.ObjectStorageService;
 import com.team5.catdogeats.storage.service.ReviewImageService;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.mapping.Buyers;
@@ -68,19 +67,27 @@ public class ReviewServiceImpl implements ReviewService {
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return reviewRepository.findByBuyer(buyer, pageable)
-                .map(ReviewResponseDto::fromEntity);
+        Page<Reviews> reviewsPage = reviewRepository.findByBuyer(buyer, pageable);
+
+        return reviewsPage.map(review -> {
+            List<ReviewImageResponseDto> images = reviewImageService.getReviewImagesByReviewId(review.getId());
+            return ReviewResponseDto.fromEntity(review, images);
+        });
     }
 
     @Override
-    public Page<ReviewResponseDto> getReviewsByProductId(String productId, int page, int size) {
-        Products product = productRepository.findById(productId)
+    public Page<ReviewResponseDto> getReviewsByProductNumber(Long productNumber, int page, int size) {
+        Products product = productRepository.findByProductNumber(productNumber)
                 .orElseThrow(() -> new NoSuchElementException("해당 상품 정보를 찾을 수 없습니다."));
 
         Pageable pageable = PageRequest.of(page, size);
 
-        return reviewRepository.findByProductId(productId, pageable)
-                .map(ReviewResponseDto::fromEntity);
+        Page<Reviews> reviewsPage = reviewRepository.findByProductNumber(productNumber, pageable);
+
+        return reviewsPage.map(review -> {
+            List<ReviewImageResponseDto> images = reviewImageService.getReviewImagesByReviewId(review.getId());
+            return ReviewResponseDto.fromEntity(review, images);
+        });
     }
 
     @JpaTransactional

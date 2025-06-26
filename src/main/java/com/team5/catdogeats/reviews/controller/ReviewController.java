@@ -79,15 +79,15 @@ public class ReviewController {
         }
     }
 
-    @Operation(summary = "상품에 대한 리뷰 목록 조회 (페이징)", description = "특정 상품에 대한 모든 구매자 리뷰 목록을 조회합니다.")
-    @GetMapping("/{productId}/list")
+    @Operation(summary = "상품에 대한 리뷰 목록 조회 (페이징)", description = "특정 상품에 대한 모든 리뷰 목록을 조회합니다.")
+    @GetMapping("/{productNumber}/list")
     public ResponseEntity<ApiResponse<PageResponseDto<ReviewResponseDto>>> getReviewsByBuyer(
-            @Parameter(description = "조회할 상품 ID", required = true, example = "fbe0a3e6-b951-493f-9ff7-8e49fcf3474c")
-            @PathVariable String productId,
+            @Parameter(description = "조회할 상품 Number", required = true)
+            @PathVariable Long productNumber,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<ReviewResponseDto> reviews = reviewService.getReviewsByProductId(productId, page, size);
+            Page<ReviewResponseDto> reviews = reviewService.getReviewsByProductNumber(productNumber, page, size);
 
             // Page 객체를 PageResponseDto로 변환
             PageResponseDto<ReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
