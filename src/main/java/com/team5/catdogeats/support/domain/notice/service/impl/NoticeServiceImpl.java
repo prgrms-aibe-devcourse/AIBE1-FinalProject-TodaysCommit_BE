@@ -81,7 +81,6 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 공지사항 생성 ==========
     @Override
-    @JpaTransactional
     public NoticeResponseDTO createNotice(NoticeCreateRequestDTO requestDTO) {
         Notices notice = Notices.builder()
                 .title(requestDTO.getTitle())
