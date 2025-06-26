@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
 @Service
@@ -39,12 +40,19 @@ public class CartServiceImpl implements CartService {
         Carts cart = getOrCreateCart(user.getId());
         List<CartItems> cartItems = cartItemRepository.findByCartsIdWithProduct(cart.getId());
 
+        log.debug("장바구니 조회 - userId: {}, 상품 수: {}", user.getId(), cartItems.size());
         return buildCartResponse(cart, cartItems);
     }
 
     @Override
     @Transactional
     public CartResponse addItemToCart(UserPrincipal userPrincipal, AddCartItemRequest request) {
+        // 입력 값 검증
+        if (request.getQuantity() <= 0) {
+            log.warn("잘못된 수량으로 장바구니 추가 시도 - quantity: {}", request.getQuantity());
+            throw new IllegalArgumentException("상품 수량은 1개 이상이어야 합니다.");
+        }
+
         Users user = getUserByPrincipal(userPrincipal);
         Carts cart = getOrCreateCart(user.getId());
         Products product = getProductById(request.getProductId());
@@ -56,8 +64,12 @@ public class CartServiceImpl implements CartService {
 
         if (existingItem != null) {
             // 기존 상품이 있으면 수량 증가
-            existingItem.setQuantity(existingItem.getQuantity() + request.getQuantity());
+            int newQuantity = existingItem.getQuantity() + request.getQuantity();
+            existingItem.setQuantity(newQuantity);
             cartItemRepository.save(existingItem);
+            log.info("장바구니 기존 상품 수량 증가 - productId: {}, 기존: {}, 추가: {}, 총합: {}",
+                    request.getProductId(), existingItem.getQuantity() - request.getQuantity(),
+                    request.getQuantity(), newQuantity);
         } else {
             // 새로운 상품 추가
             CartItems newItem = CartItems.builder()
@@ -66,6 +78,8 @@ public class CartServiceImpl implements CartService {
                     .quantity(request.getQuantity())
                     .build();
             cartItemRepository.save(newItem);
+            log.info("장바구니 새 상품 추가 - productId: {}, quantity: {}",
+                    request.getProductId(), request.getQuantity());
         }
 
         return getCartByUserPrincipal(userPrincipal);
@@ -74,17 +88,30 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public CartResponse updateCartItem(UserPrincipal userPrincipal, String cartItemId, UpdateCartItemRequest request) {
+        // 입력 값 검증
+        if (request.getQuantity() <= 0) {
+            log.warn("잘못된 수량으로 장바구니 수정 시도 - cartItemId: {}, quantity: {}",
+                    cartItemId, request.getQuantity());
+            throw new IllegalArgumentException("상품 수량은 1개 이상이어야 합니다.");
+        }
+
         Users user = getUserByPrincipal(userPrincipal);
         Carts cart = getOrCreateCart(user.getId());
         CartItems cartItem = getCartItemById(cartItemId);
 
         // 권한 확인
         if (!cartItem.getCarts().getId().equals(cart.getId())) {
-            throw new IllegalArgumentException("해당 장바구니 아이템에 접근 권한이 없습니다.");
+            log.warn("장바구니 아이템 접근 권한 없음 - userId: {}, cartItemId: {}, cartId: {}",
+                    user.getId(), cartItemId, cart.getId());
+            throw new SecurityException("해당 장바구니 아이템에 접근 권한이 없습니다.");
         }
 
+        int oldQuantity = cartItem.getQuantity();
         cartItem.setQuantity(request.getQuantity());
         cartItemRepository.save(cartItem);
+
+        log.info("장바구니 상품 수량 수정 - cartItemId: {}, 이전: {}, 변경: {}",
+                cartItemId, oldQuantity, request.getQuantity());
 
         return getCartByUserPrincipal(userPrincipal);
     }
@@ -98,10 +125,15 @@ public class CartServiceImpl implements CartService {
 
         // 권한 확인
         if (!cartItem.getCarts().getId().equals(cart.getId())) {
-            throw new IllegalArgumentException("해당 장바구니 아이템에 접근 권한이 없습니다.");
+            log.warn("장바구니 아이템 삭제 권한 없음 - userId: {}, cartItemId: {}, cartId: {}",
+                    user.getId(), cartItemId, cart.getId());
+            throw new SecurityException("해당 장바구니 아이템에 접근 권한이 없습니다.");
         }
 
+        String productName = cartItem.getProduct().getTitle();
         cartItemRepository.delete(cartItem);
+
+        log.info("장바구니 상품 삭제 - cartItemId: {}, productName: {}", cartItemId, productName);
 
         return getCartByUserPrincipal(userPrincipal);
     }
@@ -112,14 +144,21 @@ public class CartServiceImpl implements CartService {
         Users user = getUserByPrincipal(userPrincipal);
         Carts cart = getOrCreateCart(user.getId());
         List<CartItems> cartItems = cartItemRepository.findByCartsId(cart.getId());
+
+        int deletedCount = cartItems.size();
         cartItemRepository.deleteAll(cartItems);
+
+        log.info("장바구니 전체 비우기 - userId: {}, 삭제된 상품 수: {}", user.getId(), deletedCount);
     }
 
     // === Private Helper Methods ===
 
     private Carts getOrCreateCart(String userId) {
         return cartRepository.findByUserId(userId)
-                .orElseGet(() -> createNewCart(userId));
+                .orElseGet(() -> {
+                    log.info("새 장바구니 생성 - userId: {}", userId);
+                    return createNewCart(userId);
+                });
     }
 
     private Carts createNewCart(String userId) {
@@ -130,28 +169,40 @@ public class CartServiceImpl implements CartService {
         return cartRepository.save(newCart);
     }
 
-    // UserPrincipal로 사용자 조회
+    // UserPrincipal로 사용자 조회 - 예외 처리 개선
     private Users getUserByPrincipal(UserPrincipal userPrincipal) {
         return userRepository.findByProviderAndProviderId(
                         userPrincipal.provider(),
                         userPrincipal.providerId())
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "사용자를 찾을 수 없습니다: " + userPrincipal.provider() + "/" + userPrincipal.providerId()));
+                .orElseThrow(() -> {
+                    log.error("사용자를 찾을 수 없음 - provider: {}, providerId: {}",
+                            userPrincipal.provider(), userPrincipal.providerId());
+                    return new NoSuchElementException("사용자를 찾을 수 없습니다.");
+                });
     }
 
     private Users getUserById(String userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다: " + userId));
+                .orElseThrow(() -> {
+                    log.error("사용자 ID로 조회 실패 - userId: {}", userId);
+                    return new NoSuchElementException("사용자를 찾을 수 없습니다: " + userId);
+                });
     }
 
     private Products getProductById(String productId) {
         return productRepository.findById(productId)
-                .orElseThrow(() -> new IllegalArgumentException("상품을 찾을 수 없습니다: " + productId));
+                .orElseThrow(() -> {
+                    log.error("상품을 찾을 수 없음 - productId: {}", productId);
+                    return new NoSuchElementException("상품을 찾을 수 없습니다: " + productId);
+                });
     }
 
     private CartItems getCartItemById(String cartItemId) {
         return cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> new IllegalArgumentException("장바구니 아이템을 찾을 수 없습니다: " + cartItemId));
+                .orElseThrow(() -> {
+                    log.error("장바구니 아이템을 찾을 수 없음 - cartItemId: {}", cartItemId);
+                    return new NoSuchElementException("장바구니 아이템을 찾을 수 없습니다: " + cartItemId);
+                });
     }
 
     private CartResponse buildCartResponse(Carts cart, List<CartItems> cartItems) {
