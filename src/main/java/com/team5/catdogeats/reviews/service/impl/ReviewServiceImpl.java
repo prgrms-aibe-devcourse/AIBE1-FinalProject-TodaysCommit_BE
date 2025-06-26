@@ -2,13 +2,13 @@ package com.team5.catdogeats.reviews.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.pets.domain.Pets;
+import com.team5.catdogeats.pets.domain.dto.PetInfoResponseDto;
+import com.team5.catdogeats.pets.repository.PetRepository;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.reviews.domain.Reviews;
-import com.team5.catdogeats.reviews.domain.dto.ReviewCreateRequestDto;
-import com.team5.catdogeats.reviews.domain.dto.ReviewDeleteRequestDto;
-import com.team5.catdogeats.reviews.domain.dto.ReviewResponseDto;
-import com.team5.catdogeats.reviews.domain.dto.ReviewUpdateRequestDto;
+import com.team5.catdogeats.reviews.domain.dto.*;
 import com.team5.catdogeats.reviews.repository.ReviewRepository;
 import com.team5.catdogeats.reviews.service.ReviewService;
 import com.team5.catdogeats.storage.domain.dto.ReviewImageResponseDto;
@@ -36,6 +36,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final BuyerRepository buyerRepository;
     private final ReviewImageRepository reviewImageRepository;
     private final ReviewImageService reviewImageService;
+    private final PetRepository petRepository;
 
     @Override
     public String registerReview(UserPrincipal userPrincipal, ReviewCreateRequestDto dto) {
@@ -55,8 +56,9 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.save(review).getId();
     }
 
+    @JpaTransactional
     @Override
-    public Page<ReviewResponseDto> getReviewsByBuyer(UserPrincipal userPrincipal, int page, int size) {
+    public Page<MyReviewResponseDto> getReviewsByBuyer(UserPrincipal userPrincipal, int page, int size) {
         BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
 
@@ -71,12 +73,13 @@ public class ReviewServiceImpl implements ReviewService {
 
         return reviewsPage.map(review -> {
             List<ReviewImageResponseDto> images = reviewImageService.getReviewImagesByReviewId(review.getId());
-            return ReviewResponseDto.fromEntity(review, images);
+            return MyReviewResponseDto.fromEntity(review, images);
         });
     }
 
+    @JpaTransactional
     @Override
-    public Page<ReviewResponseDto> getReviewsByProductNumber(Long productNumber, int page, int size) {
+    public Page<ProductReviewResponseDto> getReviewsByProductNumber(Long productNumber, int page, int size) {
         Products product = productRepository.findByProductNumber(productNumber)
                 .orElseThrow(() -> new NoSuchElementException("해당 상품 정보를 찾을 수 없습니다."));
 
@@ -84,9 +87,14 @@ public class ReviewServiceImpl implements ReviewService {
 
         Page<Reviews> reviewsPage = reviewRepository.findByProductNumber(productNumber, pageable);
 
+
         return reviewsPage.map(review -> {
+            //해당 리뷰 작성자(구매자) pet 조회
+            List<Pets> petInfos = petRepository.findByBuyer(review.getBuyer());
+
             List<ReviewImageResponseDto> images = reviewImageService.getReviewImagesByReviewId(review.getId());
-            return ReviewResponseDto.fromEntity(review, images);
+
+            return ProductReviewResponseDto.fromEntity(review, images, petInfos);
         });
     }
 

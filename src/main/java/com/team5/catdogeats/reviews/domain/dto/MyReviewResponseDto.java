@@ -5,23 +5,22 @@ import com.team5.catdogeats.storage.domain.dto.ReviewImageResponseDto;
 
 import java.util.List;
 
-public record ReviewResponseDto(
+// 특정 buyerId로 리뷰 조회시 response
+public record MyReviewResponseDto(
         String id,
-        String productId,
-        String buyerId,
+        String productName,
         Double star,
         String contents,
-        String summary,
+        String updatedAt,
         List<ReviewImageResponseDto> images
 ) {
-    public static ReviewResponseDto fromEntity(Reviews review, List<ReviewImageResponseDto> images) {
-        return new ReviewResponseDto(
+    public static MyReviewResponseDto fromEntity(Reviews review, List<ReviewImageResponseDto> images) {
+        return new MyReviewResponseDto(
                 review.getId(),
-                review.getProduct().getId(),
-                review.getBuyer().getUserId(),
+                review.getProduct().getTitle(),
                 review.getStar(),
                 review.getContents(),
-                review.getSummary(),
+                review.getUpdatedAt().toString(),
                 images
         );
     }

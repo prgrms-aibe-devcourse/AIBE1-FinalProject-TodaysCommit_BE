@@ -4,10 +4,7 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.dto.PageResponseDto;
 import com.team5.catdogeats.global.enums.ResponseCode;
-import com.team5.catdogeats.reviews.domain.dto.ReviewCreateRequestDto;
-import com.team5.catdogeats.reviews.domain.dto.ReviewDeleteRequestDto;
-import com.team5.catdogeats.reviews.domain.dto.ReviewResponseDto;
-import com.team5.catdogeats.reviews.domain.dto.ReviewUpdateRequestDto;
+import com.team5.catdogeats.reviews.domain.dto.*;
 import com.team5.catdogeats.reviews.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -51,15 +48,15 @@ public class ReviewController {
 
     @Operation(summary = "내가 작성한 리뷰 목록 조회 (페이징)", description = "로그인한 구매자가 직접 작성한 리뷰 목록을 조회합니다.")
     @GetMapping("/list")
-    public ResponseEntity<ApiResponse<PageResponseDto<ReviewResponseDto>>> getReviewsByBuyer(
+    public ResponseEntity<ApiResponse<PageResponseDto<MyReviewResponseDto>>> getReviewsByBuyer(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<ReviewResponseDto> reviews = reviewService.getReviewsByBuyer(userPrincipal, page, size);
+            Page<MyReviewResponseDto> reviews = reviewService.getReviewsByBuyer(userPrincipal, page, size);
 
             // Page 객체를 PageResponseDto로 변환
-            PageResponseDto<ReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
+            PageResponseDto<MyReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
                     reviews.getContent(),
                     reviews.getNumber(),
                     reviews.getSize(),
@@ -81,16 +78,16 @@ public class ReviewController {
 
     @Operation(summary = "상품에 대한 리뷰 목록 조회 (페이징)", description = "특정 상품에 대한 모든 리뷰 목록을 조회합니다.")
     @GetMapping("/{productNumber}/list")
-    public ResponseEntity<ApiResponse<PageResponseDto<ReviewResponseDto>>> getReviewsByBuyer(
+    public ResponseEntity<ApiResponse<PageResponseDto<ProductReviewResponseDto>>> getReviewsByBuyer(
             @Parameter(description = "조회할 상품 Number", required = true)
             @PathVariable Long productNumber,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         try {
-            Page<ReviewResponseDto> reviews = reviewService.getReviewsByProductNumber(productNumber, page, size);
+            Page<ProductReviewResponseDto> reviews = reviewService.getReviewsByProductNumber(productNumber, page, size);
 
             // Page 객체를 PageResponseDto로 변환
-            PageResponseDto<ReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
+            PageResponseDto<ProductReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
                     reviews.getContent(),
                     reviews.getNumber(),
                     reviews.getSize(),
