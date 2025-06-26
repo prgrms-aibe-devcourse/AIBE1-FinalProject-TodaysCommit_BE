@@ -127,7 +127,7 @@ public class ReviewController {
         }
     }
 
-    @Operation(summary = "리뷰 삭제", description = "구매자가 자신의 리뷰를 삭제합니다.")
+    @Operation(summary = "리뷰 삭제", description = "구매자가 자신의 리뷰(리뷰, 이미지, 매핑 테이블 모두) 삭제합니다.")
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteReview(
             @RequestBody @Valid @Parameter(description = "삭제할 리뷰 id", required = true) ReviewDeleteRequestDto dto) {
