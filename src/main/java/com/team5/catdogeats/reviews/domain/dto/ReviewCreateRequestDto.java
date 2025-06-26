@@ -17,7 +17,7 @@ public record ReviewCreateRequestDto(
         @Size(max = 1000, message = "리뷰 내용은 1000자 이하여야 합니다.")
         String contents,
 
-        // TODO: RequestDto에 빠져서 나중에 LLM으로 요약 후 작성됨
+        @NotBlank(message = "리뷰 요약은 필수입니다.")
         String summary
 ) {
 }
