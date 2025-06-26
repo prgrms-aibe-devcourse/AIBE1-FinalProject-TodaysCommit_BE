@@ -4,6 +4,7 @@ import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.reviews.domain.Reviews;
 import com.team5.catdogeats.reviews.repository.ReviewRepository;
 import com.team5.catdogeats.storage.domain.Images;
+import com.team5.catdogeats.storage.domain.dto.ReviewImageResponseDto;
 import com.team5.catdogeats.storage.domain.dto.ReviewImageUploadResponseDto;
 import com.team5.catdogeats.storage.domain.mapping.ReviewsImages;
 import com.team5.catdogeats.storage.repository.ImageRepository;
@@ -80,6 +81,22 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
         // 2. 새 이미지 업로드/매핑
         return this.uploadReviewImage(reviewId, images);
 
+    }
+
+    @JpaTransactional
+    @Override
+    public List<ReviewImageResponseDto> getReviewImagesByReviewId(String reviewId) {
+        Reviews review = reviewRepository.findById(reviewId)
+                .orElseThrow(() -> new NoSuchElementException("해당 리뷰 없음"));
+
+        List<ReviewsImages> mappings = reviewImageRepository.findAllByReviewsIdWithImages(reviewId);
+        
+        return mappings.stream()
+                .map(mapping -> new ReviewImageResponseDto(
+                        mapping.getImages().getId(),
+                        mapping.getImages().getImageUrl()
+                ))
+                .toList();
     }
 
     @JpaTransactional
