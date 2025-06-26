@@ -106,8 +106,9 @@ public class SecurityConfig {
                     )
                     .httpBasic(AbstractHttpConfigurer::disable)
                     .formLogin(AbstractHttpConfigurer::disable)
-//                    .exceptionHandling(exception ->
-//                            exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
+
+// .exceptionHandling(exception ->
+// exception.authenticationEntryPoint(new OAuth2AuthenticationEntryPointHandler()))
                     .logout(logout -> logout
                             .logoutUrl("/v1/auth/logout")
                             .logoutSuccessHandler(customLogoutSuccessHandler)
@@ -133,4 +134,5 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
+
 }

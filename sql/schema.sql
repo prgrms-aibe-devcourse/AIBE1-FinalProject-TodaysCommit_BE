@@ -190,17 +190,54 @@ CREATE TABLE orders (
                         id BIGINT PRIMARY KEY,
                         user_id VARCHAR(36) NOT NULL,
                         order_status ENUM(
+                            'PAYMENT_PENDING',
                             'PAYMENT_COMPLETED',
                             'PREPARING',
                             'READY_FOR_SHIPMENT',
                             'IN_DELIVERY',
-                            'DELIVERED'
+                            'DELIVERED',
+                            'CANCELLED',
+                            'REFUND_PROCESSING',
+                            'REFUNDED'
                             ) ,
                         total_price BIGINT NOT NULL,
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                         CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- 재고 예약 테이블
+CREATE TABLE IF NOT EXISTS stock_reservations (
+                                                  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                                                  order_id UUID NOT NULL,
+                                                  product_id UUID NOT NULL,
+                                                  reserved_quantity INTEGER NOT NULL CHECK (reserved_quantity > 0),
+                                                  reservation_status VARCHAR(20) NOT NULL CHECK (reservation_status IN ('RESERVED', 'CONFIRMED', 'CANCELLED', 'EXPIRED')),
+                                                  reserved_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                  confirmed_at TIMESTAMP WITH TIME ZONE,
+                                                  expired_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                                                  version BIGINT NOT NULL DEFAULT 0,
+                                                  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                                                  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    -- 외래키 제약조건
+                                                  CONSTRAINT fk_stock_reservation_order_id
+                                                      FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+                                                  CONSTRAINT fk_stock_reservation_product_id
+                                                      FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);
+
+-- 성능 최적화를 위한 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_order_id ON stock_reservations(order_id);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_product_id ON stock_reservations(product_id);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_status ON stock_reservations(reservation_status);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_expired_at ON stock_reservations(expired_at);
+
+-- 복합 인덱스 (자주 사용되는 조회 패턴용)
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_product_status
+    ON stock_reservations(product_id, reservation_status);
+CREATE INDEX IF NOT EXISTS idx_stock_reservation_order_product
+    ON stock_reservations(order_id, product_id);
 
 
 -- 장바구니 헤더
@@ -249,7 +286,7 @@ CREATE TABLE payments (
                           order_id BIGINT NOT NULL,
                           method ENUM('TOSS') NOT NULL,
                           status ENUM('PENDING', 'SUCCESS', 'FAILED') DEFAULT 'PENDING',
-                          toss_payment_key VARCHAR(255) NOT NULL ,
+                          toss_payment_key VARCHAR(255),
                           paid_at DATETIME,
                           CONSTRAINT fk_payments_user_id FOREIGN KEY (buyers_id) REFERENCES buyers(user_id) ,
                           CONSTRAINT fk_payments_order_id FOREIGN KEY (order_id) REFERENCES orders(id)
