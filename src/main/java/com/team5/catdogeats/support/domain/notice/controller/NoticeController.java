@@ -74,98 +74,21 @@ public class NoticeController {
     public ResponseEntity<Resource> downloadFile(@PathVariable String noticeId, @PathVariable String fileId) {
 
         try {
-            Resource resource = noticeService.downloadFile(fileId);
-
-            // 원본 파일명 추출
-            String originalFilename = resource.getFilename();
-
-            // 스마트 파일명 생성
-            String smartFilename = generateSmartFilename(originalFilename);
-
-            // MIME 타입 결정
-            String contentType = determineContentType(originalFilename);
+            // 🆕 서비스에서 DTO로 받아오기
+            NoticeFileDownloadResponseDTO downloadResponse = noticeService.downloadFile(fileId);
 
             return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
+                    .contentType(MediaType.parseMediaType(downloadResponse.getContentType()))
                     .header(HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"" + smartFilename + "\"")
+                            "attachment; filename=\"" + downloadResponse.getFilename() + "\"")
                     .header(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, must-revalidate")
                     .header(HttpHeaders.PRAGMA, "no-cache")
                     .header(HttpHeaders.EXPIRES, "0")
-                    .body(resource);
+                    .body(downloadResponse.getResource());
 
         } catch (Exception e) {
             log.error("파일 다운로드 실패 - 파일 ID: {}, 오류: {}", fileId, e.getMessage());
             return ResponseEntity.notFound().build();
         }
-    }
-
-    // 스마트 파일명 생성 메서드
-    private String generateSmartFilename(String originalFilename) {
-        if (originalFilename == null || originalFilename.isEmpty()) {
-            return "notice_attachment_" + System.currentTimeMillis();
-        }
-
-        // 확장자 추출
-        String extension = "";
-        int lastDotIndex = originalFilename.lastIndexOf(".");
-        if (lastDotIndex > 0 && lastDotIndex < originalFilename.length() - 1) {
-            extension = originalFilename.substring(lastDotIndex);
-        }
-
-        // 파일 타입별 기본 이름 생성
-        String baseFilename = generateBaseFilename(extension);
-
-        // 현재 시간을 추가하여 중복 방지
-        String timestamp = String.valueOf(System.currentTimeMillis());
-
-        return baseFilename + "_" + timestamp + extension;
-    }
-
-    // 파일 타입별 기본 이름 생성
-    private String generateBaseFilename(String extension) {
-        if (extension == null || extension.isEmpty()) {
-            return "notice_file";
-        }
-
-        String ext = extension.toLowerCase();
-
-        return switch (ext) {
-            // 이미지 파일
-            case ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" -> "notice_image";
-
-            // 문서 파일
-            case ".pdf" -> "notice_document";
-            case ".doc", ".docx" -> "notice_word_document";
-            case ".xls", ".xlsx" -> "notice_excel_document";
-            case ".ppt", ".pptx" -> "notice_presentation";
-            case ".txt" -> "notice_text_file";
-
-            // 압축 파일
-            case ".zip", ".rar", ".7z" -> "notice_archive";
-
-            // 기타
-            default -> "notice_file";
-        };
-    }
-
-    // MIME 타입 결정 헬퍼 메서드 (기존과 동일)
-    private String determineContentType(String filename) {
-        if (filename == null) return "application/octet-stream";
-
-        String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-
-        return switch (extension) {
-            case "jpg", "jpeg" -> "image/jpeg";
-            case "png" -> "image/png";
-            case "gif" -> "image/gif";
-            case "pdf" -> "application/pdf";
-            case "doc" -> "application/msword";
-            case "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-            case "xls" -> "application/vnd.ms-excel";
-            case "xlsx" -> "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            case "txt" -> "text/plain";
-            default -> "application/octet-stream";
-        };
     }
 }

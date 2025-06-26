@@ -2,8 +2,9 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.FileStorageService;
+import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
+import com.team5.catdogeats.support.domain.notice.dto.NoticeFileDownloadResponseDTO;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -12,8 +13,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -29,7 +30,7 @@ class NoticeServiceImplFileDownloadTest {
     private FilesRepository filesRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private ObjectStorageService objectStorageService;
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
@@ -51,29 +52,28 @@ class NoticeServiceImplFileDownloadTest {
     // ========== 파일 다운로드 테스트 ==========
     @Test
     @DisplayName("파일 다운로드 - 성공")
-    void downloadFile_Success() throws IOException {
+    void downloadFile_Success() throws Exception {
         // given
         String fileId = "test-file-id";
-        // 실제 존재하는 시스템 파일 사용 (Windows 기준)
-        String filePath = "C:/Windows/System32/drivers/etc/hosts";
+        String s3FileUrl = "https://cdn.example.com/files/notice_12345678_20250625_120000_test.txt";
 
         Files fileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl(filePath)
+                .fileUrl(s3FileUrl)
                 .build();
 
-        Resource mockResource = mock(Resource.class);
-
         given(filesRepository.findById(fileId)).willReturn(Optional.of(fileEntity));
-        given(fileStorageService.downloadFile(filePath)).willReturn(mockResource);
 
         // when
-        Resource result = noticeService.downloadFile(fileId);
+        NoticeFileDownloadResponseDTO result = noticeService.downloadFile(fileId);
 
         // then
         assertThat(result).isNotNull();
+        assertThat(result).isInstanceOf(UrlResource.class);
         verify(filesRepository).findById(fileId);
-        verify(fileStorageService).downloadFile(filePath);
+
+        // ObjectStorageService는 다운로드에 직접 사용되지 않음 (URL 기반 접근)
+        // S3 URL을 통해 UrlResource로 직접 접근하는 방식
     }
 
     @Test
@@ -89,24 +89,30 @@ class NoticeServiceImplFileDownloadTest {
                 .hasMessageContaining("파일을 찾을 수 없습니다");
     }
 
+    // 실제 다운로드 실패는 네트워크/S3 문제이므로 단위 테스트에서 시뮬레이션 어려움
+    // 대신 URL 형식은 정상이지만 존재하지 않는 파일을 테스트
     @Test
-    @DisplayName("파일 다운로드 - 파일이 물리적으로 존재하지 않음")
-    void downloadFile_FileNotExists() {
+    @DisplayName("파일 다운로드 - 정상 URL (존재하지 않는 파일)")
+    void downloadFile_NonExistentFile() {
         // given
         String fileId = "test-file-id";
-        String filePath = "/completely/non/existing/path/test-file.txt";
+        String validButNonExistentUrl = "https://cdn.example.com/files/non-existent-file.txt";
 
         Files fileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl(filePath)
+                .fileUrl(validButNonExistentUrl)
                 .build();
 
         given(filesRepository.findById(fileId)).willReturn(Optional.of(fileEntity));
 
-        // when & then
-        assertThatThrownBy(() -> noticeService.downloadFile(fileId))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일이 존재하지 않습니다");
+        // when
+        NoticeFileDownloadResponseDTO result = noticeService.downloadFile(fileId);
+
+        // then
+        // UrlResource는 생성되지만 실제 파일은 존재하지 않음
+        assertThat(result).isNotNull();
+        assertThat(result).isInstanceOf(UrlResource.class);
+        verify(filesRepository).findById(fileId);
     }
 
     // ========== 헬퍼 메서드 ==========

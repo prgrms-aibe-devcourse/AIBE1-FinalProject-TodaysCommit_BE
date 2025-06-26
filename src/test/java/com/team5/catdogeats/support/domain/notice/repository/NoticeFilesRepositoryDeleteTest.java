@@ -59,15 +59,15 @@ class NoticeFilesRepositoryDeleteTest {
 
         // 파일 데이터 준비
         file1 = Files.builder()
-                .fileUrl("/uploads/file1.txt")
+                .fileUrl("https://cdn.example.com/files/file1.pdf")
                 .build();
 
         file2 = Files.builder()
-                .fileUrl("/uploads/file2.pdf")
+                .fileUrl("https://cdn.example.com/files/file2.pdf")
                 .build();
 
         file3 = Files.builder()
-                .fileUrl("/uploads/file3.docx")
+                .fileUrl("https://cdn.example.com/files/file3.docx")
                 .build();
 
         // 엔티티 저장

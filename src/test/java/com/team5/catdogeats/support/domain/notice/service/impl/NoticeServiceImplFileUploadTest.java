@@ -3,7 +3,7 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.FileStorageService;
+import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
@@ -40,7 +40,7 @@ class NoticeServiceImplFileUploadTest {
     private NoticeFilesRepository noticeFilesRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private ObjectStorageService objectStorageService;
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
@@ -72,9 +72,11 @@ class NoticeServiceImplFileUploadTest {
                 "테스트 파일 내용".getBytes()
         );
 
+        String s3FileUrl = "https://cdn.example.com/files/notice_12345678_20250625_120000_test.txt";
+
         Files savedFile = Files.builder()
                 .id("file-id")
-                .fileUrl("/path/to/file")
+                .fileUrl(s3FileUrl)
                 .build();
         setTimeFields(savedFile);
 
@@ -86,7 +88,12 @@ class NoticeServiceImplFileUploadTest {
         setTimeFields(noticeFile);
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(fileStorageService.uploadFile(file)).willReturn("/path/to/file");
+        given(objectStorageService.uploadFile(
+                anyString(), // key (파일명)
+                any(), // inputStream
+                anyLong(), // contentLength
+                anyString() // contentType
+        )).willReturn(s3FileUrl);
         given(filesRepository.save(any(Files.class))).willReturn(savedFile);
         given(noticeFilesRepository.save(any(NoticeFiles.class))).willReturn(noticeFile);
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
@@ -97,7 +104,12 @@ class NoticeServiceImplFileUploadTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getAttachments()).hasSize(1);
-        verify(fileStorageService).uploadFile(file);
+        verify(objectStorageService).uploadFile(
+                anyString(),
+                any(),
+                eq(file.getSize()),
+                eq(file.getContentType())
+        );
         verify(filesRepository).save(any(Files.class));
         verify(noticeFilesRepository).save(any(NoticeFiles.class));
     }
@@ -123,8 +135,8 @@ class NoticeServiceImplFileUploadTest {
     }
 
     @Test
-    @DisplayName("파일 업로드 - IOException 발생")
-    void uploadFile_IOException() throws IOException {
+    @DisplayName("파일 업로드 - RuntimeException 발생")
+    void uploadFile_RuntimeException() throws IOException {
         // given
         String noticeId = "test-notice-id";
         MockMultipartFile file = new MockMultipartFile(
@@ -135,7 +147,12 @@ class NoticeServiceImplFileUploadTest {
         );
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(fileStorageService.uploadFile(file)).willThrow(new IOException("파일 저장 실패"));
+        given(objectStorageService.uploadFile(
+                anyString(),
+                any(),
+                anyLong(),
+                anyString()
+        )).willThrow(new RuntimeException("S3 업로드 실패"));
 
         // when & then
         assertThatThrownBy(() -> noticeService.uploadFile(noticeId, file))

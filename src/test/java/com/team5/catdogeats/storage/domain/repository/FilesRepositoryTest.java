@@ -30,7 +30,7 @@ class FilesRepositoryTest {
     @BeforeEach
     void setUp() {
         testFile = Files.builder()
-                .fileUrl("/uploads/test-file.pdf")
+                .fileUrl("https://cdn.example.com/files/test-file.pdf")
                 .build();
 
         testFile = entityManager.persistAndFlush(testFile);
@@ -41,7 +41,7 @@ class FilesRepositoryTest {
     void save_Success() {
         // given
         Files file = Files.builder()
-                .fileUrl("/uploads/new-file.txt")
+                .fileUrl("https://cdn.example.com/files/new-file.docx")
                 .build();
 
         // when
@@ -50,7 +50,7 @@ class FilesRepositoryTest {
         // then
         assertThat(savedFile).isNotNull();
         assertThat(savedFile.getId()).isNotNull();
-        assertThat(savedFile.getFileUrl()).isEqualTo("/uploads/new-file.txt");
+        assertThat(savedFile.getFileUrl()).isEqualTo("https://cdn.example.com/files/new-file.docx");
         assertThat(savedFile.getCreatedAt()).isNotNull();
         assertThat(savedFile.getUpdatedAt()).isNotNull();
     }
@@ -63,7 +63,7 @@ class FilesRepositoryTest {
 
         // then
         assertThat(foundFile).isPresent();
-        assertThat(foundFile.get().getFileUrl()).isEqualTo("/uploads/test-file.pdf");
+        assertThat(foundFile.get().getFileUrl()).isEqualTo("https://cdn.example.com/files/test-file.pdf");
     }
 
     @Test
@@ -95,10 +95,10 @@ class FilesRepositoryTest {
     void findAll_Success() {
         // given
         Files file1 = Files.builder()
-                .fileUrl("/uploads/file1.jpg")
+                .fileUrl("https://cdn.example.com/files/file1.pdf")
                 .build();
         Files file2 = Files.builder()
-                .fileUrl("/uploads/file2.docx")
+                .fileUrl("https://cdn.example.com/files/file2.docx")
                 .build();
 
         entityManager.persistAndFlush(file1);
@@ -112,9 +112,9 @@ class FilesRepositoryTest {
         assertThat(allFiles)
                 .extracting(Files::getFileUrl)
                 .containsExactlyInAnyOrder(
-                        "/uploads/test-file.pdf",
-                        "/uploads/file1.jpg",
-                        "/uploads/file2.docx"
+                        "https://cdn.example.com/files/test-file.pdf",
+                        "https://cdn.example.com/files/file1.pdf",
+                        "https://cdn.example.com/files/file2.docx"
                 );
     }
 
@@ -123,10 +123,10 @@ class FilesRepositoryTest {
     void count_Success() {
         // given
         Files file1 = Files.builder()
-                .fileUrl("/uploads/file1.jpg")
+                .fileUrl("https://cdn.example.com/files/file1.pdf")
                 .build();
         Files file2 = Files.builder()
-                .fileUrl("/uploads/file2.docx")
+                .fileUrl("https://cdn.example.com/files/file2.docx")
                 .build();
 
         entityManager.persistAndFlush(file1);
@@ -163,7 +163,7 @@ class FilesRepositoryTest {
     @DisplayName("파일 수정 - 성공")
     void update_Success() {
         // given
-        String newFileUrl = "/uploads/updated-file.pdf";
+        String newFileUrl = "https://cdn.example.com/files/updated-file.pdf";
 
         // when
         testFile.setFileUrl(newFileUrl);
@@ -179,10 +179,10 @@ class FilesRepositoryTest {
     void saveAll_Success() {
         // given
         Files file1 = Files.builder()
-                .fileUrl("/uploads/batch1.txt")
+                .fileUrl("https://cdn.example.com/files/batch1.pdf")
                 .build();
         Files file2 = Files.builder()
-                .fileUrl("/uploads/batch2.txt")
+                .fileUrl("https://cdn.example.com/files/batch2.docx")
                 .build();
 
         List<Files> filesToSave = List.of(file1, file2);
@@ -194,6 +194,6 @@ class FilesRepositoryTest {
         assertThat(savedFiles).hasSize(2);
         assertThat(savedFiles)
                 .extracting(Files::getFileUrl)
-                .containsExactlyInAnyOrder("/uploads/batch1.txt", "/uploads/batch2.txt");
+                .containsExactlyInAnyOrder("https://cdn.example.com/files/batch1.pdf", "https://cdn.example.com/files/batch2.docx");
     }
 }

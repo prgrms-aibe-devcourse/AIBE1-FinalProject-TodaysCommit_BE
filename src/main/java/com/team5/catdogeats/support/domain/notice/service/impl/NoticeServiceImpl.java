@@ -3,8 +3,7 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
-import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.*;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
@@ -12,8 +11,6 @@ import com.team5.catdogeats.support.domain.notice.repository.NoticeRepository;
 import com.team5.catdogeats.support.domain.notice.service.NoticeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,12 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.domain.Sort;
 
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -36,9 +29,8 @@ import java.util.UUID;
 public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
-    private final FilesRepository filesRepository;
     private final NoticeFilesRepository noticeFilesRepository;
-    private final ObjectStorageService objectStorageService; // 팀원이 만든 S3 서비스 주입
+    private final NoticeFileManagementService noticeFileManagementService;  // 🆕 추가
 
     private Sort createSort(String sortBy) {
         return switch (sortBy) {
@@ -76,10 +68,13 @@ public class NoticeServiceImpl implements NoticeService {
         Notices notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
 
-        // 조회수 증가
-        notice.incrementViewCount();
+        // ✅ 원자적 조회수 증가 (동시성 안전)
+        noticeRepository.incrementViewCount(noticeId);
 
         List<NoticeFiles> attachments = noticeFilesRepository.findByNoticesId(noticeId);
+
+        // ✅ 증가된 조회수 반영을 위해 엔티티 새로고침
+        notice.setViewCount(notice.getViewCount() + 1);  // 메모리상 동기화
 
         return NoticeResponseDTO.fromWithAttachments(notice, attachments);
     }
@@ -123,13 +118,17 @@ public class NoticeServiceImpl implements NoticeService {
             throw new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId);
         }
 
-        // 연결된 파일들을 S3에서 삭제
         List<NoticeFiles> noticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
-        for (NoticeFiles noticeFile : noticeFiles) {
-            try {
-                deleteFileFromS3(noticeFile.getFiles().getFileUrl());
-            } catch (Exception e) {
-                log.warn("S3 파일 삭제 실패 (무시 가능): {}", e.getMessage());
+        log.info("=== 파일 삭제 디버깅 - 조회된 파일 개수: {} ===", noticeFiles.size()); // 🆕 추가
+
+        if (noticeFiles.isEmpty()) {
+            log.info("연결된 파일이 없어서 S3 삭제 건너뜀"); // 🆕 추가
+        } else {
+            for (NoticeFiles noticeFile : noticeFiles) {
+                String fileUrl = noticeFile.getFiles().getFileUrl();
+                String fileId = noticeFile.getFiles().getId();
+                log.info("S3 파일 삭제 시도 - URL: {}", fileUrl); // 🆕 추가
+                noticeFileManagementService.deleteNoticeFileCompletely(fileId);
             }
         }
 
@@ -142,208 +141,106 @@ public class NoticeServiceImpl implements NoticeService {
     @Override
     @JpaTransactional
     public NoticeResponseDTO uploadFile(String noticeId, MultipartFile file) {
-        try {
-            // 공지사항 존재 확인
-            Notices notice = noticeRepository.findById(noticeId)
-                    .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
+        // 파일 검증 (Notice 도메인 책임)
+        validateFile(file);
 
-            // 1. S3에 파일 업로드
-            String fileName = generateNoticeFileName(file.getOriginalFilename());
-            String s3FileUrl = objectStorageService.uploadFile(
-                    fileName,
-                    file.getInputStream(),
-                    file.getSize(),
-                    file.getContentType()
-            );
-            log.info("S3 파일 업로드 완료: {}", s3FileUrl);
+        // 공지사항 존재 확인
+        Notices notice = noticeRepository.findById(noticeId)
+                .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
 
-            // 2. Files 테이블에 파일 정보 저장
-            Files fileEntity = Files.builder()
-                    .fileUrl(s3FileUrl)
-                    .build();
-            Files savedFile = filesRepository.save(fileEntity);
+        // 🆕 파일 관리 서비스에 위임
+        Files savedFile = noticeFileManagementService.uploadNoticeFile(file);
 
-            // 3. 공지사항과 파일 연결
-            NoticeFiles noticeFile = NoticeFiles.builder()
-                    .notices(notice)
-                    .files(savedFile)
-                    .build();
-            noticeFilesRepository.save(noticeFile);
+        // 공지사항과 파일 연결 (Notice 도메인 책임)
+        NoticeFiles noticeFile = NoticeFiles.builder()
+                .notices(notice)
+                .files(savedFile)
+                .build();
+        noticeFilesRepository.save(noticeFile);
 
-            // 4. 첨부파일 포함된 상세 정보 반환
-            List<NoticeFiles> updatedNoticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
-            return NoticeResponseDTO.fromWithAttachments(notice, updatedNoticeFiles);
-
-        } catch (IOException e) {
-            log.error("S3 파일 업로드 실패 - 공지사항 ID: {}, 오류: {}", noticeId, e.getMessage());
-            throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.", e);
-        } catch (Exception e) {
-            log.error("예상치 못한 오류 발생 - 공지사항 ID: {}, 오류: {}", noticeId, e.getMessage(), e);
-            throw new RuntimeException("파일 업로드 중 오류가 발생했습니다.", e);
-        }
+        // 첨부파일 포함된 상세 정보 반환
+        List<NoticeFiles> updatedNoticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
+        return NoticeResponseDTO.fromWithAttachments(notice, updatedNoticeFiles);
     }
 
     // ========== 파일 다운로드 ==========
     @Override
-    public Resource downloadFile(String fileId) {
-        Files fileEntity = filesRepository.findById(fileId)
-                .orElseThrow(() -> new NoSuchElementException("파일을 찾을 수 없습니다: " + fileId));
-
-        try {
-            String fileUrl = fileEntity.getFileUrl();
-
-            // https:// 프로토콜 추가
-            if (!fileUrl.startsWith("http")) {
-                fileUrl = "https://" + fileUrl;
-            }
-
-            // 파일명 부분만 추출해서 인코딩
-            int lastSlash = fileUrl.lastIndexOf('/');
-            String basePath = fileUrl.substring(0, lastSlash + 1);
-            String fileName = fileUrl.substring(lastSlash + 1);
-
-            String encodedFileName = java.net.URLEncoder.encode(fileName, "UTF-8");
-            String finalUrl = basePath + encodedFileName;
-
-            log.info("최종 URL: {}", finalUrl);
-
-            Resource resource = new UrlResource(finalUrl);
-            return resource;
-
-        } catch (Exception e) {
-            log.error("S3 파일 다운로드 실패 - 파일 ID: {}, 오류: {}", fileId, e.getMessage());
-            throw new RuntimeException("파일 다운로드 중 오류가 발생했습니다: " + fileId, e);
-        }
+    public NoticeFileDownloadResponseDTO downloadFile(String fileId) {
+        return noticeFileManagementService.downloadNoticeFile(fileId);
     }
 
     // ========== 파일 삭제 ==========
     @Override
     @JpaTransactional
     public void deleteFile(String noticeId, String fileId) {
-        try {
-            // 1. 공지사항 존재 확인
-            Notices notice = noticeRepository.findById(noticeId)
-                    .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
 
-            // 2. 파일 존재 확인
-            Files fileEntity = filesRepository.findById(fileId)
-                    .orElseThrow(() -> new NoSuchElementException("파일을 찾을 수 없습니다. ID: " + fileId));
+        NoticeFiles noticeFile = noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공지사항에 연결되지 않은 파일입니다. noticeId: " + noticeId + ", fileId: " + fileId));
 
-            // 3. 해당 공지사항에 파일이 연결되어 있는지 확인
-            List<NoticeFiles> noticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
-            boolean isFileLinked = noticeFiles.stream()
-                    .anyMatch(nf -> nf.getFiles().getId().equals(fileId));
+        // 매핑 관계 삭제
+        noticeFilesRepository.deleteById(noticeFile.getId());
 
-            if (!isFileLinked) {
-                throw new IllegalArgumentException("해당 공지사항에 연결되지 않은 파일입니다. noticeId: " + noticeId + ", fileId: " + fileId);
-            }
+        // 🆕 파일 관리 서비스에 위임 (Storage + Files DB 삭제)
+        noticeFileManagementService.deleteNoticeFileCompletely(fileId);
 
-            // 4. notice_files 테이블에서 매핑 관계 삭제
-            noticeFiles.stream()
-                    .filter(nf -> nf.getFiles().getId().equals(fileId))
-                    .forEach(nf -> noticeFilesRepository.deleteById(nf.getId()));
-
-            // 5. S3에서 실제 파일 삭제
-            try {
-                deleteFileFromS3(fileEntity.getFileUrl());
-            } catch (Exception e) {
-                log.warn("S3 파일 삭제 실패 (무시 가능): {}", e.getMessage());
-            }
-
-            // 6. files 테이블에서 파일 정보 삭제
-            filesRepository.deleteById(fileId);
-
-            log.info("파일 삭제 완료 - noticeId: {}, fileId: {}", noticeId, fileId);
-
-        } catch (Exception e) {
-            log.error("파일 삭제 실패 - noticeId: {}, fileId: {}, 오류: {}", noticeId, fileId, e.getMessage());
-            throw new RuntimeException("파일 삭제 중 오류가 발생했습니다.", e);
-        }
+        log.info("파일 삭제 완료 - noticeId: {}, fileId: {}", noticeId, fileId);
     }
 
     // ========== 파일 수정(교체) ==========
     @Override
     @JpaTransactional
     public NoticeResponseDTO replaceFile(String noticeId, String fileId, MultipartFile newFile) {
-        try {
-            // 1. 공지사항 존재 확인
-            Notices notice = noticeRepository.findById(noticeId)
-                    .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
+        // 파일 검증 (Notice 도메인 책임)
+        validateFile(newFile);
 
-            // 2. 기존 파일 존재 확인
-            Files oldFileEntity = filesRepository.findById(fileId)
-                    .orElseThrow(() -> new NoSuchElementException("파일을 찾을 수 없습니다. ID: " + fileId));
+        // 공지사항 존재 확인
+        NoticeFiles noticeFile = noticeFilesRepository.findByNoticesIdAndFilesId(noticeId, fileId)
+                .orElseThrow(() -> new IllegalArgumentException("해당 공지사항에 연결되지 않은 파일입니다. noticeId: " + noticeId + ", fileId: " + fileId));
 
-            // 3. 해당 공지사항에 파일이 연결되어 있는지 확인
-            List<NoticeFiles> noticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
-            boolean isFileLinked = noticeFiles.stream()
-                    .anyMatch(nf -> nf.getFiles().getId().equals(fileId));
+        // 공지사항 정보가 필요하면
+        Notices notice = noticeFile.getNotices();
 
-            if (!isFileLinked) {
-                throw new IllegalArgumentException("해당 공지사항에 연결되지 않은 파일입니다. noticeId: " + noticeId + ", fileId: " + fileId);
-            }
+        // 🆕 파일 관리 서비스에 위임
+        noticeFileManagementService.replaceNoticeFile(fileId, newFile);
 
-            // 4. 새 파일을 S3에 업로드
-            String newFileName = generateNoticeFileName(newFile.getOriginalFilename());
-            String newFileUrl = objectStorageService.uploadFile(
-                    newFileName,
-                    newFile.getInputStream(),
-                    newFile.getSize(),
-                    newFile.getContentType()
-            );
+        log.info("파일 교체 완료 - noticeId: {}, fileId: {}", noticeId, fileId);
 
-            // 5. 기존 파일을 S3에서 삭제
-            try {
-                deleteFileFromS3(oldFileEntity.getFileUrl());
-            } catch (Exception e) {
-                log.warn("기존 S3 파일 삭제 실패 (무시 가능): {}", e.getMessage());
-            }
+        // 업데이트된 공지사항 정보 반환
+        List<NoticeFiles> updatedNoticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
+        return NoticeResponseDTO.fromWithAttachments(notice, updatedNoticeFiles);
+    }
 
-            // 6. DB 파일 정보 업데이트
-            oldFileEntity.setFileUrl(newFileUrl);
-            filesRepository.save(oldFileEntity);
 
-            log.info("S3 파일 교체 완료: {} -> {}", oldFileEntity.getFileUrl(), newFileUrl);
+    // ========== 새로 추가된 검증 및 유틸리티 메서드들 ==========
+    //파일 검증 메서드
+    private void validateFile(MultipartFile file) {
+        // 파일 크기 제한 (10MB)
+        if (file.getSize() > 10 * 1024 * 1024) {
+            throw new IllegalArgumentException("파일 크기는 10MB를 초과할 수 없습니다.");
+        }
 
-            // 7. 업데이트된 공지사항 정보 반환
-            List<NoticeFiles> updatedNoticeFiles = noticeFilesRepository.findByNoticesId(noticeId);
-            return NoticeResponseDTO.fromWithAttachments(notice, updatedNoticeFiles);
-
-        } catch (IOException e) {
-            log.error("S3 파일 수정(교체) 실패 - noticeId: {}, fileId: {}, 오류: {}", noticeId, fileId, e.getMessage());
-            throw new RuntimeException("파일 수정(교체) 중 오류가 발생했습니다.", e);
+        // 허용된 파일 확장자 검사
+        String fileName = file.getOriginalFilename();
+        if (!isAllowedFileType(fileName)) {
+            throw new IllegalArgumentException("허용되지 않는 파일 형식입니다. (pdf, doc, docx, xls, xlsx 만 가능)");
         }
     }
 
-    // ========== 헬퍼 메서드들 ==========
-    // 공지사항 전용 파일명 생성
-    // 형식: notice_UUID_타임스탬프_원본파일명
-    private String generateNoticeFileName(String originalFileName) {
-        if (originalFileName == null || originalFileName.trim().isEmpty()) {
-            throw new IllegalArgumentException("파일명이 올바르지 않습니다.");
+    //파일 타입 검증
+    private boolean isAllowedFileType(String fileName) {
+        if (fileName == null) return false;
+
+        // extractFileExtension 메서드 호출 대신 직접 처리
+        if (fileName.isEmpty()) {
+            return false;
         }
 
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
-        String uuid = UUID.randomUUID().toString().substring(0, 8);
-        return "notice_" + uuid + "_" + timestamp + "_" + originalFileName;
-    }
-
-    //S3에서 파일 삭제
-    private void deleteFileFromS3(String fileUrl) {
-        // CloudFront URL에서 key 추출
-        String key = extractKeyFromUrl(fileUrl);
-        objectStorageService.deleteFile(key);
-    }
-
-    // S3 URL에서 key 추출
-    private String extractKeyFromUrl(String fileUrl) {
-        int filesIndex = fileUrl.indexOf("files/");
-        if (filesIndex != -1) {
-            return fileUrl.substring(filesIndex);
+        int lastDotIndex = fileName.lastIndexOf(".");
+        if (lastDotIndex == -1 || lastDotIndex == fileName.length() - 1) {
+            return false;
         }
 
-        // 혹시 다른 형태의 URL이라면 마지막 부분을 파일명으로 가정
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf('/') + 1);
-        return "files/" + fileName;
+        String extension = fileName.substring(lastDotIndex + 1).toLowerCase();
+        return List.of("pdf", "doc", "docx", "xls", "xlsx").contains(extension);
     }
 }

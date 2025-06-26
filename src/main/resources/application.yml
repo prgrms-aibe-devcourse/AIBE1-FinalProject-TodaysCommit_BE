@@ -1,5 +1,5 @@
 server:
-  port: 8080 # 충돌 문제 시 수정
+  port: ${PORT:8080} # 충돌 문제 시 수정
 spring:
   profiles:
     active: dev

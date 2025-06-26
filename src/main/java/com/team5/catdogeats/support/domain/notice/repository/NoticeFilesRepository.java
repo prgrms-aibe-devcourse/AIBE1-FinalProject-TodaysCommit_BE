@@ -5,11 +5,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
-@Repository
 public interface NoticeFilesRepository extends JpaRepository<NoticeFiles, String> {
 
     List<NoticeFiles> findByNoticesId(String noticeId);
@@ -21,4 +20,6 @@ public interface NoticeFilesRepository extends JpaRepository<NoticeFiles, String
     @Modifying
     @Query("DELETE FROM NoticeFiles nf WHERE nf.notices.id = :noticeId")
     void deleteByNoticesId(@Param("noticeId") String noticeId);
+
+    Optional<NoticeFiles> findByNoticesIdAndFilesId(String noticeId, String fileId);
 }

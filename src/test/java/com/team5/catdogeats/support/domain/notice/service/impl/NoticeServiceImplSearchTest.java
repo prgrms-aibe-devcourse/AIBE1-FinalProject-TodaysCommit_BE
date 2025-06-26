@@ -1,7 +1,7 @@
 package com.team5.catdogeats.support.domain.notice.service.impl;
 
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.FileStorageService;
+import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeListResponseDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
@@ -39,7 +39,7 @@ class NoticeServiceImplSearchTest {
     private NoticeFilesRepository noticeFilesRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private ObjectStorageService objectStorageService;
 
     @InjectMocks
     private NoticeServiceImpl noticeService;

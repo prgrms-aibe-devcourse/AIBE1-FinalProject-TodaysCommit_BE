@@ -4,7 +4,7 @@ import com.team5.catdogeats.support.domain.notice.dto.NoticeCreateRequestDTO;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeListResponseDTO;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeUpdateRequestDTO;
-import org.springframework.core.io.Resource;
+import com.team5.catdogeats.support.domain.notice.dto.NoticeFileDownloadResponseDTO;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface NoticeService {
@@ -24,15 +24,15 @@ public interface NoticeService {
     // 공지사항 삭제
     void deleteNotice(String noticeId);
 
-    // 파일 업로드
+    // 파일 업로드 (파일 검증 포함)
     NoticeResponseDTO uploadFile(String noticeId, MultipartFile file);
 
-    // 파일 다운로드
-    Resource downloadFile(String fileId);
+    // 파일 다운로드 (메타데이터 포함)
+    NoticeFileDownloadResponseDTO downloadFile(String fileId);
 
     // 파일 삭제
     void deleteFile(String noticeId, String fileId);
 
-    // 파일 수정(교체)
+    // 파일 수정(교체) (파일 검증 포함)
     NoticeResponseDTO replaceFile(String noticeId, String fileId, MultipartFile newFile);
 }

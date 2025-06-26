@@ -48,7 +48,7 @@ class NoticeFilesRepositoryCRUDTest {
 
         // 파일 데이터 준비
         file1 = Files.builder()
-                .fileUrl("/uploads/file1.txt")
+                .fileUrl("https://cdn.example.com/files/notice_12345678_20250625_120000_file1.pdf")
                 .build();
 
         // 엔티티 저장
@@ -70,7 +70,7 @@ class NoticeFilesRepositoryCRUDTest {
     void save_Success() {
         // given
         Files newFile = Files.builder()
-                .fileUrl("/uploads/new-file.jpg")
+                .fileUrl("https://cdn.example.com/files/notice_87654321_20250625_120001_new-file.docx")
                 .build();
         newFile = entityManager.persistAndFlush(newFile);
 

@@ -1,6 +1,9 @@
 package com.team5.catdogeats.support.domain.notice.service.impl;
 
+import com.team5.catdogeats.storage.domain.Files;
+import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
+import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeCreateRequestDTO;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
@@ -17,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
@@ -38,7 +42,7 @@ class NoticeServiceImplCRUDTest {
     private NoticeFilesRepository noticeFilesRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private ObjectStorageService objectStorageService;
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
@@ -74,7 +78,6 @@ class NoticeServiceImplCRUDTest {
         String noticeId = "test-notice-id";
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
-        given(noticeRepository.save(any(Notices.class))).willReturn(testNotice);
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(new ArrayList<>());
 
         // when
@@ -86,8 +89,9 @@ class NoticeServiceImplCRUDTest {
         assertThat(result.getTitle()).isEqualTo(testNotice.getTitle());
         assertThat(result.getContent()).isEqualTo(testNotice.getContent());
 
-        verify(noticeRepository).save(testNotice);
+        // 조회수 증가 후 저장되는지 확인 (JpaTransactional에 의해 자동 저장)
         verify(noticeRepository).findById(noticeId);
+        verify(noticeFilesRepository).findByNoticesId(noticeId);
     }
 
     @Test
@@ -151,17 +155,69 @@ class NoticeServiceImplCRUDTest {
     }
 
     @Test
-    @DisplayName("공지사항 삭제 - 성공")
-    void deleteNotice_Success() {
+    @DisplayName("공지사항 삭제 - 성공 (첨부파일 없음)")
+    void deleteNotice_Success_NoFiles() {
         // given
         String noticeId = "test-notice-id";
         given(noticeRepository.existsById(noticeId)).willReturn(true);
+        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(new ArrayList<>());
 
         // when
         noticeService.deleteNotice(noticeId);
 
         // then
         verify(noticeRepository).existsById(noticeId);
+        verify(noticeFilesRepository).findByNoticesId(noticeId);
+        verify(noticeFilesRepository).deleteByNoticesId(noticeId);
+        verify(noticeRepository).deleteById(noticeId);
+
+        // 첨부파일이 없으므로 S3 삭제 호출되지 않음
+        verify(objectStorageService, never()).deleteFile(anyString());
+    }
+
+    @Test
+    @DisplayName("공지사항 삭제 - 성공 (첨부파일 있음)")
+    void deleteNotice_Success_WithFiles() {
+        // given
+        String noticeId = "test-notice-id";
+
+        Files file1 = Files.builder()
+                .id("file-1")
+                .fileUrl("https://cdn.example.com/files/test-file-1.txt")
+                .build();
+
+        Files file2 = Files.builder()
+                .id("file-2")
+                .fileUrl("https://cdn.example.com/files/test-file-2.txt")
+                .build();
+
+        NoticeFiles noticeFile1 = NoticeFiles.builder()
+                .id("notice-file-1")
+                .notices(testNotice)
+                .files(file1)
+                .build();
+
+        NoticeFiles noticeFile2 = NoticeFiles.builder()
+                .id("notice-file-2")
+                .notices(testNotice)
+                .files(file2)
+                .build();
+
+        given(noticeRepository.existsById(noticeId)).willReturn(true);
+        given(noticeFilesRepository.findByNoticesId(noticeId))
+                .willReturn(List.of(noticeFile1, noticeFile2));
+
+        // when
+        noticeService.deleteNotice(noticeId);
+
+        // then
+        verify(noticeRepository).existsById(noticeId);
+        verify(noticeFilesRepository).findByNoticesId(noticeId);
+
+        // S3에서 각 파일 삭제 확인
+        verify(objectStorageService).deleteFile("files/test-file-1.txt");
+        verify(objectStorageService).deleteFile("files/test-file-2.txt");
+
         verify(noticeFilesRepository).deleteByNoticesId(noticeId);
         verify(noticeRepository).deleteById(noticeId);
     }
@@ -177,6 +233,40 @@ class NoticeServiceImplCRUDTest {
         assertThatThrownBy(() -> noticeService.deleteNotice(noticeId))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessageContaining("공지사항을 찾을 수 없습니다");
+    }
+
+    @Test
+    @DisplayName("공지사항 삭제 - S3 파일 삭제 실패 (무시하고 계속 진행)")
+    void deleteNotice_S3DeleteFailure() {
+        // given
+        String noticeId = "test-notice-id";
+
+        Files file = Files.builder()
+                .id("file-1")
+                .fileUrl("https://cdn.example.com/files/test-file.txt")
+                .build();
+
+        NoticeFiles noticeFile = NoticeFiles.builder()
+                .id("notice-file-1")
+                .notices(testNotice)
+                .files(file)
+                .build();
+
+        given(noticeRepository.existsById(noticeId)).willReturn(true);
+        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
+
+        // S3 삭제 실패 시뮬레이션
+        doThrow(new RuntimeException("S3 삭제 실패"))
+                .when(objectStorageService).deleteFile("files/test-file.txt");
+
+        // when
+        noticeService.deleteNotice(noticeId);
+
+        // then
+        // S3 삭제가 실패해도 공지사항 삭제는 계속 진행되어야 함
+        verify(objectStorageService).deleteFile("files/test-file.txt");
+        verify(noticeFilesRepository).deleteByNoticesId(noticeId);
+        verify(noticeRepository).deleteById(noticeId);
     }
 
     // ========== 헬퍼 메서드 ==========

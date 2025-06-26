@@ -59,15 +59,15 @@ class NoticeFilesRepositoryQueryTest {
 
         // 파일 데이터 준비
         file1 = Files.builder()
-                .fileUrl("/uploads/file1.txt")
+                .fileUrl("https://cdn.example.com/files/file1.pdf")
                 .build();
 
         file2 = Files.builder()
-                .fileUrl("/uploads/file2.pdf")
+                .fileUrl("https://cdn.example.com/files/file2.pdf")
                 .build();
 
         file3 = Files.builder()
-                .fileUrl("/uploads/file3.docx")
+                .fileUrl("https://cdn.example.com/files/file3.docx")
                 .build();
 
         // 엔티티 저장
@@ -109,7 +109,7 @@ class NoticeFilesRepositoryQueryTest {
         assertThat(result).hasSize(2);
         assertThat(result)
                 .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactlyInAnyOrder("/uploads/file1.txt", "/uploads/file2.pdf");
+                .containsExactlyInAnyOrder("https://cdn.example.com/files/file1.pdf", "https://cdn.example.com/files/file2.pdf");
     }
 
     @Test
@@ -140,7 +140,7 @@ class NoticeFilesRepositoryQueryTest {
         // 파일 URL 확인
         assertThat(result)
                 .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactlyInAnyOrder("/uploads/file1.txt", "/uploads/file2.pdf");
+                .containsExactlyInAnyOrder("https://cdn.example.com/files/file1.pdf", "https://cdn.example.com/files/file2.pdf");
     }
 
     @Test
@@ -167,10 +167,10 @@ class NoticeFilesRepositoryQueryTest {
         // 각 공지사항에 올바른 파일들이 연결되어 있는지 확인
         assertThat(notice1Files)
                 .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactlyInAnyOrder("/uploads/file1.txt", "/uploads/file2.pdf");
+                .containsExactlyInAnyOrder("https://cdn.example.com/files/file1.pdf", "https://cdn.example.com/files/file2.pdf");
 
         assertThat(notice2Files)
                 .extracting(nf -> nf.getFiles().getFileUrl())
-                .containsExactly("/uploads/file3.docx");
+                .containsExactly("https://cdn.example.com/files/file3.docx");
     }
 }

@@ -51,7 +51,7 @@ public class SecurityConfig {
                             session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers("/v1/admin/login").permitAll()
-                            .requestMatchers("/v1/admin/**").permitAll() // Todo: hasRole("ADMIN") <- 임시로 permitAll 처리 ✅ pr전 되돌리기!
+                            .requestMatchers("/v1/admin/**").hasRole("ADMIN") // 테스트 시, 임시 permitAll()
                             .anyRequest().authenticated());
             return http.build();
         } catch (Exception e) {

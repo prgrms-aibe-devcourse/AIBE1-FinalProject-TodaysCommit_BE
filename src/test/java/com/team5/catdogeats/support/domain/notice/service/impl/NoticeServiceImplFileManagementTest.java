@@ -3,7 +3,7 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
 import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.FileStorageService;
+import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
-import java.io.IOException;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,7 +41,7 @@ class NoticeServiceImplFileManagementTest {
     private NoticeFilesRepository noticeFilesRepository;
 
     @Mock
-    private FileStorageService fileStorageService;
+    private ObjectStorageService objectStorageService;
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
@@ -64,14 +63,14 @@ class NoticeServiceImplFileManagementTest {
     // ========== 파일 삭제 테스트 (4개) ==========
     @Test
     @DisplayName("파일 삭제 - 성공")
-    void deleteFile_Success() throws IOException {
+    void deleteFile_Success() {
         // given
         String noticeId = "test-notice-id";
         String fileId = "test-file-id";
 
         Files fileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl("/path/to/file")
+                .fileUrl("https://cdn.example.com/files/test-file.txt")
                 .build();
 
         NoticeFiles noticeFile = NoticeFiles.builder()
@@ -83,7 +82,6 @@ class NoticeServiceImplFileManagementTest {
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
         given(filesRepository.findById(fileId)).willReturn(Optional.of(fileEntity));
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
-        given(noticeFilesRepository.count()).willReturn(0L);
 
         // when
         noticeService.deleteFile(noticeId, fileId);
@@ -91,7 +89,9 @@ class NoticeServiceImplFileManagementTest {
         // then
         verify(noticeRepository).findById(noticeId);
         verify(filesRepository).findById(fileId);
-        verify(fileStorageService).deleteFile(fileEntity.getFileUrl());
+
+        // S3에서 파일 삭제 확인 (extractKeyFromUrl로 추출된 key 사용)
+        verify(objectStorageService).deleteFile("files/test-file.txt");
         verify(filesRepository).deleteById(fileId);
     }
 
@@ -135,7 +135,7 @@ class NoticeServiceImplFileManagementTest {
 
         Files fileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl("/path/to/file")
+                .fileUrl("https://cdn.example.com/files/test-file.txt")
                 .build();
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
@@ -151,7 +151,7 @@ class NoticeServiceImplFileManagementTest {
     // ========== 파일 수정(교체) 테스트 (5개) ==========
     @Test
     @DisplayName("파일 수정(교체) - 성공")
-    void replaceFile_Success() throws IOException {
+    void replaceFile_Success() {
         // given
         String noticeId = "test-notice-id";
         String fileId = "test-file-id";
@@ -162,9 +162,12 @@ class NoticeServiceImplFileManagementTest {
                 "새로운 파일 내용".getBytes()
         );
 
+        String oldFileUrl = "https://cdn.example.com/files/old-file.txt";
+        String newFileUrl = "https://cdn.example.com/files/notice_12345678_20250625_120000_new-test.txt";
+
         Files oldFileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl("/path/to/old-file")
+                .fileUrl(oldFileUrl)
                 .build();
         setTimeFields(oldFileEntity);
 
@@ -178,8 +181,17 @@ class NoticeServiceImplFileManagementTest {
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
         given(filesRepository.findById(fileId)).willReturn(Optional.of(oldFileEntity));
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
-        given(fileStorageService.replaceFile("/path/to/old-file", newFile)).willReturn("/path/to/new-file");
+
+        // 새 파일 업로드 성공
+        given(objectStorageService.uploadFile(
+                anyString(),
+                any(),
+                anyLong(),
+                anyString()
+        )).willReturn(newFileUrl);
+
         given(filesRepository.save(any(Files.class))).willReturn(oldFileEntity);
+        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
 
         // when
         NoticeResponseDTO result = noticeService.replaceFile(noticeId, fileId, newFile);
@@ -188,7 +200,18 @@ class NoticeServiceImplFileManagementTest {
         assertThat(result).isNotNull();
         verify(noticeRepository).findById(noticeId);
         verify(filesRepository).findById(fileId);
-        verify(fileStorageService).replaceFile("/path/to/old-file", newFile);
+
+        // 새 파일 업로드 확인
+        verify(objectStorageService).uploadFile(
+                anyString(),
+                any(),
+                eq(newFile.getSize()),
+                eq(newFile.getContentType())
+        );
+
+        // 기존 파일 삭제 확인
+        verify(objectStorageService).deleteFile("files/old-file.txt");
+
         verify(filesRepository).save(oldFileEntity);
     }
 
@@ -250,7 +273,7 @@ class NoticeServiceImplFileManagementTest {
 
         Files fileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl("/path/to/file")
+                .fileUrl("https://cdn.example.com/files/test-file.txt")
                 .build();
 
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
@@ -264,8 +287,8 @@ class NoticeServiceImplFileManagementTest {
     }
 
     @Test
-    @DisplayName("파일 수정(교체) - IOException 발생")
-    void replaceFile_IOException() throws IOException {
+    @DisplayName("파일 수정(교체) - S3 업로드 실패")
+    void replaceFile_S3UploadFailure() {
         // given
         String noticeId = "test-notice-id";
         String fileId = "test-file-id";
@@ -278,7 +301,7 @@ class NoticeServiceImplFileManagementTest {
 
         Files oldFileEntity = Files.builder()
                 .id(fileId)
-                .fileUrl("/path/to/old-file")
+                .fileUrl("https://cdn.example.com/files/old-file.txt")
                 .build();
 
         NoticeFiles noticeFile = NoticeFiles.builder()
@@ -290,12 +313,19 @@ class NoticeServiceImplFileManagementTest {
         given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
         given(filesRepository.findById(fileId)).willReturn(Optional.of(oldFileEntity));
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(List.of(noticeFile));
-        given(fileStorageService.replaceFile("/path/to/old-file", newFile)).willThrow(new IOException("새 파일 저장 실패"));
+
+        // S3 업로드 실패 시뮬레이션
+        given(objectStorageService.uploadFile(
+                anyString(),
+                any(),
+                anyLong(),
+                anyString()
+        )).willThrow(new RuntimeException("S3 업로드 실패"));
 
         // when & then
         assertThatThrownBy(() -> noticeService.replaceFile(noticeId, fileId, newFile))
                 .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("파일 수정(교체) 중 오류가 발생했습니다");
+                .hasMessageContaining("S3 업로드 실패");
     }
 
     // ========== 헬퍼 메서드 ==========
