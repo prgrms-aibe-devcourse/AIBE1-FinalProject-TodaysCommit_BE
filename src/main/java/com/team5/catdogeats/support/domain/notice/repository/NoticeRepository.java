@@ -11,19 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface NoticeRepository extends JpaRepository<Notices, String> {
 
-    // 전체 목록 조회 (N+1 쿼리 해결)
-    @Query("SELECT DISTINCT n FROM Notices n " +
-            "LEFT JOIN FETCH n.noticeFiles nf " +
-            "LEFT JOIN FETCH nf.files")
-    Page<Notices> findAllWithFiles(Pageable pageable);
-
-    // 검색 조회 (N+1 쿼리 해결)
-    @Query("SELECT DISTINCT n FROM Notices n " +
-            "LEFT JOIN FETCH n.noticeFiles nf " +
-            "LEFT JOIN FETCH nf.files " +
-            "WHERE lower(n.title) LIKE lower(CONCAT('%', :keyword, '%')) OR " +
-            "lower(n.content) LIKE lower(CONCAT('%', :keyword, '%'))")
-    Page<Notices> findByTitleOrContentContainingWithFiles(@Param("keyword") String keyword, Pageable pageable);
+    // 검색 조회 (제목 + 내용 검색)
+    @Query("SELECT n FROM Notices n WHERE n.title LIKE %:keyword% OR n.content LIKE %:keyword%")
+    Page<Notices> findByTitleOrContentContaining(@Param("keyword") String keyword, Pageable pageable);
 
     // 조회수 증가
     @Modifying

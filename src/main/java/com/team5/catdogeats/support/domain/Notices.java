@@ -31,11 +31,6 @@ public class Notices extends BaseEntity {
     @Builder.Default  // Builder 패턴에서 기본값 설정
     private Long viewCount = 0L;
 
-    // NoticeFiles와의 관계 추가
-    @OneToMany(mappedBy = "notices", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @Builder.Default
-    private List<NoticeFiles> noticeFiles = new ArrayList<>();
-
     // 조회수 증가 메서드
     public void incrementViewCount() {
         this.viewCount++;

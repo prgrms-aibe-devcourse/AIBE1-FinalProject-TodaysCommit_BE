@@ -11,16 +11,13 @@ import com.team5.catdogeats.support.domain.notice.repository.NoticeRepository;
 import com.team5.catdogeats.support.domain.notice.service.NoticeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.data.domain.Sort;
 
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
+
 
 @Service
 @RequiredArgsConstructor
@@ -46,19 +43,15 @@ public class NoticeServiceImpl implements NoticeService {
     public NoticeListResponseDTO getNotices(int page, int size, String search, String sortBy) {
         Sort sort = createSort(sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Notices> noticePage;
 
-        // JOIN FETCH로 N+1 쿼리 해결
+        Page<Notices> noticePage;
         if (search != null && !search.trim().isEmpty()) {
-            noticePage = noticeRepository.findByTitleOrContentContainingWithFiles(search.trim(), pageable);
+            noticePage = noticeRepository.findByTitleOrContentContaining(search.trim(), pageable);
         } else {
-            noticePage = noticeRepository.findAllWithFiles(pageable);
+            noticePage = noticeRepository.findAll(pageable);
         }
 
-        Page<NoticeResponseDTO> responsePage = noticePage.map(notice ->
-                NoticeResponseDTO.fromWithAttachments(notice, notice.getNoticeFiles())
-        );
-
+        Page<NoticeResponseDTO> responsePage = noticePage.map(NoticeResponseDTO::from);
         return NoticeListResponseDTO.from(responsePage);
     }
 
