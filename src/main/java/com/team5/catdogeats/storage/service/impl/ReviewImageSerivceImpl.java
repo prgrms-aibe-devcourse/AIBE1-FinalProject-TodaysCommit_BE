@@ -100,7 +100,7 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
 
     /**
      * 고유한 파일명 생성
-     * 형식: brand_{userId}_{UUID}.{확장자}
+     * 형식: review_{reviewId}_{UUID}.{확장자}
      */
     private String generateUniqueFileName(String originalFileName, String reviewId) {
         String extension = imageValidationUtil.getFileExtension(originalFileName);
@@ -109,6 +109,6 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
         String shortReviewId = reviewId.length() > 8 ? reviewId.substring(0, 8) : reviewId;
 
         // 처음 8자리만 사용 (너무 길어지는 것 방지)
-        return String.format("brand_%s_%s.%s", shortReviewId, uuid, extension);
+        return String.format("review_%s_%s.%s", shortReviewId, uuid, extension);
     }
 }
