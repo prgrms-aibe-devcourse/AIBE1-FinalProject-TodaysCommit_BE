@@ -25,7 +25,7 @@ import java.util.NoSuchElementException;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(value = "jpaTransactionManager", readOnly = true)
+@Transactional(value = "jpaTransactionManager")
 public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
@@ -42,6 +42,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     // ========== 공지사항 목록 조회 ==========
     @Override
+    @Transactional(value = "jpaTransactionManager", readOnly = true)
     public NoticeListResponseDTO getNotices(int page, int size, String search, String sortBy) {
         Sort sort = createSort(sortBy);
         Pageable pageable = PageRequest.of(page, size, sort);
