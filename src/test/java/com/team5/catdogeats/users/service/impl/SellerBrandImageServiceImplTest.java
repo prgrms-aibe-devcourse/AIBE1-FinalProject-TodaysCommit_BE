@@ -35,7 +35,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT) 
-@DisplayName("SellerBrandImageServiceImpl 테스트 - 업데이트 버전")
+@DisplayName("SellerBrandImageServiceImpl 테스트")
 class SellerBrandImageServiceImplTest {
 
     @Mock
