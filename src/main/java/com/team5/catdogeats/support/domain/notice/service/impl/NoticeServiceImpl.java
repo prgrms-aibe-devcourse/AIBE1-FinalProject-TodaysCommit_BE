@@ -22,7 +22,6 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(value = "jpaTransactionManager")
 public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
