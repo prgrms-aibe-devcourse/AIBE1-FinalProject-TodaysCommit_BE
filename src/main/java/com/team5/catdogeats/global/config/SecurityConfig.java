@@ -28,9 +28,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(
-        prePostEnabled = true
-)
+@EnableMethodSecurity(prePostEnabled = true)
 @Slf4j
 @RequiredArgsConstructor
 public class SecurityConfig {

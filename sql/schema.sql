@@ -492,6 +492,7 @@ CREATE TABLE notices (
                          id VARCHAR(36) PRIMARY KEY,
                          title VARCHAR(255) NOT NULL,
                          content TEXT NOT NULL,
+                         view_count BIGINT NOT NULL DEFAULT 0,  -- view_count 추가
                          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -533,5 +534,7 @@ CREATE TABLE inquiry_files (
 CREATE TABLE notice_files (
                               id VARCHAR(36) PRIMARY KEY ,
                               notice_id VARCHAR(36) NOT NULL ,
-                              CONSTRAINT fk_notice_files_notice_id FOREIGN KEY (notice_id) REFERENCES notices(id)
+                              file_id VARCHAR(36) NOT NULL, -- file_id 추가
+                              CONSTRAINT fk_notice_files_notice_id FOREIGN KEY (notice_id) REFERENCES notices(id),
+                              CONSTRAINT fk_notice_files_file_id FOREIGN KEY (file_id) REFERENCES files(id)  -- 이것도 추가
 );

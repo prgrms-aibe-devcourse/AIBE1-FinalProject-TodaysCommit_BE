@@ -1,6 +1,7 @@
-package com.team5.catdogeats.storage.service.impl;
+package com.team5.catdogeats.storage.domain.service.impl;
 
 import com.team5.catdogeats.global.config.AwsS3Config;
+import com.team5.catdogeats.storage.service.impl.AwsS3ServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
