@@ -1,263 +1,614 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 대시보드 - 고양이강아지잇츠</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+            as="style"
+            href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+            onload="this.rel='stylesheet'"
+            rel="stylesheet"
+    />
+    <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+            rel="stylesheet"
+    />
+    <title>CatDogEats Admin Dashboard</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
         body {
-            background-color: #f8f9fa;
+            font-family: "Noto Sans KR", "Work Sans", sans-serif;
+            background-color: #faf8f5;
         }
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .primary-bg {
+            background-color: #f5a623;
+        }
+        .primary-text {
+            color: #f5a623;
+        }
+        .secondary-text {
+            color: #a5d6a7;
+        }
+        .accent-text {
+            color: #7d6e63;
+        }
+        .secondary-bg {
+            background-color: #e8f5e9;
+        }
+        .active-tab {
+            border-left-width: 4px;
+            border-color: #f5a623;
+            background-color: #fff9f0;
+            color: #f5a623;
+            font-weight: 700;
+        }
+        .inactive-tab {
+            border-left-width: 4px;
+            border-color: transparent;
+            color: #7d6e63;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .inactive-tab:hover {
+            background-color: #fdfbf8;
+            color: #e69500;
+        }
+        .page-title {
+            color: #7d6e63;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .page-subtitle {
+            color: #a89a91;
+            font-size: 1rem;
         }
         .sidebar {
-            background: white;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            min-height: calc(100vh - 76px);
+            background-color: #fffdfb;
+            border-right: 1px solid #f0ebe5;
         }
-        .main-content {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-            padding: 30px;
-            margin: 20px 0;
+        .sidebar-link-icon {
+            color: #bcaaa4;
         }
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .sidebar-link-text {
+            color: #7d6e63;
+        }
+        .active-tab .sidebar-link-icon,
+        .active-tab .sidebar-link-text {
+            color: #f5a623;
+        }
+        .inactive-tab:hover .sidebar-link-icon,
+        .inactive-tab:hover .sidebar-link-text {
+            color: #e69500;
+        }
+        .stat-card {
+            background-color: white;
+            border: 1px solid #f0ebe5;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: box-shadow 0.2s ease-in-out;
+        }
+        .stat-card:hover {
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .stat-card-highlight {
+            background-color: #fff9f0;
+            border-color: #f5a623;
+        }
+        .chart-card {
+            background-color: white;
+            border: 1px solid #f0ebe5;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .growth-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            color: #16a085;
+            font-weight: 500;
+        }
+        .chart-bar {
+            background-color: #f5a623;
+            border-radius: 0.25rem 0.25rem 0 0;
+            transition: background-color 0.2s ease-in-out;
+        }
+        .chart-bar.current {
+            background-color: #e69500;
+        }
+        .chart-bar.muted {
+            background-color: #fdd5a3;
+        }
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        .user-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background-color 0.15s ease-in-out;
+        }
+        .dropdown-item:hover {
+            background-color: #f9fafb;
+            color: #111827;
+            text-decoration: none;
+        }
+        .dropdown-item.danger {
+            color: #dc2626;
+        }
+        .dropdown-item.danger:hover {
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+        .welcome-card {
+            background: linear-gradient(135deg, #f5a623 0%, #e69500 100%);
             color: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-        }
-        .stats-card i {
-            font-size: 2.5rem;
-            opacity: 0.8;
-        }
-        .nav-link {
-            color: #495057;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin: 5px 0;
-        }
-        .nav-link:hover, .nav-link.active {
-            background-color: #e9ecef;
-            color: #667eea;
-        }
-        .welcome-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
         }
     </style>
 </head>
-<body>
-<!-- 네비게이션 바 -->
-<nav class="navbar navbar-expand-lg navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand fw-bold" href="#">
-            <i class="fas fa-paw me-2"></i>고양이강아지잇츠 관리자
-        </a>
-
-        <div class="navbar-nav ms-auto">
-            <div class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-                    <i class="fas fa-user-circle me-2"></i>
-                    <span th:text="${admin.name}">관리자</span>
-                </a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="/v1/admin/profile"><i class="fas fa-user me-2"></i>프로필</a></li>
-                    <li><a class="dropdown-item" href="/v1/admin/change-password"><i class="fas fa-key me-2"></i>비밀번호 변경</a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li>
-                        <form action="/v1/admin/logout" method="post" style="display: inline;">
-                            <button type="submit" class="dropdown-item text-danger">
-                                <i class="fas fa-sign-out-alt me-2"></i>로그아웃
+<body class="bg-FAF8F5">
+<div
+        class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden"
+>
+    <aside
+            class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4"
+    >
+        <div class="flex items-center gap-3 px-3 mb-6">
+            <div class="size-8 text-orange-500">
+                <svg
+                        fill="none"
+                        viewBox="0 0 48 48"
+                        xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                            d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                            fill="#F5A623"
+                    ></path>
+                    <path
+                            d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                            fill="white"
+                    ></path>
+                </svg>
+            </div>
+            <h2
+                    class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]"
+            >
+                CatDogEats <br />관리자 페이지
+            </h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+            <a
+                    class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="/v1/admin/dashboard"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >dashboard</span
+            >
+                <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+            </a>
+            <a
+                    class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="/v1/admin/invite"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >person_add</span
+            >
+                <span class="sidebar-link-text text-sm font-medium">계정 생성</span>
+            </a>
+            <a
+                    class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="#"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >report_problem</span
+            >
+                <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+            </a>
+            <a
+                    class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="#"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >campaign</span
+            >
+                <span class="sidebar-link-text text-sm font-medium"
+                >공지사항 관리</span
+                >
+            </a>
+            <a
+                    class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="#"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >quiz</span
+            >
+                <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+            </a>
+            <a
+                    class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="#"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >support_agent</span
+            >
+                <span class="sidebar-link-text text-sm font-medium"
+                >1:1 문의 관리</span
+                >
+            </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+            <a
+                    class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md"
+                    href="/v1/admin/change-password"
+            >
+            <span class="material-icons-outlined sidebar-link-icon text-xl"
+            >settings</span
+            >
+                <span class="sidebar-link-text text-sm font-medium">설정</span>
+            </a>
+        </div>
+    </aside>
+    <div class="layout-container flex h-full grow flex-col">
+        <header
+                class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm"
+        >
+            <div class="flex items-center"></div>
+            <div class="flex flex-1 justify-end gap-6 items-center">
+                <span class="text-sm accent-text" th:text="${admin.email}">admin@catdogeats.com</span>
+                <div class="user-menu">
+                    <div
+                            class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200 cursor-pointer"
+                            style="
+                  background-image: url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face');
+                "
+                            onclick="toggleUserMenu()"
+                    ></div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="/v1/admin/profile" class="dropdown-item">
+                            <span class="material-icons-outlined text-base mr-3">person</span>
+                            프로필
+                        </a>
+                        <a href="/v1/admin/change-password" class="dropdown-item">
+                            <span class="material-icons-outlined text-base mr-3">lock</span>
+                            비밀번호 변경
+                        </a>
+                        <hr class="my-1 border-gray-200">
+                        <form action="/v1/admin/logout" method="post" style="display: inline; width: 100%;">
+                            <button type="submit" class="dropdown-item danger w-full text-left border-0 bg-transparent">
+                                <span class="material-icons-outlined text-base mr-3">logout</span>
+                                로그아웃
                             </button>
                         </form>
-                    </li>
-                </ul>
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
-</nav>
-
-<div class="container-fluid">
-    <div class="row">
-        <!-- 사이드바 -->
-        <div class="col-md-3 col-lg-2 px-0">
-            <div class="sidebar">
-                <nav class="nav flex-column p-3">
-                    <a class="nav-link active" href="/v1/admin/dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>대시보드
-                    </a>
-                    <a class="nav-link" href="/v1/admin/invite">
-                        <i class="fas fa-user-plus me-2"></i>관리자 초대
-                    </a>
-                    <a class="nav-link" href="/v1/admin/users">
-                        <i class="fas fa-users me-2"></i>회원 관리
-                    </a>
-                    <a class="nav-link" href="/v1/admin/products">
-                        <i class="fas fa-box me-2"></i>상품 관리
-                    </a>
-                    <a class="nav-link" href="/v1/admin/orders">
-                        <i class="fas fa-shopping-cart me-2"></i>주문 관리
-                    </a>
-                    <a class="nav-link" href="/v1/admin/inquiries">
-                        <i class="fas fa-question-circle me-2"></i>문의 관리
-                    </a>
-                    <a class="nav-link" href="/v1/admin/notices">
-                        <i class="fas fa-bullhorn me-2"></i>공지사항
-                    </a>
-                    <a class="nav-link" href="/v1/admin/reports">
-                        <i class="fas fa-chart-bar me-2"></i>리포트
-                    </a>
-                </nav>
-            </div>
-        </div>
-
-        <!-- 메인 콘텐츠 -->
-        <div class="col-md-9 col-lg-10">
-            <div class="main-content">
+        </header>
+        <main
+                class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5"
+        >
+            <div class="flex flex-col w-full max-w-7xl mx-auto">
                 <!-- 환영 섹션 -->
-                <div class="welcome-section">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="fw-bold mb-2">
+                <div class="welcome-card">
+                    <div class="flex items-center justify-between">
+                        <div class="flex-1">
+                            <h1 class="text-2xl font-bold mb-2">
                                 안녕하세요, <span th:text="${admin.name}">관리자</span>님! 👋
-                            </h2>
-                            <p class="mb-0 opacity-75">
-                                오늘도 고양이강아지잇츠 플랫폼 관리를 위해 수고하고 계시네요.
+                            </h1>
+                            <p class="mb-2 opacity-90">
+                                오늘도 CatDogEats 플랫폼 관리를 위해 수고하고 계시네요.
                             </p>
-                            <small class="opacity-75">
-                                부서: <span th:text="${admin.department}">ADMIN</span> |
-                                로그인 시간: <span th:text="${#temporals.format(admin.loginTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 09:00</span>
-                            </small>
+                            <div class="text-sm opacity-75">
+                                <span>부서: </span><span th:text="${admin.department}">ADMIN</span>
+                                <span class="mx-2">|</span>
+                                <span>로그인 시간: </span>
+                                <span th:text="${#temporals.format(admin.loginTime, 'yyyy-MM-dd HH:mm')}">2024-01-01 09:00</span>
+                            </div>
                         </div>
-                        <div class="col-md-4 text-end">
-                            <i class="fas fa-crown" style="font-size: 4rem; opacity: 0.3;"></i>
+                        <div class="hidden md:block">
+                  <span class="material-icons-outlined" style="font-size: 4rem; opacity: 0.3;">
+                    admin_panel_settings
+                  </span>
                         </div>
                     </div>
                 </div>
 
                 <!-- 통계 카드 -->
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="opacity-75">총 회원 수</h6>
-                                    <h3 class="fw-bold">1,234</h3>
+                <div
+                        class="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4"
+                >
+                    <div class="stat-card">
+                        <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl accent-text"
+                  >group</span
+                  >
+                            <p class="accent-text text-sm font-medium">총 회원 수</p>
+                        </div>
+                        <p class="text-slate-900 text-3xl font-bold">1,234</p>
+                        <div class="growth-indicator text-xs mt-2">
+                            <span class="material-icons-outlined text-sm">trending_up</span>
+                            <span>전월 대비 +5%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl accent-text"
+                  >person_add</span
+                  >
+                            <p class="accent-text text-sm font-medium">월간 신규 회원</p>
+                        </div>
+                        <p class="text-slate-900 text-3xl font-bold">123</p>
+                        <div class="growth-indicator text-xs mt-2">
+                            <span class="material-icons-outlined text-sm">trending_up</span>
+                            <span>전월 대비 +10%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl accent-text"
+                  >shopping_cart</span
+                  >
+                            <p class="accent-text text-sm font-medium">이번 달 주문</p>
+                        </div>
+                        <p class="text-slate-900 text-3xl font-bold">456</p>
+                        <div class="growth-indicator text-xs mt-2">
+                            <span class="material-icons-outlined text-sm">trending_up</span>
+                            <span>전월 대비 +8%</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card stat-card-highlight">
+                        <div class="flex items-center gap-3 mb-3">
+                  <span class="material-icons-outlined text-2xl primary-text"
+                  >report_problem</span
+                  >
+                            <p class="primary-text text-sm font-medium">
+                                처리 대기 중인 신고
+                            </p>
+                        </div>
+                        <p class="primary-text text-3xl font-bold">5</p>
+                        <div class="text-xs mt-2 text-orange-600">
+                            <span>즉시 확인 필요</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 차트 섹션 -->
+                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                    <!-- 월간 신규 회원 차트 -->
+                    <div class="chart-card">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="accent-text text-lg font-semibold">
+                                월간 신규 회원 수
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm text-slate-500">이번 달</span>
+                                <div class="growth-indicator">
+                      <span class="material-icons-outlined text-sm"
+                      >trending_up</span
+                      >
+                                    <span class="text-sm">+10%</span>
                                 </div>
-                                <i class="fas fa-users"></i>
+                            </div>
+                        </div>
+                        <div class="h-64">
+                            <div
+                                    class="grid h-full grid-flow-col gap-4 grid-rows-[1fr_auto] items-end justify-items-center px-3 pt-4"
+                            >
+                                <div
+                                        class="chart-bar muted w-full"
+                                        style="height: 70%"
+                                ></div>
+                                <p class="text-slate-500 text-xs font-medium">1월</p>
+                                <div
+                                        class="chart-bar muted w-full"
+                                        style="height: 80%"
+                                ></div>
+                                <p class="text-slate-500 text-xs font-medium">2월</p>
+                                <div
+                                        class="chart-bar muted w-full"
+                                        style="height: 50%"
+                                ></div>
+                                <p class="text-slate-500 text-xs font-medium">3월</p>
+                                <div
+                                        class="chart-bar muted w-full"
+                                        style="height: 60%"
+                                ></div>
+                                <p class="text-slate-500 text-xs font-medium">4월</p>
+                                <div
+                                        class="chart-bar muted w-full"
+                                        style="height: 90%"
+                                ></div>
+                                <p class="text-slate-500 text-xs font-medium">5월</p>
+                                <div
+                                        class="chart-bar current w-full"
+                                        style="height: 85%"
+                                ></div>
+                                <p class="text-slate-900 text-xs font-bold">6월</p>
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="opacity-75">상품 수</h6>
-                                    <h3 class="fw-bold">567</h3>
-                                </div>
-                                <i class="fas fa-box"></i>
-                            </div>
+
+                    <!-- 최근 활동 -->
+                    <div class="chart-card">
+                        <div class="flex items-center justify-between mb-6">
+                            <h3 class="accent-text text-lg font-semibold">
+                                <span class="material-icons-outlined text-base mr-2 align-middle">schedule</span>
+                                최근 활동
+                            </h3>
+                            <a href="#" class="text-sm primary-text hover:underline">전체 보기</a>
                         </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="opacity-75">오늘 주문</h6>
-                                    <h3 class="fw-bold">89</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-outlined text-blue-500">person_add</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900">새 회원 가입</p>
+                                        <p class="text-xs text-slate-500">홍길동님이 가입했습니다</p>
+                                    </div>
                                 </div>
-                                <i class="fas fa-shopping-cart"></i>
+                                <span class="text-xs text-slate-400">5분 전</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="stats-card">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h6 class="opacity-75">미처리 문의</h6>
-                                    <h3 class="fw-bold">12</h3>
+
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-outlined text-green-500">shopping_cart</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900">새 주문</p>
+                                        <p class="text-xs text-slate-500">주문번호 #ORD-2024-001</p>
+                                    </div>
                                 </div>
-                                <i class="fas fa-question-circle"></i>
+                                <span class="text-xs text-slate-400">10분 전</span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-outlined text-red-500">report_problem</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900">신고 접수</p>
+                                        <p class="text-xs text-slate-500">부적절한 상품 설명 신고</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-slate-400">1시간 전</span>
+                            </div>
+
+                            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="material-icons-outlined text-purple-500">help_outline</span>
+                                    <div>
+                                        <p class="text-sm font-medium text-slate-900">1:1 문의</p>
+                                        <p class="text-xs text-slate-500">결제 관련 문의</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-slate-400">2시간 전</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 최근 활동 -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-clock me-2 text-primary"></i>최근 주문
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="list-group list-group-flush">
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">강아지 수제 간식 세트</h6>
-                                            <small class="text-muted">주문번호: #ORD001</small>
-                                        </div>
-                                        <span class="badge bg-success">완료</span>
-                                    </div>
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">고양이 참치 간식</h6>
-                                            <small class="text-muted">주문번호: #ORD002</small>
-                                        </div>
-                                        <span class="badge bg-warning">처리중</span>
-                                    </div>
-                                    <div class="list-group-item d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <h6 class="mb-1">프리미엄 간식 박스</h6>
-                                            <small class="text-muted">주문번호: #ORD003</small>
-                                        </div>
-                                        <span class="badge bg-primary">결제완료</span>
-                                    </div>
-                                </div>
-                            </div>
+                <!-- 빠른 액션 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <!-- 관리자 계정 생성 (ADMIN 부서만 표시) -->
+                    <div class="chart-card text-center" th:if="${admin.department.name() == 'ADMIN'}">
+                        <div class="mb-4">
+                            <span class="material-icons-outlined text-4xl primary-text">person_add</span>
                         </div>
+                        <h3 class="accent-text font-semibold mb-2">관리자 계정 생성</h3>
+                        <p class="text-sm text-slate-500 mb-4">새로운 관리자를 초대하고 계정을 생성합니다.</p>
+                        <a href="/v1/admin/invite" class="inline-flex items-center px-4 py-2 primary-bg text-white rounded-lg hover:bg-orange-600 transition-colors">
+                            <span class="material-icons-outlined text-sm mr-2">add</span>
+                            계정 생성
+                        </a>
                     </div>
 
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fas fa-exclamation-triangle me-2 text-warning"></i>긴급 알림
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="alert alert-warning">
-                                    <i class="fas fa-info-circle me-2"></i>
-                                    재고 부족 상품이 5개 있습니다.
-                                </div>
-                                <div class="alert alert-info">
-                                    <i class="fas fa-bell me-2"></i>
-                                    새로운 1:1 문의가 3건 접수되었습니다.
-                                </div>
-                                <div class="alert alert-success">
-                                    <i class="fas fa-check-circle me-2"></i>
-                                    시스템 백업이 정상적으로 완료되었습니다.
-                                </div>
-                            </div>
+                    <!-- 일반 관리자용 메뉴 (모든 부서 표시) -->
+                    <div class="chart-card text-center">
+                        <div class="mb-4">
+                            <span class="material-icons-outlined text-4xl text-red-500">report_problem</span>
                         </div>
+                        <h3 class="accent-text font-semibold mb-2">신고 관리</h3>
+                        <p class="text-sm text-slate-500 mb-4">접수된 신고를 확인하고 처리합니다.</p>
+                        <a href="#" class="inline-flex items-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                            <span class="material-icons-outlined text-sm mr-2">warning</span>
+                            신고 확인
+                        </a>
+                    </div>
+
+                    <div class="chart-card text-center">
+                        <div class="mb-4">
+                            <span class="material-icons-outlined text-4xl text-blue-500">campaign</span>
+                        </div>
+                        <h3 class="accent-text font-semibold mb-2">공지사항</h3>
+                        <p class="text-sm text-slate-500 mb-4">새로운 공지사항을 작성하고 관리합니다.</p>
+                        <a href="#" class="inline-flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+                            <span class="material-icons-outlined text-sm mr-2">edit</span>
+                            공지 작성
+                        </a>
                     </div>
                 </div>
             </div>
-        </div>
+        </main>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // 사용자 메뉴 토글
+    function toggleUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('active');
+    }
+
+    // 외부 클릭 시 메뉴 닫기
+    document.addEventListener('click', function(event) {
+        const userMenu = document.querySelector('.user-menu');
+        const dropdown = document.getElementById('userDropdown');
+
+        if (!userMenu.contains(event.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
+
+    // 페이지 로드 시 실시간 데이터 가져오기 (옵션)
+    document.addEventListener('DOMContentLoaded', function() {
+        // loadDashboardData();
+    });
+
+    // 실시간 데이터 로딩 함수 (추후 구현)
+    async function loadDashboardData() {
+        try {
+            const response = await fetch('/v1/admin/dashboard/data', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                updateDashboardStats(data);
+            }
+        } catch (error) {
+            console.error('대시보드 데이터 로딩 실패:', error);
+        }
+    }
+
+    // 대시보드 통계 업데이트 함수
+    function updateDashboardStats(data) {
+        // 실제 데이터로 통계 카드들 업데이트
+        // 추후 백엔드에서 실제 데이터를 받아올 때 구현
+    }
+</script>
 </body>
 </html>

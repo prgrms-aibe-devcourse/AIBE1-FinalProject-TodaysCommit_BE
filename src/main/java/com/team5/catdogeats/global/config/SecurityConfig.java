@@ -55,13 +55,14 @@ public class SecurityConfig {
                                     .maximumSessions(1)
                                     .maxSessionsPreventsLogin(false))
                     .authorizeHttpRequests(authorize -> authorize
-                            .requestMatchers("/v1/admin/login").permitAll()          // 로그인 페이지
-                            .requestMatchers("/v1/admin/verify").permitAll()         // 계정 인증 페이지
-                            .requestMatchers("/v1/admin/resend-code").permitAll()    // 인증코드 재발송
-                            .requestMatchers("/v1/admin/**").authenticated()         // 🔧 세션 인증 필요
+                            .requestMatchers("/v1/admin/login").permitAll()              // 로그인 페이지
+                            .requestMatchers("/v1/admin/verify").permitAll()             // 계정 인증 페이지
+                            .requestMatchers("/v1/admin/resend-code").permitAll()        // 인증코드 재발송
+                            .requestMatchers("/v1/admin/invite").hasAuthority("ADMIN")   // 🔧 초대 기능은 ADMIN 부서만
+                            .requestMatchers("/v1/admin/**").authenticated()             // 🔧 나머지는 세션 인증 필요
                             .anyRequest().authenticated())
                     .httpBasic(AbstractHttpConfigurer::disable)
-                    .formLogin(AbstractHttpConfigurer::disable)                     // Spring Security 기본 로그인 비활성화
+                    .formLogin(AbstractHttpConfigurer::disable)                         // Spring Security 기본 로그인 비활성화
                     .logout(logout -> logout
                             .logoutUrl("/v1/admin/logout")
                             .logoutSuccessUrl("/v1/admin/login?logout=true")
@@ -69,12 +70,18 @@ public class SecurityConfig {
                             .deleteCookies("JSESSIONID")
                             .permitAll())
                     .securityContext(securityContext ->
-                            securityContext.requireExplicitSave(false))  // 🔧 SecurityContext 자동 저장 활성화
+                            securityContext.requireExplicitSave(false))                // 🔧 SecurityContext 자동 저장 활성화
                     .exceptionHandling(exceptions -> exceptions
                             .authenticationEntryPoint((request, response, authException) -> {
                                 // 인증되지 않은 사용자를 로그인 페이지로 리다이렉트
                                 if (request.getRequestURI().startsWith("/v1/admin/")) {
                                     response.sendRedirect("/v1/admin/login");
+                                }
+                            })
+                            .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                // 권한이 없는 사용자를 대시보드로 리다이렉트
+                                if (request.getRequestURI().startsWith("/v1/admin/")) {
+                                    response.sendRedirect("/v1/admin/dashboard?error=access_denied");
                                 }
                             }));
             return http.build();

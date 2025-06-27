@@ -1,197 +1,493 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>계정 인증 - 고양이강아지잇츠</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+            as="style"
+            href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+            onload="this.rel='stylesheet'"
+            rel="stylesheet"
+    />
+    <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+            rel="stylesheet"
+    />
+    <title>CatDogEats 관리자 계정 인증</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: "Noto Sans KR", "Work Sans", sans-serif;
+            background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
         }
+
         .verify-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            padding: 40px;
-            max-width: 500px;
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+            0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0ebe5;
+        }
+
+        .primary-bg {
+            background-color: #f5a623;
+        }
+
+        .primary-text {
+            color: #f5a623;
+        }
+
+        .accent-text {
+            color: #7d6e63;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #7d6e63;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
             width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            background-color: white;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
+
+        .form-input:focus {
+            outline: none;
+            border-color: #f5a623;
+            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.1);
         }
-        .logo i {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 12px;
-            font-weight: 600;
-        }
-        .btn-outline-secondary {
-            border-color: #6c757d;
-        }
-        .verification-code {
+
+        .verification-code-input {
             font-size: 1.5rem;
             text-align: center;
             letter-spacing: 0.5rem;
             font-family: 'Courier New', monospace;
+            font-weight: bold;
         }
-        .instruction {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
+
+        .verify-button {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: #f5a623;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out,
+            transform 0.1s ease-in-out;
+        }
+
+        .verify-button:hover {
+            background-color: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .verify-button:active {
+            transform: translateY(0);
+        }
+
+        .verify-button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .resend-button {
+            width: 100%;
+            padding: 0.75rem;
+            background-color: #f8fafc;
+            color: #374151;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .resend-button:hover {
+            background-color: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .back-link {
+            color: #f5a623;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .back-link:hover {
+            color: #e69500;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .info-message {
+            background-color: #dbeafe;
+            border: 1px solid #93c5fd;
+            color: #1d4ed8;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .warning-message {
+            background-color: #fef3c7;
+            border: 1px solid #fde68a;
+            color: #d97706;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo-icon {
+            width: 3rem;
+            height: 3rem;
+            color: #f5a623;
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .instruction-card {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .instruction-title {
+            color: #0369a1;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .instruction-list {
+            color: #075985;
+            font-size: 0.875rem;
+            margin: 0;
+            padding-left: 1rem;
+        }
+
+        .instruction-list li {
+            margin-bottom: 0.25rem;
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="verify-container">
-                <div class="logo">
-                    <i class="fas fa-shield-alt"></i>
-                    <h3 class="fw-bold text-primary">계정 인증</h3>
-                    <p class="text-muted">이메일로 발송된 인증코드를 입력해주세요</p>
-                </div>
-
-                <div class="instruction">
-                    <h6><i class="fas fa-info-circle me-2 text-info"></i>인증 안내</h6>
-                    <ul class="mb-0 small">
-                        <li>이메일로 발송된 6자리 인증코드를 입력해주세요</li>
-                        <li>인증코드는 1시간 동안만 유효합니다</li>
-                        <li>인증 완료 후 로그인하여 비밀번호를 변경해주세요</li>
-                    </ul>
-                </div>
-
-                <!-- 알림 메시지 -->
-                <div id="alertContainer"></div>
-
-                <!-- 인증 폼 -->
-                <form id="verifyForm">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">
-                            <i class="fas fa-envelope me-2"></i>이메일
-                        </label>
-                        <input type="email"
-                               class="form-control"
-                               id="email"
-                               name="email"
-                               th:value="${email}"
-                               required>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="verificationCode" class="form-label">
-                            <i class="fas fa-key me-2"></i>인증코드 (6자리)
-                        </label>
-                        <input type="text"
-                               class="form-control verification-code"
-                               id="verificationCode"
-                               name="verificationCode"
-                               maxlength="6"
-                               pattern="\d{6}"
-                               placeholder="000000"
-                               required>
-                    </div>
-
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-check me-2"></i>계정 인증
-                        </button>
-
-                        <button type="button" class="btn btn-outline-secondary" id="resendBtn">
-                            <i class="fas fa-redo me-2"></i>인증코드 재발송
-                        </button>
-                    </div>
-                </form>
-
-                <div class="text-center mt-4">
-                    <small class="text-muted">
-                        <a href="/v1/admin/login" class="text-decoration-none">로그인 페이지로 돌아가기</a>
-                    </small>
-                </div>
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="verify-container w-full max-w-md p-8">
+        <!-- 로고 -->
+        <div class="logo-container">
+            <div class="logo-icon">
+                <svg
+                        fill="none"
+                        viewBox="0 0 48 48"
+                        xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                            d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                            fill="currentColor"
+                    ></path>
+                    <path
+                            d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                            fill="white"
+                    ></path>
+                </svg>
             </div>
+            <h1 class="text-2xl font-bold accent-text">CatDogEats</h1>
+        </div>
+
+        <!-- 제목 -->
+        <div class="text-center mb-8">
+            <div class="mb-4">
+                <span class="material-icons-outlined text-6xl primary-text">verified_user</span>
+            </div>
+            <h2 class="text-xl font-semibold accent-text mb-2">계정 인증</h2>
+            <p class="text-sm text-slate-500">
+                이메일로 발송된 인증코드를 입력해주세요
+            </p>
+        </div>
+
+        <!-- 인증 안내 -->
+        <div class="instruction-card">
+            <div class="flex items-center gap-2 mb-3">
+                <span class="material-icons-outlined text-blue-600 text-base">info</span>
+                <h3 class="instruction-title">인증 안내</h3>
+            </div>
+            <ul class="instruction-list">
+                <li>이메일로 발송된 6자리 인증코드를 입력해주세요</li>
+                <li>인증코드는 1시간 동안만 유효합니다</li>
+                <li>인증 완료 후 로그인하여 비밀번호를 변경해주세요</li>
+            </ul>
+        </div>
+
+        <!-- 알림 메시지 -->
+        <div id="errorMessage" class="error-message mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">error</span>
+                <span id="errorText">오류가 발생했습니다.</span>
+            </div>
+        </div>
+
+        <div id="successMessage" class="success-message mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">check_circle</span>
+                <span id="successText">인증이 완료되었습니다.</span>
+            </div>
+        </div>
+
+        <div id="infoMessage" class="info-message mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">info</span>
+                <span id="infoText">정보 메시지입니다.</span>
+            </div>
+        </div>
+
+        <div id="warningMessage" class="warning-message mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">warning</span>
+                <span id="warningText">경고 메시지입니다.</span>
+            </div>
+        </div>
+
+        <!-- 인증 폼 -->
+        <form id="verifyForm" onsubmit="handleVerify(event)">
+            <!-- 이메일 -->
+            <div class="mb-4">
+                <label class="form-label" for="email">
+                    <span class="material-icons-outlined text-sm mr-2 align-middle">email</span>
+                    이메일
+                </label>
+                <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        class="form-input"
+                        th:value="${email}"
+                        placeholder="admin@catdogeats.com"
+                        required
+                        autocomplete="email"
+                />
+            </div>
+
+            <!-- 인증코드 -->
+            <div class="mb-6">
+                <label class="form-label" for="verificationCode">
+                    <span class="material-icons-outlined text-sm mr-2 align-middle">vpn_key</span>
+                    인증코드 (6자리)
+                </label>
+                <input
+                        type="text"
+                        id="verificationCode"
+                        name="verificationCode"
+                        class="form-input verification-code-input"
+                        maxlength="6"
+                        pattern="\d{6}"
+                        placeholder="000000"
+                        required
+                        autocomplete="one-time-code"
+                />
+                <p class="text-sm text-slate-500 mt-2">
+                    이메일로 받은 6자리 숫자 코드를 입력하세요.
+                </p>
+            </div>
+
+            <!-- 버튼 그룹 -->
+            <div class="space-y-3">
+                <button type="submit" id="verifyButton" class="verify-button">
+                    <div class="flex items-center justify-center gap-2">
+                        <div id="loadingSpinner" class="loading-spinner"></div>
+                        <span class="material-icons-outlined text-base" id="verifyIcon">verified_user</span>
+                        <span id="verifyButtonText">계정 인증</span>
+                    </div>
+                </button>
+
+                <button type="button" id="resendButton" class="resend-button">
+                    <div class="flex items-center justify-center gap-2">
+                        <span class="material-icons-outlined text-base">refresh</span>
+                        <span>인증코드 재발송</span>
+                    </div>
+                </button>
+            </div>
+        </form>
+
+        <!-- 하단 링크 -->
+        <div class="text-center mt-8">
+            <p class="text-xs text-slate-400 mb-2">
+                문제가 발생하면 시스템 관리자에게 문의하세요
+            </p>
+            <a href="/v1/admin/login" class="back-link">
+                로그인 페이지로 돌아가기
+            </a>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('verifyForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    // 인증 처리
+    async function handleVerify(event) {
+        event.preventDefault();
 
-        const email = document.getElementById('email').value;
-        const verificationCode = document.getElementById('verificationCode').value;
+        const email = document.getElementById('email').value.trim();
+        const verificationCode = document.getElementById('verificationCode').value.trim();
+
+        // 입력값 검증
+        if (!email || !verificationCode) {
+            showAlert('이메일과 인증코드를 모두 입력해주세요.', 'warning');
+            return;
+        }
 
         if (verificationCode.length !== 6 || !/^\d{6}$/.test(verificationCode)) {
             showAlert('6자리 숫자 인증코드를 입력해주세요.', 'warning');
             return;
         }
 
+        // UI 업데이트
+        setLoading(true);
+        hideMessages();
+
         try {
+            // 서버로 인증 요청
             const response = await fetch('/v1/admin/verify', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ email, verificationCode })
+                body: JSON.stringify({
+                    email: email,
+                    verificationCode: verificationCode
+                })
             });
 
             const result = await response.json();
 
-            if (result.success) {
-                showAlert('계정 인증이 완료되었습니다!', 'success');
-                setTimeout(() => {
-                    window.location.href = result.data.redirectUrl;
-                }, 1500);
-            } else {
-                showAlert(result.message, 'danger');
-            }
-        } catch (error) {
-            showAlert('인증 중 오류가 발생했습니다.', 'danger');
-        }
-    });
+            if (response.ok && result.success) {
+                // 인증 성공
+                showAlert('계정 인증이 완료되었습니다! 로그인 페이지로 이동합니다.', 'success');
 
-    document.getElementById('resendBtn').addEventListener('click', async function() {
-        const email = document.getElementById('email').value;
+                // 2초 후 리다이렉트
+                setTimeout(() => {
+                    if (result.data && result.data.redirectUrl) {
+                        window.location.href = result.data.redirectUrl;
+                    } else {
+                        window.location.href = '/v1/admin/login';
+                    }
+                }, 1500);
+
+            } else {
+                // 인증 실패
+                const errorMessage = result.message || "인증에 실패했습니다.";
+                showAlert(errorMessage, 'error');
+                setLoading(false);
+            }
+
+        } catch (error) {
+            console.error('인증 요청 중 오류:', error);
+            showAlert("서버 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.", 'error');
+            setLoading(false);
+        }
+    }
+
+    // 인증코드 재발송
+    document.getElementById('resendButton').addEventListener('click', async function() {
+        const email = document.getElementById('email').value.trim();
 
         if (!email) {
             showAlert('이메일을 입력해주세요.', 'warning');
             return;
         }
 
+        this.disabled = true;
+        this.innerHTML = '<span class="material-icons-outlined text-base mr-2">hourglass_empty</span>발송 중...';
+
         try {
             const response = await fetch('/v1/admin/resend-code', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
                 body: `email=${encodeURIComponent(email)}`
             });
 
             const result = await response.json();
 
-            if (result.success) {
-                showAlert('인증코드가 재발송되었습니다.', 'info');
+            if (response.ok && result.success) {
+                showAlert('인증코드가 재발송되었습니다. 이메일을 확인해주세요.', 'info');
             } else {
-                showAlert(result.message, 'danger');
+                const errorMessage = result.message || "재발송에 실패했습니다.";
+                showAlert(errorMessage, 'error');
             }
+
         } catch (error) {
-            showAlert('재발송 중 오류가 발생했습니다.', 'danger');
+            console.error('재발송 요청 중 오류:', error);
+            showAlert("재발송 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.", 'error');
+        } finally {
+            this.disabled = false;
+            this.innerHTML = '<span class="material-icons-outlined text-base mr-2">refresh</span>인증코드 재발송';
         }
     });
 
@@ -200,15 +496,78 @@
         e.target.value = e.target.value.replace(/\D/g, '');
     });
 
-    function showAlert(message, type) {
-        const alertContainer = document.getElementById('alertContainer');
-        alertContainer.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
+    // UI 헬퍼 함수들
+    function setLoading(isLoading) {
+        const button = document.getElementById("verifyButton");
+        const buttonText = document.getElementById("verifyButtonText");
+        const verifyIcon = document.getElementById("verifyIcon");
+        const spinner = document.getElementById("loadingSpinner");
+
+        button.disabled = isLoading;
+        buttonText.textContent = isLoading ? "인증 중..." : "계정 인증";
+        verifyIcon.style.display = isLoading ? "none" : "block";
+        spinner.style.display = isLoading ? "block" : "none";
     }
+
+    function showAlert(message, type) {
+        hideMessages();
+
+        let messageElement, textElement;
+
+        switch(type) {
+            case 'success':
+                messageElement = document.getElementById('successMessage');
+                textElement = document.getElementById('successText');
+                break;
+            case 'info':
+                messageElement = document.getElementById('infoMessage');
+                textElement = document.getElementById('infoText');
+                break;
+            case 'warning':
+                messageElement = document.getElementById('warningMessage');
+                textElement = document.getElementById('warningText');
+                break;
+            default:
+                messageElement = document.getElementById('errorMessage');
+                textElement = document.getElementById('errorText');
+        }
+
+        textElement.textContent = message;
+        messageElement.style.display = 'block';
+
+        // 5초 후 자동 숨김 (성공/정보 메시지만)
+        if (type === 'success' || type === 'info') {
+            setTimeout(() => {
+                messageElement.style.display = 'none';
+            }, 5000);
+        }
+    }
+
+    function hideMessages() {
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('successMessage').style.display = 'none';
+        document.getElementById('infoMessage').style.display = 'none';
+        document.getElementById('warningMessage').style.display = 'none';
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        // 인증코드 필드에 포커스
+        const codeInput = document.getElementById('verificationCode');
+        if (codeInput) {
+            codeInput.focus();
+        }
+    });
+
+    // Enter 키 처리
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            const verifyButton = document.getElementById('verifyButton');
+            if (!verifyButton.disabled) {
+                handleVerify(event);
+            }
+        }
+    });
 </script>
 </body>
 </html>

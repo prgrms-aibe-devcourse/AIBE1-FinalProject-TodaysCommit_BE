@@ -1,147 +1,550 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관리자 로그인 - 고양이강아지잇츠</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
+    <meta charset="utf-8" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+            as="style"
+            href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+            onload="this.rel='stylesheet'"
+            rel="stylesheet"
+    />
+    <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+            rel="stylesheet"
+    />
+    <title>CatDogEats 관리자 로그인</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: "Noto Sans KR", "Work Sans", sans-serif;
+            background: linear-gradient(135deg, #faf8f5 0%, #f5f0e8 100%);
             min-height: 100vh;
+        }
+
+        .login-container {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+            0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid #f0ebe5;
+        }
+
+        .primary-bg {
+            background-color: #f5a623;
+        }
+
+        .primary-text {
+            color: #f5a623;
+        }
+
+        .accent-text {
+            color: #7d6e63;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #7d6e63;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            color: #374151;
+            background-color: white;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #f5a623;
+            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.1);
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 0.875rem;
+            background-color: #f5a623;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out,
+            transform 0.1s ease-in-out;
+        }
+
+        .login-button:hover {
+            background-color: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .login-button:active {
+            transform: translateY(0);
+        }
+
+        .login-button:disabled {
+            background-color: #cbd5e1;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .forgot-link {
+            color: #f5a623;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .forgot-link:hover {
+            color: #e69500;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #15803d;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .logout-message {
+            background-color: #dbeafe;
+            border: 1px solid #93c5fd;
+            color: #1d4ed8;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .logo-container {
             display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
         }
-        .login-container {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            padding: 40px;
-            max-width: 400px;
-            width: 100%;
+
+        .logo-icon {
+            width: 3rem;
+            height: 3rem;
+            color: #f5a623;
         }
-        .logo {
-            text-align: center;
-            margin-bottom: 30px;
+
+        .remember-checkbox {
+            accent-color: #f5a623;
         }
-        .logo i {
-            font-size: 3rem;
-            color: #667eea;
-            margin-bottom: 10px;
+
+        .loading-spinner {
+            display: none;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
         }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            padding: 12px;
-            font-weight: 600;
+
+        .input-group {
+            position: relative;
         }
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+        .input-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1.25rem;
         }
-        .alert {
-            border-radius: 10px;
-            border: none;
+
+        .input-with-icon {
+            padding-left: 2.75rem;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            cursor: pointer;
+            font-size: 1.25rem;
+            transition: color 0.2s ease-in-out;
+        }
+
+        .password-toggle:hover {
+            color: #6b7280;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            transform: scale(0.95) translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
         }
     </style>
 </head>
 <body>
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-6">
-            <div class="login-container">
-                <div class="logo">
-                    <i class="fas fa-paw"></i>
-                    <h3 class="fw-bold text-primary">고양이강아지잇츠</h3>
-                    <p class="text-muted">관리자 로그인</p>
-                </div>
+<div class="min-h-screen flex items-center justify-center p-4">
+    <div class="login-container w-full max-w-md p-8">
+        <!-- 로고 -->
+        <div class="logo-container">
+            <div class="logo-icon">
+                <svg
+                        fill="none"
+                        viewBox="0 0 48 48"
+                        xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                            d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z"
+                            fill="currentColor"
+                    ></path>
+                    <path
+                            d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z"
+                            fill="white"
+                    ></path>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold accent-text">CatDogEats</h1>
+        </div>
 
-                <!-- 알림 메시지 -->
-                <div id="alertContainer"></div>
+        <!-- 제목 -->
+        <div class="text-center mb-8">
+            <h2 class="text-xl font-semibold accent-text mb-2">관리자 로그인</h2>
+            <p class="text-sm text-slate-500">
+                관리자 계정으로 로그인하여 시스템을 관리하세요
+            </p>
+        </div>
 
-                <!-- 로그인 폼 -->
-                <form id="loginForm">
-                    <div class="mb-3">
-                        <label for="email" class="form-label">
-                            <i class="fas fa-envelope me-2"></i>이메일
-                        </label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
+        <!-- 알림 메시지 -->
+        <div id="errorMessage" class="error-message mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">error</span>
+                <span id="errorText">로그인에 실패했습니다. 다시 시도해주세요.</span>
+            </div>
+        </div>
 
-                    <div class="mb-4">
-                        <label for="password" class="form-label">
-                            <i class="fas fa-lock me-2"></i>비밀번호
-                        </label>
-                        <input type="password" class="form-control" id="password" name="password" required>
-                    </div>
+        <div id="successMessage" class="success-message mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">check_circle</span>
+                <span>로그인이 성공했습니다. 리다이렉트 중...</span>
+            </div>
+        </div>
 
-                    <button type="submit" class="btn btn-primary w-100 mb-3">
-                        <i class="fas fa-sign-in-alt me-2"></i>로그인
-                    </button>
-                </form>
+        <div id="logoutMessage" class="logout-message mb-4" th:if="${param.logout}">
+            <div class="flex items-center gap-2">
+                <span class="material-icons-outlined text-sm">info</span>
+                <span>로그아웃되었습니다.</span>
+            </div>
+        </div>
 
-                <div class="text-center">
-                    <small class="text-muted">
-                        계정이 없으신가요? 관리자에게 문의해주세요.
-                    </small>
+        <!-- 로그인 폼 -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <!-- 이메일 -->
+            <div class="mb-4">
+                <label class="form-label" for="email">이메일</label>
+                <div class="input-group">
+                    <span class="material-icons-outlined input-icon">email</span>
+                    <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            class="form-input input-with-icon"
+                            placeholder="admin@catdogeats.com"
+                            required
+                            autocomplete="email"
+                    />
                 </div>
             </div>
+
+            <!-- 비밀번호 -->
+            <div class="mb-6">
+                <label class="form-label" for="password">비밀번호</label>
+                <div class="input-group">
+                    <span class="material-icons-outlined input-icon">lock</span>
+                    <input
+                            type="password"
+                            id="password"
+                            name="password"
+                            class="form-input input-with-icon"
+                            placeholder="비밀번호를 입력하세요"
+                            required
+                            autocomplete="current-password"
+                    />
+                    <span
+                            class="material-icons-outlined password-toggle"
+                            onclick="togglePassword()"
+                            id="passwordToggle"
+                    >
+                visibility_off
+              </span>
+                </div>
+            </div>
+
+            <!-- 옵션 -->
+            <div class="flex items-center justify-between mb-6">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input
+                            type="checkbox"
+                            id="remember"
+                            class="remember-checkbox w-4 h-4 rounded"
+                    />
+                    <span class="text-sm text-slate-600">로그인 상태 유지</span>
+                </label>
+                <a href="/v1/admin/verify" class="forgot-link">
+                    계정 인증하기
+                </a>
+            </div>
+
+            <!-- 로그인 버튼 -->
+            <button type="submit" id="loginButton" class="login-button">
+                <div class="flex items-center justify-center gap-2">
+                    <div id="loadingSpinner" class="loading-spinner"></div>
+                    <span id="buttonText">로그인</span>
+                </div>
+            </button>
+        </form>
+
+        <!-- 추가 정보 -->
+        <div class="mt-8 text-center">
+            <div
+                    class="flex items-center gap-2 justify-center text-sm text-slate-500 mb-3"
+            >
+                <span class="material-icons-outlined text-sm">info</span>
+                <span>관리자 전용 페이지입니다</span>
+            </div>
+            <p class="text-xs text-slate-400">
+                문제가 발생하면 시스템 관리자에게 문의하세요
+            </p>
         </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    document.getElementById('loginForm').addEventListener('submit', async function(e) {
-        e.preventDefault();
+    // 비밀번호 보기/숨기기
+    function togglePassword() {
+        const passwordInput = document.getElementById("password");
+        const toggleIcon = document.getElementById("passwordToggle");
 
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        if (passwordInput.type === "password") {
+            passwordInput.type = "text";
+            toggleIcon.textContent = "visibility";
+        } else {
+            passwordInput.type = "password";
+            toggleIcon.textContent = "visibility_off";
+        }
+    }
+
+    // 로그인 처리
+    async function handleLogin(event) {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        // 입력값 검증
+        if (!email || !password) {
+            showError("이메일과 비밀번호를 모두 입력해주세요.");
+            return;
+        }
+
+        // UI 업데이트
+        setLoading(true);
+        hideMessages();
 
         try {
+            // 서버로 로그인 요청
             const response = await fetch('/v1/admin/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
             });
 
             const result = await response.json();
 
-            if (result.success) {
-                showAlert('로그인 성공!', 'success');
+            if (response.ok && result.success) {
+                // 로그인 성공
+                showSuccess("로그인이 성공했습니다. 리다이렉트 중...");
+
+                // 2초 후 리다이렉트
                 setTimeout(() => {
-                    window.location.href = result.data.redirectUrl;
-                }, 1000);
+                    if (result.data && result.data.redirectUrl) {
+                        window.location.href = result.data.redirectUrl;
+                    } else {
+                        window.location.href = '/v1/admin/dashboard';
+                    }
+                }, 1500);
+
             } else {
-                showAlert(result.message, 'danger');
+                // 로그인 실패
+                const errorMessage = result.message || "로그인에 실패했습니다.";
+                showError(errorMessage);
+                setLoading(false);
             }
+
         } catch (error) {
-            showAlert('로그인 중 오류가 발생했습니다.', 'danger');
+            console.error('로그인 요청 중 오류:', error);
+            showError("서버 연결에 문제가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            setLoading(false);
+        }
+    }
+
+    // UI 헬퍼 함수들
+    function setLoading(isLoading) {
+        const button = document.getElementById("loginButton");
+        const buttonText = document.getElementById("buttonText");
+        const spinner = document.getElementById("loadingSpinner");
+
+        button.disabled = isLoading;
+        buttonText.textContent = isLoading ? "로그인 중..." : "로그인";
+        spinner.style.display = isLoading ? "block" : "none";
+    }
+
+    function showError(message) {
+        const errorMsg = document.getElementById("errorMessage");
+        const errorText = document.getElementById("errorText");
+
+        errorText.textContent = message;
+        errorMsg.style.display = "block";
+
+        // 3초 후 자동 숨김
+        setTimeout(() => {
+            errorMsg.style.display = "none";
+        }, 5000);
+    }
+
+    function showSuccess(message) {
+        const successMsg = document.getElementById("successMessage");
+        const successText = successMsg.querySelector("span:last-child");
+
+        successText.textContent = message;
+        successMsg.style.display = "block";
+    }
+
+    function hideMessages() {
+        document.getElementById("errorMessage").style.display = "none";
+        document.getElementById("successMessage").style.display = "none";
+    }
+
+    // 페이지 로드 시 초기화
+    document.addEventListener("DOMContentLoaded", function () {
+        // URL 파라미터 확인 (로그아웃 메시지)
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('logout') === 'true') {
+            document.getElementById("logoutMessage").style.display = "block";
+
+            // 5초 후 로그아웃 메시지 숨김
+            setTimeout(() => {
+                document.getElementById("logoutMessage").style.display = "none";
+            }, 5000);
+        }
+
+        // 저장된 이메일 복원 (remember 기능)
+        const savedEmail = localStorage.getItem("adminEmail");
+        if (savedEmail) {
+            document.getElementById("email").value = savedEmail;
+            document.getElementById("remember").checked = true;
+        }
+
+        // 이메일 필드에 포커스
+        document.getElementById("email").focus();
+    });
+
+    // Remember 체크박스 처리
+    document.getElementById("remember").addEventListener("change", function() {
+        const email = document.getElementById("email").value.trim();
+
+        if (this.checked && email) {
+            localStorage.setItem("adminEmail", email);
+        } else {
+            localStorage.removeItem("adminEmail");
         }
     });
 
-    function showAlert(message, type) {
-        const alertContainer = document.getElementById('alertContainer');
-        alertContainer.innerHTML = `
-                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-                    ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
-    }
+    // 이메일 입력 시 remember 기능 업데이트
+    document.getElementById("email").addEventListener("blur", function() {
+        const rememberChecked = document.getElementById("remember").checked;
+        const email = this.value.trim();
 
-    // URL 파라미터 체크 (로그아웃 메시지)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('logout') === 'true') {
-        showAlert('로그아웃되었습니다.', 'info');
-    }
+        if (rememberChecked && email) {
+            localStorage.setItem("adminEmail", email);
+        }
+    });
+
+    // Enter 키 처리
+    document.addEventListener("keydown", function(event) {
+        if (event.key === "Enter") {
+            const loginButton = document.getElementById("loginButton");
+            if (!loginButton.disabled) {
+                handleLogin(event);
+            }
+        }
+    });
 </script>
 </body>
 </html>

@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 
 /**
@@ -54,11 +56,17 @@ public class AdminAuthenticationServiceImpl implements AdminAuthenticationServic
         admin.updateLastLogin();
         adminRepository.save(admin);
 
-        // 5. Spring Security Authentication 객체 생성 및 설정
+        // 5. Spring Security Authentication 객체 생성 및 설정 (부서별 권한 포함)
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+        // 부서별 권한 추가
+        authorities.add(new SimpleGrantedAuthority(admin.getDepartment().name()));
+
         Authentication authentication = new UsernamePasswordAuthenticationToken(
                 admin.getEmail(),
                 null, // 비밀번호는 null로 설정 (보안상)
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
+                authorities
         );
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
@@ -75,7 +83,8 @@ public class AdminAuthenticationServiceImpl implements AdminAuthenticationServic
         session.setAttribute(ADMIN_SESSION_KEY, sessionInfo);
         session.setMaxInactiveInterval(30 * 60); // 30분 세션 만료
 
-        log.info("관리자 로그인 성공: email={}, name={}", admin.getEmail(), admin.getName());
+        log.info("관리자 로그인 성공: email={}, name={}, department={}",
+                admin.getEmail(), admin.getName(), admin.getDepartment());
 
         return AdminLoginResponseDTO.builder()
                 .email(admin.getEmail())
