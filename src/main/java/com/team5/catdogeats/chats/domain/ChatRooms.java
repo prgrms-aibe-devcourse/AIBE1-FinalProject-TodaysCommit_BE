@@ -48,12 +48,6 @@ public class ChatRooms {
     @Builder.Default
     private int sellerUnreadCount = 0;  // 판매자 기준 안읽은 메시지 수
 
-    // 5. 실시간 상태 관리를 위한 추가 필드
-    @Builder.Default
-    private boolean buyerOnline = false;  // 구매자 온라인 상태
-    @Builder.Default
-    private boolean sellerOnline = false; // 판매자 온라인 상태
-
     private Instant buyerLastSeenAt;    // 구매자 마지막 접속 시간
     private Instant sellerLastSeenAt;   // 판매자 마지막 접속 시간
 
