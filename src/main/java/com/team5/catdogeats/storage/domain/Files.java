@@ -16,6 +16,7 @@ public class Files extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
+    @Setter
     @Column(name = "file_url", length = 255, nullable = false)
     private String fileUrl;
 }

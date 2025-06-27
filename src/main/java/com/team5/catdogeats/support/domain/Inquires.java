@@ -1,5 +1,6 @@
 package com.team5.catdogeats.support.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.team5.catdogeats.admins.domain.Admins;
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.support.domain.enums.InquiryStatus;
@@ -32,6 +33,8 @@ public class Inquires extends BaseEntity {
     private Inquires parent;
 
     @OneToMany(mappedBy = "parent")
+    @ToString.Exclude // 무한 루프 방지
+    @JsonIgnore // 순환 참조 방지
     private List<Inquires> replies;
 
     @ManyToOne(fetch = FetchType.LAZY)
