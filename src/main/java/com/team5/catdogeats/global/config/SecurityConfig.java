@@ -55,11 +55,13 @@ public class SecurityConfig {
                                     .maximumSessions(1)
                                     .maxSessionsPreventsLogin(false))
                     .authorizeHttpRequests(authorize -> authorize
-                            .requestMatchers("/v1/admin/login").permitAll()              // 로그인 페이지
-                            .requestMatchers("/v1/admin/verify").permitAll()             // 계정 인증 페이지
-                            .requestMatchers("/v1/admin/resend-code").permitAll()        // 인증코드 재발송
-                            .requestMatchers("/v1/admin/invite").hasAuthority("ADMIN")   // 🔧 초대 기능은 ADMIN 부서만
-                            .requestMatchers("/v1/admin/**").authenticated()             // 🔧 나머지는 세션 인증 필요
+                            .requestMatchers("/v1/admin/login").permitAll()                           // 로그인 페이지
+                            .requestMatchers("/v1/admin/verify").permitAll()                          // 계정 인증 페이지
+                            .requestMatchers("/v1/admin/resend-code").permitAll()                     // 인증코드 재발송
+                            .requestMatchers("/v1/admin/invite").hasAuthority("ADMIN")                // 초대 기능은 ADMIN 부서만
+                            .requestMatchers("/v1/admin/account-management").hasAuthority("ADMIN")    // 계정 관리는 ADMIN 부서만
+                            .requestMatchers("/v1/admin/accounts/**").hasAuthority("ADMIN")           // 계정 관리 API는 ADMIN 부서만
+                            .requestMatchers("/v1/admin/**").authenticated()                          // 나머지는 세션 인증 필요
                             .anyRequest().authenticated())
                     .httpBasic(AbstractHttpConfigurer::disable)
                     .formLogin(AbstractHttpConfigurer::disable)                         // Spring Security 기본 로그인 비활성화

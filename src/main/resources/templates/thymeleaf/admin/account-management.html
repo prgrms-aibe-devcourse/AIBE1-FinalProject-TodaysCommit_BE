@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link crossorigin="" href="https://fonts.gstatic.com/" rel="preconnect" />
+    <link
+            as="style"
+            href="https://fonts.googleapis.com/css2?display=swap&amp;family=Noto+Sans+KR%3Awght%40400%3B500%3B700%3B900&amp;family=Work+Sans%3Awght%40400%3B500%3B700%3B900"
+            onload="this.rel='stylesheet'"
+            rel="stylesheet"
+    />
+    <link
+            href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+            rel="stylesheet"
+    />
+    <title>CatDogEats 관리자 계정 관리</title>
+    <link href="data:image/x-icon;base64," rel="icon" type="image/x-icon" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <style type="text/css">
+        body {
+            font-family: "Noto Sans KR", "Work Sans", sans-serif;
+            background-color: #faf8f5;
+        }
+        .primary-bg {
+            background-color: #f5a623;
+        }
+        .primary-text {
+            color: #f5a623;
+        }
+        .accent-text {
+            color: #7d6e63;
+        }
+        .sidebar {
+            background-color: #fffdfb;
+            border-right: 1px solid #f0ebe5;
+        }
+        .sidebar-link-icon {
+            color: #bcaaa4;
+        }
+        .sidebar-link-text {
+            color: #7d6e63;
+        }
+        .active-tab {
+            border-left-width: 4px;
+            border-color: #f5a623;
+            background-color: #fff9f0;
+            color: #f5a623;
+            font-weight: 700;
+        }
+        .active-tab .sidebar-link-icon,
+        .active-tab .sidebar-link-text {
+            color: #f5a623;
+        }
+        .inactive-tab {
+            border-left-width: 4px;
+            border-color: transparent;
+            color: #7d6e63;
+            font-weight: 500;
+            transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out;
+        }
+        .inactive-tab:hover {
+            background-color: #fdfbf8;
+            color: #e69500;
+        }
+        .inactive-tab:hover .sidebar-link-icon,
+        .inactive-tab:hover .sidebar-link-text {
+            color: #e69500;
+        }
+
+        .admin-container {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #f0ebe5;
+            margin: 2rem;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, #f5a623 0%, #e69500 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 1rem 1rem 0 0;
+        }
+
+        .content-section {
+            padding: 2rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: #f5a623;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: #64748b;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-secondary:hover {
+            background-color: #f8fafc;
+            border-color: #94a3b8;
+        }
+
+        .btn-danger {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #dc2626;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            min-width: 300px;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .search-box:focus-within {
+            border-color: #f5a623;
+            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.1);
+        }
+
+        .search-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            flex: 1;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #e2e8f0;
+            background-color: white;
+            color: #64748b;
+        }
+
+        .filter-tab.active {
+            background-color: #f5a623;
+            color: white;
+            border-color: #f5a623;
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-table th {
+            background-color: #f8fafc;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+
+        .admin-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+
+        .admin-table tbody tr:hover {
+            background-color: #fefce8;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            gap: 0.25rem;
+        }
+
+        .status-active {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .status-inactive {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .action-btn {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .action-toggle {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .action-toggle:hover {
+            background-color: #e5e7eb;
+        }
+
+        .action-delete {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+
+        .action-delete:hover {
+            background-color: #fecaca;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .pagination-btn {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #e5e7eb;
+            background-color: white;
+            color: #6b7280;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.875rem;
+        }
+
+        .pagination-btn:hover:not(.disabled) {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .pagination-btn.active {
+            background-color: #f5a623;
+            color: white;
+            border-color: #f5a623;
+        }
+
+        .pagination-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .user-menu {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background-color: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            min-width: 200px;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+
+        .user-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+        .dropdown-item:hover {
+            background-color: #f9fafb;
+            color: #111827;
+            text-decoration: none;
+        }
+
+        .dropdown-item.danger {
+            color: #dc2626;
+        }
+
+        .dropdown-item.danger:hover {
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            display: none;
+        }
+
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .alert-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #6b7280;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            color: #d1d5db;
+            margin-bottom: 1rem;
+        }
+
+        /* 모달 스타일 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95) translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label.required::after {
+            content: " *";
+            color: #ef4444;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #f5a623;
+            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.1);
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background-color: white;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #f5a623;
+            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.1);
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 반응형 */
+        @media (max-width: 768px) {
+            .admin-container {
+                margin: 1rem;
+                border-radius: 0.75rem;
+            }
+
+            .header-section {
+                padding: 1.5rem;
+            }
+
+            .content-section {
+                padding: 1.5rem;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .search-box {
+                min-width: auto;
+            }
+
+            .admin-table {
+                font-size: 0.75rem;
+            }
+
+            .admin-table th,
+            .admin-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-FAF8F5">
+<div class="relative flex size-full min-h-screen flex-row group/design-root overflow-x-hidden">
+    <!-- 사이드바 -->
+    <aside class="sidebar w-64 flex-shrink-0 flex flex-col space-y-2 py-6 px-4">
+        <div class="flex items-center gap-3 px-3 mb-6">
+            <div class="size-8 text-orange-500">
+                <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M32.9392 10.7307C32.0655 10.4106 31.134 10.2503 30.1954 10.2589H29.747C26.3663 10.2589 23.4064 12.0854 21.7295 14.8563C20.0527 12.0854 17.0928 10.2589 13.7121 10.2589H13.2637C12.3251 10.2503 11.3936 10.4106 10.52 10.7307C6.2872 12.3058 3.34436 16.4118 3.34436 21.1279C3.34436 27.4542 10.0706 33.2441 19.1119 38.0983C20.2683 38.7325 21.6107 39.076 22.9831 39.076C24.3555 39.076 25.6979 38.7325 26.8543 38.0983C35.8956 33.2441 42.6218 27.4542 42.6218 21.1279C42.6218 16.4118 39.679 12.3058 35.4462 10.7307H32.9392Z" fill="#F5A623"></path>
+                    <path d="M34.5763 21.813C34.5763 22.2145 34.2561 22.5347 33.8546 22.5347H29.9871L24.0362 32.0712C23.8229 32.4247 23.4134 32.6305 22.9831 32.6305C22.5527 32.6305 22.1432 32.4247 21.9299 32.0712L15.9791 22.5347H12.1115C11.7101 22.5347 11.39 22.2145 11.39 21.813C11.39 21.4116 11.7101 21.0914 12.1115 21.0914H16.4973C16.8988 21.0914 17.259 21.3438 17.4148 21.7093L22.9831 30.6195L28.5513 21.7093C28.7071 21.3438 29.0673 21.0914 29.4688 21.0914H33.8546C34.2561 21.0914 34.5763 21.4116 34.5763 21.813Z" fill="white"></path>
+                </svg>
+            </div>
+            <h2 class="text-orange-500 text-xl font-bold leading-tight tracking-[-0.015em]">CatDogEats <br />관리자 페이지</h2>
+        </div>
+        <nav class="flex flex-col space-y-1">
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="/v1/admin/dashboard">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">dashboard</span>
+                <span class="sidebar-link-text text-sm font-medium">대시보드</span>
+            </a>
+            <a class="active-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="/v1/admin/account-management">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">manage_accounts</span>
+                <span class="sidebar-link-text text-sm font-medium">계정 관리</span>
+            </a>
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="/v1/admin/invite" id="inviteMenuItem">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">person_add</span>
+                <span class="sidebar-link-text text-sm font-medium">계정 생성</span>
+            </a>
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="#">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">report_problem</span>
+                <span class="sidebar-link-text text-sm font-medium">신고 관리</span>
+            </a>
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="#">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">campaign</span>
+                <span class="sidebar-link-text text-sm font-medium">공지사항 관리</span>
+            </a>
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="#">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">quiz</span>
+                <span class="sidebar-link-text text-sm font-medium">FAQ 관리</span>
+            </a>
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="#">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">support_agent</span>
+                <span class="sidebar-link-text text-sm font-medium">1:1 문의 관리</span>
+            </a>
+        </nav>
+        <div class="mt-auto pt-4 border-t border-beige-200">
+            <a class="inactive-tab flex items-center gap-3 px-3 py-2.5 rounded-md" href="/v1/admin/settings">
+                <span class="material-icons-outlined sidebar-link-icon text-xl">settings</span>
+                <span class="sidebar-link-text text-sm font-medium">설정</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="layout-container flex h-full grow flex-col">
+        <!-- 헤더 -->
+        <header class="flex items-center justify-between whitespace-nowrap border-b border-solid border-slate-200 bg-white px-6 py-3 shadow-sm">
+            <div class="flex items-center">
+                <h1 class="accent-text text-lg font-semibold">관리자 계정 관리</h1>
+            </div>
+            <div class="flex flex-1 justify-end gap-6 items-center">
+                <span class="text-sm accent-text" th:text="${admin.email}">admin@catdogeats.com</span>
+                <div class="user-menu">
+                    <div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 border border-slate-200 cursor-pointer"
+                         style="background-image: url('https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face');"
+                         onclick="toggleUserMenu()"></div>
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="/v1/admin/profile" class="dropdown-item">
+                            <span class="material-icons-outlined text-base mr-3">person</span>
+                            프로필
+                        </a>
+                        <a href="/v1/admin/settings" class="dropdown-item">
+                            <span class="material-icons-outlined text-base mr-3">settings</span>
+                            설정
+                        </a>
+                        <hr class="my-1 border-gray-200">
+                        <form action="/v1/admin/logout" method="post" style="display: inline; width: 100%;">
+                            <button type="submit" class="dropdown-item danger w-full text-left border-0 bg-transparent">
+                                <span class="material-icons-outlined text-base mr-3">logout</span>
+                                로그아웃
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 -->
+        <main class="px-6 md:px-10 lg:px-16 xl:px-20 flex flex-1 flex-col py-8 bg-FAF8F5">
+            <div class="admin-container">
+                <!-- 헤더 섹션 -->
+                <div class="header-section">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h1 class="text-3xl font-bold mb-2">관리자 계정 관리</h1>
+                            <p class="text-white/80">시스템 관리자 계정을 생성, 조회할 수 있습니다</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/v1/admin/dashboard" class="btn btn-secondary" style="background-color: rgba(255,255,255,0.2); border-color: rgba(255,255,255,0.3); color: white;">
+                                <span class="material-icons-outlined text-sm">dashboard</span>
+                                대시보드
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 콘텐츠 섹션 -->
+                <div class="content-section">
+                    <!-- 통계 카드 -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                    <span class="material-icons-outlined text-blue-600">group</span>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900" id="totalAdmins">-</div>
+                                    <div class="text-sm text-gray-500">전체 관리자</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <span class="material-icons-outlined text-green-600">check_circle</span>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900" id="activeAdmins">-</div>
+                                    <div class="text-sm text-gray-500">활성 계정</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                    <span class="material-icons-outlined text-yellow-600">schedule</span>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900" id="pendingAdmins">-</div>
+                                    <div class="text-sm text-gray-500">승인 대기</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="flex items-center gap-3 mb-3">
+                                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                    <span class="material-icons-outlined text-red-600">cancel</span>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-gray-900" id="inactiveAdmins">-</div>
+                                    <div class="text-sm text-gray-500">비활성 계정</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 알림 메시지 -->
+                    <div id="alertMessage" class="alert alert-success">
+                        <span class="material-icons-outlined text-sm">check_circle</span>
+                        <span id="alertText">작업이 성공적으로 완료되었습니다.</span>
+                    </div>
+
+                    <!-- 툴바 -->
+                    <div class="toolbar">
+                        <div class="search-box">
+                            <span class="material-icons-outlined text-gray-400">search</span>
+                            <input type="text" class="search-input" placeholder="이메일, 이름으로 검색..." id="searchInput" oninput="filterAdmins()" />
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="/v1/admin/invite" class="btn btn-primary">
+                                <span class="material-icons-outlined text-sm">add</span>
+                                관리자 추가
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- 필터 탭 -->
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" onclick="filterByStatus('all')" data-status="all">전체 (-)</button>
+                        <button class="filter-tab" onclick="filterByStatus('active')" data-status="active">활성 (-)</button>
+                        <button class="filter-tab" onclick="filterByStatus('pending')" data-status="pending">승인대기 (-)</button>
+                        <button class="filter-tab" onclick="filterByStatus('inactive')" data-status="inactive">비활성 (-)</button>
+                    </div>
+
+                    <!-- 관리자 테이블 -->
+                    <div style="overflow-x: auto;">
+                        <table class="admin-table">
+                            <thead>
+                            <tr>
+                                <th>관리자 정보</th>
+                                <th>부서</th>
+                                <th>상태</th>
+                                <th>등록일</th>
+                                <th>최종 로그인</th>
+                                <th>작업</th>
+                            </tr>
+                            </thead>
+                            <tbody id="adminTableBody">
+                            <!-- 관리자 목록이 여기에 동적으로 생성됩니다 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- 빈 상태 -->
+                    <div id="emptyState" class="empty-state" style="display: none;">
+                        <div class="empty-icon">
+                            <span class="material-icons-outlined">search_off</span>
+                        </div>
+                        <h3 class="text-lg font-semibold mb-2">검색 결과가 없습니다</h3>
+                        <p class="text-sm">다른 검색어로 다시 시도해보세요</p>
+                    </div>
+
+                    <!-- 페이지네이션 -->
+                    <div class="pagination" id="pagination">
+                        <!-- 페이지네이션이 여기에 동적으로 생성됩니다 -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<!-- 삭제 확인 모달 -->
+<div id="deleteModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="text-lg font-semibold text-red-600">관리자 삭제</h3>
+            <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600">
+                <span class="material-icons-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="text-center">
+                <div class="mb-4">
+                    <span class="material-icons-outlined text-red-500 text-6xl">warning</span>
+                </div>
+                <h3 class="text-lg font-semibold mb-2">정말로 삭제하시겠습니까?</h3>
+                <p class="text-gray-600 mb-4">
+                    <span id="deleteAdminName" class="font-semibold">-</span>님의 계정이 영구적으로 삭제됩니다.
+                </p>
+                <p class="text-sm text-gray-500">
+                    이메일: <span id="deleteAdminEmail" class="font-medium">-</span>
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">취소</button>
+            <button type="button" onclick="confirmDelete()" class="btn btn-danger">
+                <span class="material-icons-outlined text-sm">delete</span>
+                삭제
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 전역 변수
+    let currentPage = 0;
+    let currentSize = 10;
+    let currentStatus = 'all';
+    let currentSearch = '';
+    let adminData = [];
+    let statsData = {};
+
+    // 페이지 로드 시 초기화
+    document.addEventListener('DOMContentLoaded', function() {
+        loadAdminList();
+    });
+
+    // 관리자 목록 로드
+    async function loadAdminList() {
+        try {
+            showLoading(true);
+
+            const params = new URLSearchParams({
+                page: currentPage,
+                size: currentSize,
+                ...(currentStatus !== 'all' && { status: currentStatus }),
+                ...(currentSearch && { search: currentSearch })
+            });
+
+            const response = await fetch(`/v1/admin/accounts?${params}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success && result.data) {
+                adminData = result.data.admins;
+                statsData = result.data.stats;
+                updateStats(statsData);
+                updateFilterTabs(statsData);
+                renderAdmins(result.data);
+            } else {
+                throw new Error(result.message || '데이터 로드 실패');
+            }
+
+        } catch (error) {
+            console.error('관리자 목록 로드 중 오류:', error);
+            showAlert('관리자 목록을 불러오는데 실패했습니다.', 'error');
+        } finally {
+            showLoading(false);
+        }
+    }
+
+    // 통계 업데이트
+    function updateStats(stats) {
+        document.getElementById('totalAdmins').textContent = stats.totalCount || 0;
+        document.getElementById('activeAdmins').textContent = stats.activeCount || 0;
+        document.getElementById('pendingAdmins').textContent = stats.pendingCount || 0;
+        document.getElementById('inactiveAdmins').textContent = stats.inactiveCount || 0;
+    }
+
+    // 필터 탭 업데이트
+    function updateFilterTabs(stats) {
+        document.querySelector('[data-status="all"]').textContent = `전체 (${stats.totalCount || 0})`;
+        document.querySelector('[data-status="active"]').textContent = `활성 (${stats.activeCount || 0})`;
+        document.querySelector('[data-status="pending"]').textContent = `승인대기 (${stats.pendingCount || 0})`;
+        document.querySelector('[data-status="inactive"]').textContent = `비활성 (${stats.inactiveCount || 0})`;
+    }
+
+    // 관리자 목록 렌더링
+    function renderAdmins(data) {
+        const tbody = document.getElementById('adminTableBody');
+        const admins = data.admins;
+
+        if (!admins || admins.length === 0) {
+            tbody.innerHTML = '';
+            document.getElementById('emptyState').style.display = 'block';
+            document.querySelector('.admin-table').style.display = 'none';
+            document.getElementById('pagination').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('emptyState').style.display = 'none';
+        document.querySelector('.admin-table').style.display = 'table';
+
+        tbody.innerHTML = admins.map(admin => `
+          <tr>
+            <td>
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span class="text-orange-600 font-semibold text-sm">${admin.name.substring(0, 2)}</span>
+                </div>
+                <div>
+                  <div class="font-semibold text-gray-900">${admin.name}</div>
+                  <div class="text-gray-500 text-sm">${admin.email}</div>
+                </div>
+              </div>
+            </td>
+            <td>${getDepartmentName(admin.department)}</td>
+            <td>
+              <span class="status-badge ${getStatusClass(admin)}">
+                <span class="material-icons-outlined text-xs">${getStatusIcon(admin)}</span>
+                ${getStatusName(admin)}
+              </span>
+            </td>
+            <td>${formatDate(admin.createdAt)}</td>
+            <td>${admin.lastLoginAt ? formatDateTime(admin.lastLoginAt) : '-'}</td>
+            <td>
+              <div class="action-buttons">
+                ${!admin.email.includes('super@catdogeats.com') ? `
+                  <button class="action-btn action-toggle" onclick="toggleAdminStatus('${admin.email}')" title="${admin.isFirstLogin ? '활성화' : '비활성화'}">
+                    <span class="material-icons-outlined text-sm">${admin.isFirstLogin ? 'toggle_off' : 'toggle_on'}</span>
+                  </button>
+                  <button class="action-btn action-delete" onclick="deleteAdmin('${admin.email}', '${admin.name}')" title="삭제">
+                    <span class="material-icons-outlined text-sm">delete</span>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `).join('');
+
+        renderPagination(data);
+    }
+
+    // 페이지네이션 렌더링
+    function renderPagination(data) {
+        const pagination = document.getElementById('pagination');
+        const { totalPages, currentPage: page } = data;
+
+        if (totalPages <= 1) {
+            pagination.style.display = 'none';
+            return;
+        }
+
+        pagination.style.display = 'flex';
+
+        let paginationHTML = '';
+
+        // 이전 버튼
+        paginationHTML += `
+          <button class="pagination-btn ${page === 0 ? 'disabled' : ''}" onclick="goToPage(${page - 1})">
+            <span class="material-icons-outlined text-sm">chevron_left</span>
+          </button>
+        `;
+
+        // 페이지 번호들
+        const startPage = Math.max(0, page - 2);
+        const endPage = Math.min(totalPages - 1, page + 2);
+
+        if (startPage > 0) {
+            paginationHTML += `<button class="pagination-btn" onclick="goToPage(0)">1</button>`;
+            if (startPage > 1) {
+                paginationHTML += `<span class="pagination-btn disabled">...</span>`;
+            }
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHTML += `
+            <button class="pagination-btn ${page === i ? 'active' : ''}" onclick="goToPage(${i})">
+              ${i + 1}
+            </button>
+          `;
+        }
+
+        if (endPage < totalPages - 1) {
+            if (endPage < totalPages - 2) {
+                paginationHTML += `<span class="pagination-btn disabled">...</span>`;
+            }
+            paginationHTML += `<button class="pagination-btn" onclick="goToPage(${totalPages - 1})">${totalPages}</button>`;
+        }
+
+        // 다음 버튼
+        paginationHTML += `
+          <button class="pagination-btn ${page === totalPages - 1 ? 'disabled' : ''}" onclick="goToPage(${page + 1})">
+            <span class="material-icons-outlined text-sm">chevron_right</span>
+          </button>
+        `;
+
+        pagination.innerHTML = paginationHTML;
+    }
+
+    // 페이지 이동
+    function goToPage(page) {
+        if (page < 0) return;
+        currentPage = page;
+        loadAdminList();
+    }
+
+    // 상태별 필터링
+    function filterByStatus(status) {
+        currentStatus = status;
+        currentPage = 0;
+
+        // 탭 활성화 상태 변경
+        document.querySelectorAll('.filter-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        document.querySelector(`[data-status="${status}"]`).classList.add('active');
+
+        loadAdminList();
+    }
+
+    // 검색 필터링
+    function filterAdmins() {
+        const searchTerm = document.getElementById('searchInput').value.trim();
+        currentSearch = searchTerm;
+        currentPage = 0;
+        loadAdminList();
+    }
+
+    // 관리자 상태 토글
+    async function toggleAdminStatus(adminEmail) {
+        try {
+            // 이메일로 관리자 ID 찾기 (실제로는 서버에서 이메일로 찾도록 수정 필요)
+            const admin = adminData.find(a => a.email === adminEmail);
+            if (!admin) {
+                showAlert('관리자를 찾을 수 없습니다.', 'error');
+                return;
+            }
+
+            const response = await fetch(`/v1/admin/accounts/${admin.email}/toggle-status`, {
+                method: 'PATCH',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showAlert(result.data, 'success');
+                loadAdminList(); // 목록 새로고침
+            } else {
+                showAlert(result.message || '상태 변경에 실패했습니다.', 'error');
+            }
+
+        } catch (error) {
+            console.error('상태 토글 중 오류:', error);
+            showAlert('서버 연결에 문제가 발생했습니다.', 'error');
+        }
+    }
+
+    // 관리자 삭제
+    function deleteAdmin(adminEmail, adminName) {
+        if (adminEmail.includes('super@catdogeats.com')) {
+            showAlert('슈퍼관리자 계정은 삭제할 수 없습니다.', 'error');
+            return;
+        }
+
+        document.getElementById('deleteAdminName').textContent = adminName;
+        document.getElementById('deleteAdminEmail').textContent = adminEmail;
+        document.getElementById('deleteModal').classList.add('active');
+        document.getElementById('deleteModal').dataset.adminEmail = adminEmail;
+        document.body.style.overflow = 'hidden';
+    }
+
+    // 삭제 확인
+    async function confirmDelete() {
+        try {
+            const adminEmail = document.getElementById('deleteModal').dataset.adminEmail;
+
+            const response = await fetch(`/v1/admin/accounts/${adminEmail}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showAlert(result.data, 'success');
+                loadAdminList(); // 목록 새로고침
+            } else {
+                showAlert(result.message || '삭제에 실패했습니다.', 'error');
+            }
+
+        } catch (error) {
+            console.error('삭제 중 오류:', error);
+            showAlert('서버 연결에 문제가 발생했습니다.', 'error');
+        }
+
+        closeDeleteModal();
+    }
+
+    // 삭제 모달 닫기
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+        document.body.style.overflow = 'auto';
+    }
+
+    // 사용자 메뉴 토글
+    function toggleUserMenu() {
+        const dropdown = document.getElementById('userDropdown');
+        dropdown.classList.toggle('active');
+    }
+
+    // 외부 클릭 시 메뉴 닫기
+    document.addEventListener('click', function(event) {
+        const userMenu = document.querySelector('.user-menu');
+        const dropdown = document.getElementById('userDropdown');
+
+        if (!userMenu.contains(event.target)) {
+            dropdown.classList.remove('active');
+        }
+
+        // 모달 외부 클릭 시 닫기
+        if (event.target.classList.contains('modal-overlay')) {
+            if (event.target.id === 'deleteModal') {
+                closeDeleteModal();
+            }
+        }
+    });
+
+    // ESC 키로 모달 닫기
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            if (document.getElementById('deleteModal').classList.contains('active')) {
+                closeDeleteModal();
+            }
+        }
+    });
+
+    // 알림 표시
+    function showAlert(message, type = 'success') {
+        const alert = document.getElementById('alertMessage');
+        const alertText = document.getElementById('alertText');
+
+        alert.className = `alert alert-${type}`;
+        alert.style.display = 'flex';
+        alertText.textContent = message;
+
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 5000);
+    }
+
+    // 로딩 표시
+    function showLoading(show) {
+        const tbody = document.getElementById('adminTableBody');
+        if (show) {
+            tbody.innerHTML = `
+            <tr>
+              <td colspan="6" class="text-center py-8">
+                <div class="flex items-center justify-center gap-2">
+                  <div class="loading-spinner" style="display: block; border-top-color: #f5a623;"></div>
+                  <span>로딩 중...</span>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+    }
+
+    // 유틸리티 함수들
+    function getDepartmentName(dept) {
+        const names = {
+            'DEVELOPMENT': '개발팀',
+            'CUSTOMER_SERVICE': '고객서비스팀',
+            'OPERATIONS': '운영팀',
+            'ADMIN': '관리팀'
+        };
+        return names[dept] || dept;
+    }
+
+    function getStatusName(admin) {
+        if (!admin.isFirstLogin) {
+            return '활성';
+        } else if (admin.verificationCode) {
+            return '승인대기';
+        } else {
+            return '비활성';
+        }
+    }
+
+    function getStatusClass(admin) {
+        if (!admin.isFirstLogin) {
+            return 'status-active';
+        } else if (admin.verificationCode) {
+            return 'status-pending';
+        } else {
+            return 'status-inactive';
+        }
+    }
+
+    function getStatusIcon(admin) {
+        if (!admin.isFirstLogin) {
+            return 'check_circle';
+        } else if (admin.verificationCode) {
+            return 'schedule';
+        } else {
+            return 'cancel';
+        }
+    }
+
+    function formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ko-KR');
+    }
+
+    function formatDateTime(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleString('ko-KR');
+    }
+</script>
+</body>
+</html>
