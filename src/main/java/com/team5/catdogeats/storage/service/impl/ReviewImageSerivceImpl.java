@@ -32,6 +32,11 @@ public class ReviewImageSerivceImpl implements ReviewImageService {
     @JpaTransactional
     @Override
     public List<ReviewImageUploadResponseDto> uploadReviewImage(String reviewId, List<MultipartFile> images) throws IOException {
+
+        if (images.size() > 10) {
+            throw new IllegalArgumentException("이미지는 한 번에 최대 10개까지만 업로드할 수 있습니다.");
+        }
+
         Reviews review = reviewRepository.findById(reviewId)
                 .orElseThrow(() -> new NoSuchElementException("해당 리뷰 없음"));
 
