@@ -1,6 +1,6 @@
 package com.team5.catdogeats.support.domain.notice.service.impl;
 
-import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
+import com.team5.catdogeats.storage.service.NoticeFileManagementService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeListResponseDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;

@@ -1,4 +1,4 @@
-package com.team5.catdogeats.storage.domain.repository;
+package com.team5.catdogeats.storage.repository;
 
 import com.team5.catdogeats.storage.domain.Files;
 import org.springframework.data.jpa.repository.JpaRepository;

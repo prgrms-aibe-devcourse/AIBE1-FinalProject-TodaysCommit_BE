@@ -1,6 +1,6 @@
 package com.team5.catdogeats.storage.controller;
 
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

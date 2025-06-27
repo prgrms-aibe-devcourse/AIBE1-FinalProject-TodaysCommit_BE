@@ -1,4 +1,4 @@
-package com.team5.catdogeats.storage.domain.service;
+package com.team5.catdogeats.storage.service;
 
 import java.io.InputStream;
 

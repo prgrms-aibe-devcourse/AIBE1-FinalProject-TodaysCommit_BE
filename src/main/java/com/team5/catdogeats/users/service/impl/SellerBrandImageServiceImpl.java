@@ -2,7 +2,7 @@ package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.service.ObjectStorageService;
 import com.team5.catdogeats.storage.util.ImageValidationUtil;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.SellerBrandImageResponseDTO;
@@ -16,8 +16,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 @Slf4j

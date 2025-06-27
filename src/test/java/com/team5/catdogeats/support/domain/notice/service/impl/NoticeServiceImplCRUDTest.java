@@ -2,9 +2,9 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
-import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.repository.FilesRepository;
+import com.team5.catdogeats.storage.service.NoticeFileManagementService;
+import com.team5.catdogeats.storage.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeCreateRequestDTO;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;

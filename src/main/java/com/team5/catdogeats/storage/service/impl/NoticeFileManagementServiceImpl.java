@@ -1,9 +1,9 @@
-package com.team5.catdogeats.storage.domain.service.impl;
+package com.team5.catdogeats.storage.service.impl;
 
 import com.team5.catdogeats.storage.domain.Files;
-import com.team5.catdogeats.storage.domain.repository.FilesRepository;
-import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.repository.FilesRepository;
+import com.team5.catdogeats.storage.service.NoticeFileManagementService;
+import com.team5.catdogeats.storage.service.ObjectStorageService;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeFileDownloadResponseDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
