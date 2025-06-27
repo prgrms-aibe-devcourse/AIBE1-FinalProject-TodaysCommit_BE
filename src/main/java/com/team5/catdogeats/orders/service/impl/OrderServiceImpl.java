@@ -1,5 +1,8 @@
 package com.team5.catdogeats.orders.service.impl;
 
+import com.team5.catdogeats.addresses.domain.enums.AddressType;
+import com.team5.catdogeats.addresses.dto.AddressResponseDto;
+import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.orders.domain.Orders;
@@ -8,6 +11,7 @@ import com.team5.catdogeats.orders.dto.common.DetailedOrderItemInfo;
 import com.team5.catdogeats.orders.dto.common.OrderItemInfo;
 import com.team5.catdogeats.orders.dto.request.OrderCreateRequest;
 import com.team5.catdogeats.orders.dto.response.OrderCreateResponse;
+import com.team5.catdogeats.orders.dto.response.OrderDetailResponse;
 import com.team5.catdogeats.orders.event.OrderCreatedEvent;
 import com.team5.catdogeats.orders.repository.OrderRepository;
 import com.team5.catdogeats.orders.service.OrderService;
@@ -51,6 +55,7 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TossPaymentResponseBuilder tossPaymentResponseBuilder;
+    private final AddressService addressService;
 
     /**
      * UserPrincipal을 사용한 주문 생성 (EDA + 쿠폰 할인 방식)
@@ -97,6 +102,86 @@ public class OrderServiceImpl implements OrderService {
         log.info("주문 생성 완료: orderId={}, orderNumber={}, 원가={}원, 쿠폰할인={}%, 최종금액={}원",
                 savedOrder.getId(), savedOrder.getOrderNumber(), originalTotalPrice,
                 couponDiscountRate != null ? couponDiscountRate : 0, finalTotalPrice);
+
+        return response;
+    }
+
+    /**
+     * 주문 상세 조회 구현
+     * UserPrincipal을 통한 보안 검증과 함께 주문 상세 정보를 조회합니다.
+     */
+    @Override
+    @JpaTransactional(readOnly = true)
+    public OrderDetailResponse getOrderDetail(UserPrincipal userPrincipal, Long orderNumber) {
+        log.info("주문 상세 조회 시작 - provider: {}, providerId: {}, orderNumber: {}",
+                userPrincipal.provider(), userPrincipal.providerId(), orderNumber);
+
+        // 1. 사용자 인증 및 구매자 권한 확인
+        BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(
+                userPrincipal.provider(),
+                userPrincipal.providerId()
+        ).orElseThrow(() -> {
+            log.warn("구매자를 찾을 수 없음 - provider: {}, providerId: {}",
+                    userPrincipal.provider(), userPrincipal.providerId());
+            return new NoSuchElementException("구매자 정보를 찾을 수 없습니다.");
+        });
+
+        Users user = userRepository.findById(buyerDTO.userId())
+                .orElseThrow(() -> {
+                    log.warn("사용자를 찾을 수 없음 - userId: {}", buyerDTO.userId());
+                    return new NoSuchElementException("사용자 정보를 찾을 수 없습니다.");
+                });
+
+        // 2. 주문 조회 (연관 데이터 포함)
+        Orders order = orderRepository.findOrderDetailByUserAndOrderNumber(user, orderNumber)
+                .orElseThrow(() -> {
+                    log.warn("주문을 찾을 수 없음 - userId: {}, orderNumber: {}", user.getId(), orderNumber);
+                    return new NoSuchElementException("주문을 찾을 수 없습니다.");
+                });
+
+        // 3. 사용자 기본 주소 조회 (배송지 정보로 사용)
+        AddressResponseDto defaultAddress = addressService.getDefaultAddress(userPrincipal, AddressType.PERSONAL);
+
+        // 4. 주문 상품 정보 변환
+        List<OrderDetailResponse.OrderItemDetail> orderItemDetails = order.getOrderItems().stream()
+                .map(orderItem -> new OrderDetailResponse.OrderItemDetail(
+                        orderItem.getId(),
+                        orderItem.getProducts().getId(),
+                        orderItem.getProducts().getName(),
+                        orderItem.getQuantity(),
+                        orderItem.getPrice(),
+                        orderItem.getPrice() * orderItem.getQuantity()
+                )).toList();
+
+        // 5. 총 상품 가격 계산
+        Long totalProductPrice = orderItemDetails.stream()
+                .mapToLong(OrderDetailResponse.OrderItemDetail::totalPrice)
+                .sum();
+
+        // 6. 할인 금액 및 배송비 계산 (비즈니스 로직에 따라 수정 필요)
+        Long discountAmount = calculateDiscountAmount(order, totalProductPrice);
+        Long deliveryFee = calculateDeliveryFee(order, totalProductPrice);
+
+        // 7. 받는 사람 정보 생성
+        OrderDetailResponse.RecipientInfo recipientInfo = createRecipientInfo(defaultAddress, orderNumber);
+
+        // 8. 결제 정보 생성
+        OrderDetailResponse.PaymentInfo paymentInfo = OrderDetailResponse.PaymentInfo.of(
+                totalProductPrice, discountAmount, deliveryFee);
+
+        // 9. 응답 DTO 생성
+        OrderDetailResponse response = new OrderDetailResponse(
+                order.getId(),
+                order.getOrderNumber(),
+                order.getCreatedAt().toLocalDateTime(),
+                order.getOrderStatus(),
+                recipientInfo,
+                paymentInfo,
+                orderItemDetails
+        );
+
+        log.info("주문 상세 조회 완료 - orderId: {}, orderNumber: {}, 상품 개수: {}",
+                order.getId(), order.getOrderNumber(), orderItemDetails.size());
 
         return response;
     }
@@ -163,7 +248,6 @@ public class OrderServiceImpl implements OrderService {
     /**
      * 쿠폰 할인 적용
      * 전체 주문 금액에서 쿠폰 할인률만큼 할인합니다.
-     *
      * @param originalTotalPrice 원가 총 금액
      * @param couponDiscountRate 쿠폰 할인률 (%, null이면 할인 없음)
      * @return 할인 적용된 최종 금액
@@ -258,6 +342,48 @@ public class OrderServiceImpl implements OrderService {
         log.debug("OrderCreatedEvent 발행 완료: orderId={}, 원가={}원, 쿠폰할인={}%, 최종={}원",
                 savedOrder.getId(), originalTotalPrice,
                 couponDiscountRate != null ? couponDiscountRate : 0, finalTotalPrice);
+    }
+
+    /**
+     * 할인 금액 계산 (비즈니스 로직에 따라 구현)
+     */
+    private Long calculateDiscountAmount(Orders order, Long totalProductPrice) {
+        // 현재는 주문 금액에서 실제 결제 금액을 빼서 할인 금액 계산
+        return Math.max(0L, totalProductPrice - order.getTotalPrice());
+    }
+
+    /**
+     * 배송비 계산 (비즈니스 로직에 따라 구현)
+     */
+    private Long calculateDeliveryFee(Orders order, Long totalProductPrice) {
+        // 현재는 기본 배송비 설정 (3,000원, 30,000원 이상 무료배송)
+        return totalProductPrice >= 30000L ? 0L : 3000L;
+    }
+
+    /**
+     * 받는 사람 정보 생성
+     */
+    private OrderDetailResponse.RecipientInfo createRecipientInfo(AddressResponseDto defaultAddress, Long orderNumber) {
+        if (defaultAddress == null) {
+            // 기본 주소가 없는 경우 기본값 설정
+            return new OrderDetailResponse.RecipientInfo(
+                    "수령인 미등록",
+                    "연락처 미등록",
+                    "주소 미등록",
+                    "배송 요청사항 없음"
+            );
+        }
+
+        return OrderDetailResponse.RecipientInfo.of(
+                "수령인", // TODO: 실제 수령인 이름 (별도 저장 필요)
+                defaultAddress.getPhoneNumber(),
+                defaultAddress.getCity(),
+                defaultAddress.getDistrict(),
+                defaultAddress.getNeighborhood(),
+                defaultAddress.getStreetAddress(),
+                defaultAddress.getDetailAddress(),
+                "안전하게 배송 부탁드립니다." // TODO: 실제 배송 요청사항 (별도 저장 필요)
+        );
     }
 
     /**
