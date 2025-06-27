@@ -28,9 +28,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(
-        prePostEnabled = true
-)
+@EnableMethodSecurity(prePostEnabled = true)
 @Slf4j
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -53,7 +51,7 @@ public class SecurityConfig {
                             session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers("/v1/admin/login").permitAll()
-                            .requestMatchers("/v1/admin/**").hasRole("ADMIN")
+                            .requestMatchers("/v1/admin/**").hasRole("ADMIN") // 테스트 시, permitAll() / 기존, hasRole("ADMIN")
                             .anyRequest().authenticated());
             return http.build();
         } catch (Exception e) {
@@ -87,7 +85,7 @@ public class SecurityConfig {
                             .requestMatchers("/login/oauth2/code/naver/**").permitAll()
                             .requestMatchers("/login/oauth2/code/kakao/**").permitAll()
                             .requestMatchers("/v1/auth/refresh").permitAll()
-                            .requestMatchers("/v1/notices").permitAll()
+                            .requestMatchers("/v1/notices/**").permitAll()
                             .requestMatchers("/v1/faqs").permitAll()
                             .requestMatchers("/v1/buyers/products/list").permitAll()
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()

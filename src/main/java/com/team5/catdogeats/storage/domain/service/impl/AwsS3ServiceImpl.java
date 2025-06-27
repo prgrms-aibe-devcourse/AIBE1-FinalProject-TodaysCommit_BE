@@ -1,7 +1,7 @@
-package com.team5.catdogeats.storage.service.impl;
+package com.team5.catdogeats.storage.domain.service.impl;
 
 import com.team5.catdogeats.global.config.AwsS3Config;
-import com.team5.catdogeats.storage.service.ObjectStorageService;
+import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import software.amazon.awssdk.core.sync.RequestBody;
