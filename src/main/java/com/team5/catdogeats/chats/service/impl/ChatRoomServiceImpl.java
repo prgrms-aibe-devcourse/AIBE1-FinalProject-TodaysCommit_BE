@@ -28,7 +28,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
 
     public ChatRooms createRoom(UserPrincipal principal, String vendorName) {
         try {
-        String buyerId  = validateUserPrincipal(principal);      // 로그인-사용자 = Buyer
+        String buyerId  = validateUserPrincipal(principal);
         String sellerId = sellersRepository.findByVendorName(vendorName)
                 .orElseThrow(() -> new NoSuchElementException("판매자 정보를 찾을 수 없습니다."))
                 .getUserId();
