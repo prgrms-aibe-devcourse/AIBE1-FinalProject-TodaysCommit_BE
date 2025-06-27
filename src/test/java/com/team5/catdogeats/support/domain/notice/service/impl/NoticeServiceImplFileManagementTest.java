@@ -2,7 +2,7 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
-import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
+import com.team5.catdogeats.storage.service.NoticeFileManagementService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)

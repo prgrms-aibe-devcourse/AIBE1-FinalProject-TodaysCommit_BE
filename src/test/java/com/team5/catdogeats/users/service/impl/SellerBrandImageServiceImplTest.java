@@ -1,7 +1,7 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
-import com.team5.catdogeats.storage.domain.service.ObjectStorageService;
+import com.team5.catdogeats.storage.service.ObjectStorageService;
 import com.team5.catdogeats.storage.util.ImageValidationUtil;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.SellerBrandImageResponseDTO;

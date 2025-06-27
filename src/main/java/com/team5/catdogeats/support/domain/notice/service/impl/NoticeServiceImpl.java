@@ -3,7 +3,7 @@ package com.team5.catdogeats.support.domain.notice.service.impl;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
-import com.team5.catdogeats.storage.domain.service.NoticeFileManagementService;
+import com.team5.catdogeats.storage.service.NoticeFileManagementService;
 import com.team5.catdogeats.support.domain.Notices;
 import com.team5.catdogeats.support.domain.notice.dto.*;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
