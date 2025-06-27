@@ -55,7 +55,7 @@ public class ReviewServiceImpl implements ReviewService {
         return reviewRepository.save(review).getId();
     }
 
-    @JpaTransactional
+    @JpaTransactional(readOnly = true)
     @Override
     public Page<MyReviewResponseDto> getReviewsByBuyer(UserPrincipal userPrincipal, int page, int size) {
         BuyerDTO buyerDTO = buyerRepository.findOnlyBuyerByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
@@ -76,7 +76,7 @@ public class ReviewServiceImpl implements ReviewService {
         });
     }
 
-    @JpaTransactional
+    @JpaTransactional(readOnly = true)
     @Override
     public Page<ProductReviewResponseDto> getReviewsByProductNumber(Long productNumber, int page, int size) {
         Products product = productRepository.findByProductNumber(productNumber)
