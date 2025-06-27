@@ -2,6 +2,7 @@ package com.team5.catdogeats.chats.mongo.repository;
 
 import com.team5.catdogeats.chats.domain.ChatRooms;
 import com.team5.catdogeats.chats.domain.enums.BehaviorType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Update;
@@ -17,6 +18,46 @@ public interface ChatRoomRepository extends MongoRepository<ChatRooms, String> {
 
     Optional<ChatRooms> findByIdAndSellerId(String id, String sellerId);
     Optional<ChatRooms> findByIdAndBuyerId(String id, String buyerId);
+
+
+    // 커서 페이징 용
+    @Query(
+            value = "{ 'buyerId': ?0, 'lastMessageAt': { $lt: ?1 } }",
+            sort  = "{ 'lastMessageAt': -1 }"
+    )
+    List<ChatRooms> findByBuyerIdAndLastMessageAtLessThanOrderByLastMessageAtDesc(
+            String buyerId,
+            Instant cursor,
+            Pageable pageable);
+
+    // buyerId 최신순 페이징
+    @Query(
+            value = "{ 'buyerId': ?0 }",
+            sort  = "{ 'lastMessageAt': -1 }"
+    )
+    List<ChatRooms> findByBuyerIdOrderByLastMessageAtDesc(
+            String buyerId,
+            Pageable pageable);
+
+    // sellerId + cursor 페이징 (sort 추가)
+    @Query(
+            value = "{ 'sellerId': ?0, 'lastMessageAt': { $lt: ?1 } }",
+            sort  = "{ 'lastMessageAt': -1 }"
+    )
+    List<ChatRooms> findBySellerIdAndLastMessageAtLessThanOrderByLastMessageAtDesc(
+            String sellerId,
+            Instant cursor,
+            Pageable pageable);
+
+    // sellerId 최신순 페이징
+    @Query(
+            value = "{ 'sellerId': ?0 }",
+            sort  = "{ 'lastMessageAt': -1 }"
+    )
+    List<ChatRooms> findBySellerIdOrderByLastMessageAtDesc(
+            String sellerId,
+            Pageable pageable);
+
 
 
     @Query("{ '_id': ?0 }")

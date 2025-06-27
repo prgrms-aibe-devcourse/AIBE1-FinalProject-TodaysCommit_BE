@@ -2,10 +2,7 @@ package com.team5.catdogeats.chats.controller;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.chats.domain.ChatRooms;
-import com.team5.catdogeats.chats.domain.dto.ChatRoomListDTO;
-import com.team5.catdogeats.chats.domain.dto.ChatRoomRequestDTO;
-import com.team5.catdogeats.chats.domain.dto.ChatRoomResponseDTO;
-import com.team5.catdogeats.chats.service.ChatMessageService;
+import com.team5.catdogeats.chats.domain.dto.*;
 import com.team5.catdogeats.chats.service.ChatRoomCreateService;
 import com.team5.catdogeats.chats.service.ChatRoomListService;
 import com.team5.catdogeats.global.dto.ApiResponse;
@@ -18,7 +15,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.NoSuchElementException;
 
 @Slf4j
@@ -28,7 +24,6 @@ import java.util.NoSuchElementException;
 public class ChatRoomController {
 
     private final ChatRoomCreateService ChatRoomCreateService;
-    private final ChatMessageService chatMessageService;
     private final ChatRoomListService chatRoomListService;
 
     @PostMapping("/rooms")
@@ -54,10 +49,10 @@ public class ChatRoomController {
     }
 
     @GetMapping("/rooms")
-    public ResponseEntity<ApiResponse<List<ChatRoomListDTO>>> getChatHistory(
+    public ResponseEntity<ApiResponse<ChatRoomPageResponseDTO<ChatRoomListDTO>>> getChatHistory(
             @AuthenticationPrincipal UserPrincipal principal,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "20") Integer size) {
 
         if (principal == null) {
             return ResponseEntity
@@ -66,11 +61,16 @@ public class ChatRoomController {
         }
 
         try {
-            List<ChatRoomListDTO> chatRooms = chatRoomListService.getAllChatRooms(principal);
+            ChatRoomPageRequestDTO pageRequest = ChatRoomPageRequestDTO.builder()
+                    .cursor(cursor)
+                    .size(size)
+                    .build();
 
-            log.debug("전체 채팅방 목록 조회 완료: principal={}, count={}", principal, chatRooms.size());
+            ChatRoomPageResponseDTO<ChatRoomListDTO> response =
+                    chatRoomListService.getChatRooms(principal, pageRequest);
 
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS,chatRooms));
+
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
 
         }  catch (NoSuchElementException e) {
            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND));

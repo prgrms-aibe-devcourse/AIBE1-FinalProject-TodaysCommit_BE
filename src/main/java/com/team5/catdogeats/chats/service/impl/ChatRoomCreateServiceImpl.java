@@ -2,6 +2,7 @@ package com.team5.catdogeats.chats.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.chats.domain.ChatRooms;
+import com.team5.catdogeats.chats.domain.enums.BehaviorType;
 import com.team5.catdogeats.chats.mongo.repository.ChatRoomRepository;
 import com.team5.catdogeats.chats.service.ChatRoomCreateService;
 import com.team5.catdogeats.chats.service.ChatRoomUpdateService;
@@ -56,9 +57,9 @@ public class ChatRoomCreateServiceImpl implements ChatRoomCreateService {
                                 .buyerLastReadAt(now)
                                 .sellerLastReadAt(now)
                                 .lastMessage(null)
-                                .lastMessageAt(null)
-                                .lastSenderId(null)
-                                .lastBehaviorType(null)
+                                .lastMessageAt(now)
+                                .lastSenderId(buyerId)
+                                .lastBehaviorType(BehaviorType.ENTER)
                                 .buyerUnreadCount(0)
                                 .sellerUnreadCount(0)
                                 .buyerLastSeenAt(now)
