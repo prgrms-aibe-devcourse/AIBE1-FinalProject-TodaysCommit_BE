@@ -7,6 +7,8 @@ import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
 
 public interface ProductService {
     String registerProduct(UserPrincipal userPrincipal, ProductCreateRequestDto dto);
+
     void updateProduct(ProductUpdateRequestDto dto);
+
     void deleteProduct(ProductDeleteRequestDto dto);
 }
