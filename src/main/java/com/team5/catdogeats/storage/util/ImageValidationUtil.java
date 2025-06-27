@@ -16,12 +16,11 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class ImageValidationUtil {
 
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final int MAX_FILENAME_LENGTH = 255;
 
     /**
      * 통합 이미지 파일 검증
-     * - 기본 속성 검사 (크기, NULL 등)
+     * - 기본 속성 검사 (NULL)
      * - 실제 파일 내용 검증 (Magic Number)
      * - 보안 강화된 단일 검증 메서드
      *
@@ -54,10 +53,6 @@ public class ImageValidationUtil {
     private void validateBasicProperties(MultipartFile imageFile) {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("이미지 파일이 비어있습니다.");
-        }
-
-        if (imageFile.getSize() > MAX_FILE_SIZE) {
-            throw new IllegalArgumentException("이미지 파일 크기는 10MB를 초과할 수 없습니다.");
         }
     }
 

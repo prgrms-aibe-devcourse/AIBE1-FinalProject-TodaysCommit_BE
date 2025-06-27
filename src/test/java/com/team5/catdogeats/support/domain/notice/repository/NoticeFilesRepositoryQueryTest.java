@@ -2,7 +2,7 @@ package com.team5.catdogeats.support.domain.notice.repository;
 
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.storage.domain.mapping.NoticeFiles;
-import com.team5.catdogeats.storage.domain.repository.FilesRepository;
+import com.team5.catdogeats.storage.repository.FilesRepository;
 import com.team5.catdogeats.support.domain.Notices;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

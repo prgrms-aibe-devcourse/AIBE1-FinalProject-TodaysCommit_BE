@@ -14,13 +14,12 @@ import lombok.*;
 @Builder
 public class ReviewsImages extends BaseEntity {
     @Id
-    @Column(length = 36)
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(length = 36)
     private String id;  // 이 id는 reviews 테이블의 id를 FK로 참조
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @MapsId
-    @JoinColumn(name = "id", nullable = false,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "review_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_reviews_images_review_id"))
     private Reviews reviews;
 
