@@ -8,7 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
@@ -19,7 +18,7 @@ import java.util.Optional;
  * Orders 엔티티의 실제 ID 타입(String)에 맞게 수정되었습니다.
  */
 public interface OrderRepository extends JpaRepository<Orders, String> {
-
+/*
     /**
      * 주문 번호로 주문 조회
      * @param orderNumber 주문 번호
@@ -79,18 +78,16 @@ public interface OrderRepository extends JpaRepository<Orders, String> {
     boolean existsByUserAndOrderNumber(Users user, Long orderNumber);
 
     /**
-     * 주문 상세 조회를 위한 연관 데이터 포함 조회
-     * OrderItems, Products, Payments를 join fetch하여 N+1 문제 방지
+     * 주문 상세 조회 (OrderItems와 Products 함께 조회)
      * @param user 사용자 엔티티
      * @param orderNumber 주문 번호
      * @return 연관 데이터를 포함한 주문 정보 (Optional)
      */
     @Query("""
-    SELECT DISTINCT o FROM Orders o 
-    LEFT JOIN FETCH o.orderItems oi 
+    SELECT DISTINCT o FROM Orders o
+    LEFT JOIN FETCH o.orderItems oi
     LEFT JOIN FETCH oi.products p
-    LEFT JOIN FETCH o.payments pay
-    WHERE o.user = :user 
+    WHERE o.user = :user
     AND o.orderNumber = :orderNumber
     """)
     Optional<Orders> findOrderDetailByUserAndOrderNumber(@Param("user") Users user, @Param("orderNumber") Long orderNumber);

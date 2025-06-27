@@ -106,9 +106,9 @@ public class OrderServiceImpl implements OrderService {
         return response;
     }
 
+    // ===== getOrderDetail 메서드 구현 =====
     /**
      * 주문 상세 조회 구현
-     * UserPrincipal을 통한 보안 검증과 함께 주문 상세 정보를 조회합니다.
      */
     @Override
     @JpaTransactional(readOnly = true)
@@ -132,7 +132,7 @@ public class OrderServiceImpl implements OrderService {
                     return new NoSuchElementException("사용자 정보를 찾을 수 없습니다.");
                 });
 
-        // 2. 주문 조회 (연관 데이터 포함)
+        // 2. 주문 조회 (OrderItems와 Products 함께 조회)
         Orders order = orderRepository.findOrderDetailByUserAndOrderNumber(user, orderNumber)
                 .orElseThrow(() -> {
                     log.warn("주문을 찾을 수 없음 - userId: {}, orderNumber: {}", user.getId(), orderNumber);
@@ -147,7 +147,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(orderItem -> new OrderDetailResponse.OrderItemDetail(
                         orderItem.getId(),
                         orderItem.getProducts().getId(),
-                        orderItem.getProducts().getName(),
+                        orderItem.getProducts().getTitle(), // getName() → getTitle()로 수정
                         orderItem.getQuantity(),
                         orderItem.getPrice(),
                         orderItem.getPrice() * orderItem.getQuantity()
@@ -158,7 +158,7 @@ public class OrderServiceImpl implements OrderService {
                 .mapToLong(OrderDetailResponse.OrderItemDetail::totalPrice)
                 .sum();
 
-        // 6. 할인 금액 및 배송비 계산 (비즈니스 로직에 따라 수정 필요)
+        // 6. 할인 금액 및 배송비 계산
         Long discountAmount = calculateDiscountAmount(order, totalProductPrice);
         Long deliveryFee = calculateDeliveryFee(order, totalProductPrice);
 
