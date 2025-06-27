@@ -2,9 +2,12 @@ package com.team5.catdogeats.orders.domain;
 
 import com.team5.catdogeats.baseEntity.BaseEntity;
 import com.team5.catdogeats.orders.domain.enums.OrderStatus;
+import com.team5.catdogeats.orders.domain.mapping.OrderItems;
 import com.team5.catdogeats.users.domain.Users;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -35,4 +38,8 @@ public class Orders extends BaseEntity {
     @Column(name = "total_price", nullable = false)
     private Long totalPrice;
 
+
+    // 주문 상품 목록
+    @OneToMany(mappedBy = "orders", fetch = FetchType.LAZY)
+    private List<OrderItems> orderItems;
 }
