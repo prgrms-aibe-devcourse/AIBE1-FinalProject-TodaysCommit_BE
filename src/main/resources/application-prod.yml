@@ -1,6 +1,6 @@
 batch:
   withdrawn:
-    cron: "${WITHDRAW_CRON:0 30 2 * * ?}"
+    cron: ${WITHDRAW_CRON:0 30 2 * * ?}
     chunk-size: ${WITHDRAW_CHUNK:1000}
 spring:
   batch:

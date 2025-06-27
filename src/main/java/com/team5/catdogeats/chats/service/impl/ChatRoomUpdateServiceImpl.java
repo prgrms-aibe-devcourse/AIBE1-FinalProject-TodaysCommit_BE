@@ -122,6 +122,7 @@ public class ChatRoomUpdateServiceImpl implements ChatRoomUpdateService {
     /**
      * 사용자의 전체 안읽은 메시지 개수 조회
      */
+    @Override
     public int getTotalUnreadCount(String userId) {
         try {
             String userRole = userIdCacheService.getCachedRoleByUserId(userId);
