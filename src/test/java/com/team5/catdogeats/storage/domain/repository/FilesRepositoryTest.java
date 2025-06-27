@@ -1,6 +1,7 @@
 package com.team5.catdogeats.storage.domain.repository;
 
 import com.team5.catdogeats.storage.domain.Files;
+import com.team5.catdogeats.storage.repository.FilesRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

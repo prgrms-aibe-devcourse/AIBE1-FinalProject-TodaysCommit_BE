@@ -1,4 +1,4 @@
-package com.team5.catdogeats.storage.domain.service;
+package com.team5.catdogeats.storage.service;
 
 import com.team5.catdogeats.storage.domain.Files;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeFileDownloadResponseDTO;

@@ -1,4 +1,4 @@
-package com.team5.catdogeats.pets.domain.dto;
+package com.team5.catdogeats.global.dto;
 
 import java.util.List;
 
