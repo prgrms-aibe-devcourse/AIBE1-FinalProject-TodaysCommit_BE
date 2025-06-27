@@ -4,7 +4,10 @@ import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.chats.domain.ChatRooms;
 import com.team5.catdogeats.chats.mongo.repository.ChatRoomRepository;
 import com.team5.catdogeats.chats.service.ChatRoomService;
+import com.team5.catdogeats.chats.service.ChatRoomUpdateService;
 import com.team5.catdogeats.chats.service.UserIdCacheService;
+import com.team5.catdogeats.global.config.MongoTransactional;
+import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -20,6 +24,7 @@ public class ChatRoomServiceImpl implements ChatRoomService {
     private final ChatRoomRepository chatRoomRepository;
     private final UserIdCacheService userIdCacheService;
     private final SellersRepository sellersRepository;
+    private final ChatRoomUpdateService chatRoomUpdateService;
 
     public ChatRooms createRoom(UserPrincipal principal, String vendorName) {
         try {
@@ -46,6 +51,30 @@ public class ChatRoomServiceImpl implements ChatRoomService {
                     });
         } catch (Exception e) {
             log.error("Error creating chat room", e);
+            throw e;
+        }
+    }
+
+    @MongoTransactional
+    public void markMessagesAsRead(String roomId, String userId) {
+        try {
+            String role = userIdCacheService.getCachedRoleByUserId(userId);
+            // 채팅방 참여자 검증
+            if (Objects.equals(Role.ROLE_SELLER.toString(), role)) {
+                chatRoomRepository.findByIdAndSellerId(roomId, userId)
+                        .orElseThrow(() -> new NoSuchElementException("유저 정보가 없습니다."));
+            } else if (Objects.equals(Role.ROLE_BUYER.toString(), role)) {
+                chatRoomRepository.findByIdAndBuyerId(roomId, userId)
+                        .orElseThrow(() -> new NoSuchElementException("유저 정보가 없습니다."));
+            } else {
+                throw new IllegalStateException("권한 정보가 올바르지 않습니다.");
+            }
+            // 안읽은 메시지 개수 초기화 및 마지막 읽음 시간 업데이트
+            chatRoomUpdateService.markMessagesAsRead(roomId, userId);
+
+            log.debug("메시지 읽음 처리 완료: roomId={}, userId={}", roomId, userId);
+        } catch (Exception e) {
+            log.error("메시지 읽음 처리 실패: roomId={}, userId={}", roomId, userId, e);
             throw e;
         }
     }
