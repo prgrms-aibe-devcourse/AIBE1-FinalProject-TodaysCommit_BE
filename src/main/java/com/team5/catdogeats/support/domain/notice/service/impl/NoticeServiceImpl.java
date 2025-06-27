@@ -9,6 +9,8 @@ import com.team5.catdogeats.support.domain.notice.dto.*;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeRepository;
 import com.team5.catdogeats.support.domain.notice.service.NoticeService;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
@@ -26,7 +28,7 @@ public class NoticeServiceImpl implements NoticeService {
 
     private final NoticeRepository noticeRepository;
     private final NoticeFilesRepository noticeFilesRepository;
-    private final NoticeFileManagementService noticeFileManagementService;  // 🆕 추가
+    private final NoticeFileManagementService noticeFileManagementService;
 
     private Sort createSort(String sortBy) {
         return switch (sortBy) {
@@ -54,6 +56,10 @@ public class NoticeServiceImpl implements NoticeService {
         return NoticeListResponseDTO.from(responsePage);
     }
 
+    // ✅ 추가
+    @PersistenceContext
+    private EntityManager em;
+
     // ========== 공지사항 상세 조회 ==========
     @Override
     @JpaTransactional
@@ -61,13 +67,14 @@ public class NoticeServiceImpl implements NoticeService {
         Notices notice = noticeRepository.findById(noticeId)
                 .orElseThrow(() -> new NoSuchElementException("공지사항을 찾을 수 없습니다. ID: " + noticeId));
 
-        // ✅ 원자적 조회수 증가 (동시성 안전)
+        // 원자적 조회수 증가 (동시성 안전)
         noticeRepository.incrementViewCount(noticeId);
 
-        List<NoticeFiles> attachments = noticeFilesRepository.findByNoticesId(noticeId);
+        // ✅ 추가
+        em.flush();      // DB 반영 (JPQL bulk-update 반영)
+        em.refresh(notice);  // 엔티티 새로고침 (DB에서 다시 select 해서 엔티티 동기화)
 
-        // ✅ 증가된 조회수 반영을 위해 엔티티 새로고침
-        notice.setViewCount(notice.getViewCount() + 1);  // 메모리상 동기화
+        List<NoticeFiles> attachments = noticeFilesRepository.findByNoticesId(noticeId);
 
         return NoticeResponseDTO.fromWithAttachments(notice, attachments);
     }

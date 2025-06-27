@@ -11,6 +11,7 @@ import com.team5.catdogeats.support.domain.notice.dto.NoticeResponseDTO;
 import com.team5.catdogeats.support.domain.notice.dto.NoticeUpdateRequestDTO;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeFilesRepository;
 import com.team5.catdogeats.support.domain.notice.repository.NoticeRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,7 +19,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import jakarta.persistence.EntityManager;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +33,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("공지사항 CRUD 서비스 테스트")
+@DisplayName("공지사항 CRUD 서비스 테스트 (Mock)")
 class NoticeServiceImplCRUDTest {
 
     @Mock
@@ -46,7 +49,10 @@ class NoticeServiceImplCRUDTest {
     private ObjectStorageService objectStorageService;
 
     @Mock
-    private NoticeFileManagementService noticeFileManagementService; // 🆕 추가
+    private NoticeFileManagementService noticeFileManagementService;
+
+    @Mock
+    private EntityManager entityManager; // ✅ EntityManager Mock 추가
 
     @InjectMocks
     private NoticeServiceImpl noticeService;
@@ -73,29 +79,76 @@ class NoticeServiceImplCRUDTest {
         updateRequestDTO = new NoticeUpdateRequestDTO();
         updateRequestDTO.setTitle("수정된 공지사항");
         updateRequestDTO.setContent("수정된 내용");
+
+        // ✅ Mock EntityManager를 Service에 주입
+        ReflectionTestUtils.setField(noticeService, "em", entityManager);
     }
 
     @Test
-    @DisplayName("공지사항 상세 조회 - 성공 (조회수 증가)")
-    void getNotice_Success() {
+    @DisplayName("공지사항 상세 조회 - 성공 (수정된 코드 검증)")
+    void getNotice_Success_WithUpdatedLogic() {
         // given
         String noticeId = "test-notice-id";
+        Notices originalNotice = Notices.builder()
+                .id(noticeId)
+                .title("테스트 공지사항")
+                .content("테스트 내용")
+                .viewCount(10L) // 초기 조회수
+                .build();
 
-        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
+        Notices refreshedNotice = Notices.builder()
+                .id(noticeId)
+                .title("테스트 공지사항")
+                .content("테스트 내용")
+                .viewCount(11L) // DB에서 증가된 조회수
+                .build();
+
+        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(originalNotice));
         given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(new ArrayList<>());
+
+        // refresh 후 엔티티가 업데이트된 상태를 시뮬레이션
+        doAnswer(invocation -> {
+            // refresh 시뮬레이션: 엔티티의 viewCount를 업데이트
+            originalNotice.setViewCount(11L);
+            return null;
+        }).when(entityManager).refresh(originalNotice);
 
         // when
         NoticeResponseDTO result = noticeService.getNotice(noticeId);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(testNotice.getId());
-        assertThat(result.getTitle()).isEqualTo(testNotice.getTitle());
-        assertThat(result.getContent()).isEqualTo(testNotice.getContent());
+        assertThat(result.getId()).isEqualTo(noticeId);
+        assertThat(result.getTitle()).isEqualTo("테스트 공지사항");
+        assertThat(result.getViewCount()).isEqualTo(11L); // ✅ 증가된 조회수 확인
 
-        // 조회수 증가 후 저장되는지 확인 (JpaTransactional에 의해 자동 저장)
+        // ✅ 수정된 코드의 핵심 로직 검증
         verify(noticeRepository).findById(noticeId);
+        verify(noticeRepository).incrementViewCount(noticeId); // 조회수 증가 호출 확인
+        verify(entityManager).flush(); // DB 반영 확인
+        verify(entityManager).refresh(originalNotice); // 엔티티 새로고침 확인
         verify(noticeFilesRepository).findByNoticesId(noticeId);
+    }
+
+    @Test
+    @DisplayName("공지사항 상세 조회 - EntityManager 동작 순서 검증")
+    void getNotice_EntityManagerCallOrder() {
+        // given
+        String noticeId = "test-notice-id";
+        given(noticeRepository.findById(noticeId)).willReturn(Optional.of(testNotice));
+        given(noticeFilesRepository.findByNoticesId(noticeId)).willReturn(new ArrayList<>());
+
+        // when
+        noticeService.getNotice(noticeId);
+
+        // then - 호출 순서 검증
+        var inOrder = inOrder(noticeRepository, entityManager, noticeFilesRepository);
+
+        inOrder.verify(noticeRepository).findById(noticeId);
+        inOrder.verify(noticeRepository).incrementViewCount(noticeId);
+        inOrder.verify(entityManager).flush(); // flush가 먼저
+        inOrder.verify(entityManager).refresh(testNotice); // refresh가 나중에
+        inOrder.verify(noticeFilesRepository).findByNoticesId(noticeId);
     }
 
     @Test
@@ -109,6 +162,11 @@ class NoticeServiceImplCRUDTest {
         assertThatThrownBy(() -> noticeService.getNotice(noticeId))
                 .isInstanceOf(NoSuchElementException.class)
                 .hasMessageContaining("공지사항을 찾을 수 없습니다");
+
+        // EntityManager 호출되지 않아야 함
+        verify(entityManager, never()).flush();
+        verify(entityManager, never()).refresh(any());
+        verify(noticeRepository, never()).incrementViewCount(anyString());
     }
 
     @Test
