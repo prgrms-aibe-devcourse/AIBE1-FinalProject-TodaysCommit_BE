@@ -52,9 +52,13 @@ public class AdminAuthenticationServiceImpl implements AdminAuthenticationServic
             throw new BadCredentialsException("이메일 또는 비밀번호가 올바르지 않습니다.");
         }
 
-        // 4. 로그인 시간 업데이트
-        admin.updateLastLogin();
+        // 4. 첫 로그인 상태 저장 (업데이트 전에 미리 저장)
+        boolean isFirstLogin = admin.getIsFirstLogin();
+
+        // 5. 로그인 시간만 업데이트 (첫 로그인 상태는 유지)
+        admin.updateLastLoginTime(); // ← 변경: isFirstLogin을 건드리지 않는 메서드 사용
         adminRepository.save(admin);
+
 
         // 5. Spring Security Authentication 객체 생성 및 설정 (부서별 권한 포함)
         Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
@@ -77,20 +81,30 @@ public class AdminAuthenticationServiceImpl implements AdminAuthenticationServic
                 .name(admin.getName())
                 .department(admin.getDepartment())
                 .loginTime(ZonedDateTime.now())
-                .isFirstLogin(admin.getIsFirstLogin())
+                .isFirstLogin(isFirstLogin)
                 .build();
 
         session.setAttribute(ADMIN_SESSION_KEY, sessionInfo);
         session.setMaxInactiveInterval(30 * 60); // 30분 세션 만료
 
-        log.info("관리자 로그인 성공: email={}, name={}, department={}",
-                admin.getEmail(), admin.getName(), admin.getDepartment());
+        log.info("관리자 로그인 성공: email={}, name={}, department={},isFirstLogin={}",
+                admin.getEmail(), admin.getName(), admin.getDepartment(), admin.getIsFirstLogin());
+
+        String redirectUrl = admin.getIsFirstLogin()
+                ? "/v1/admin/change-password"
+                : "/v1/admin/dashboard";
+
+        String message = admin.getIsFirstLogin()
+                ? "첫 로그인입니다. 보안을 위해 비밀번호를 변경해주세요."
+                : "로그인 성공";
+
+
 
         return AdminLoginResponseDTO.builder()
                 .email(admin.getEmail())
                 .name(admin.getName())
                 .department(admin.getDepartment())
-                .isFirstLogin(admin.getIsFirstLogin())
+                .isFirstLogin(isFirstLogin)
                 .lastLoginAt(admin.getLastLoginAt())
                 .redirectUrl(admin.getIsFirstLogin() ? "/v1/admin/change-password" : "/v1/admin/dashboard")
                 .message("로그인 성공")
@@ -132,6 +146,7 @@ public class AdminAuthenticationServiceImpl implements AdminAuthenticationServic
 
         // 비밀번호 변경
         admin.changePassword(passwordEncoder.encode(request.newPassword()));
+        admin.completeFirstLogin();
         adminRepository.save(admin);
 
         // 세션 정보 업데이트

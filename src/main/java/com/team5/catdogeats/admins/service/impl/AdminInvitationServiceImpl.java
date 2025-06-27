@@ -70,16 +70,16 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
         String verificationCode = generateVerificationCode();
         ZonedDateTime expiry = ZonedDateTime.now().plusHours(expirationHours);
 
-        // 5. 초기 비밀번호 생성 (임시)
-        String initialPassword = generateInitialPassword();
 
-        // 6. 관리자 계정 생성 (비활성화 상태)
+        // 5. 관리자 계정 생성 (비활성화 상태)
+        String tempPassword = generateInitialPassword(); // 임시 비밀번호
+
         Admins admin = Admins.builder()
                 .email(request.email())
                 .name(request.name())
                 .department(request.department())
                 .adminRole(AdminRole.ROLE_ADMIN)
-                .password(passwordEncoder.encode(initialPassword))
+                .password(passwordEncoder.encode(tempPassword)) // 임시 비밀번호 (인증 시 재생성됨)
                 .isActive(false)
                 .isFirstLogin(true)
                 .build();
@@ -88,7 +88,7 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
         adminRepository.save(admin);
 
         // 7. 인증 이메일 발송
-        sendVerificationEmail(request.email(), request.name(), verificationCode, initialPassword, request.department());
+        sendVerificationEmail(request.email(), request.name(), verificationCode,request.department());
 
         log.info("관리자 초대 완료: email={}, name={}, department={}", request.email(), request.name(), request.department());
 
@@ -123,12 +123,12 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
     /**
      * 인증 이메일 발송
      */
-    private void sendVerificationEmail(String email, String name, String verificationCode, String initialPassword, Department department) {
+    private void sendVerificationEmail(String email, String name, String verificationCode,Department department) {
         try {
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(email);
             message.setSubject("[CatDogEats] 관리자 계정 인증 안내");
-            message.setText(buildEmailContent(name, verificationCode, initialPassword, department));
+            message.setText(buildEmailContent(name, verificationCode,department));
 
             mailSender.send(message);
             log.info("인증 이메일 발송 완료: {}", email);
@@ -142,7 +142,7 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
     /**
      * 이메일 내용 구성
      */
-    private String buildEmailContent(String name, String verificationCode, String initialPassword, Department department) {
+    private String buildEmailContent(String name, String verificationCode, Department department) {
         String departmentName = getDepartmentDisplayName(department);
 
         return String.format("""
@@ -153,7 +153,7 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
             ===== 계정 정보 =====
             부서: %s
             인증코드: %s
-            초기 비밀번호: %s
+            
             
             ===== 계정 활성화 방법 =====
             1. 아래 링크로 접속해주세요.
@@ -166,8 +166,8 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
             ※ 인증코드는 1시간 동안만 유효합니다.
             ※ 문의사항이 있으시면 시스템 관리자에게 연락해주세요.
             
-            고양이강아지잇츠 관리팀
-            """, name, departmentName, departmentName, verificationCode, initialPassword, baseUrl);
+            CatDogEats 관리팀
+            """, name, departmentName, departmentName, verificationCode, baseUrl);
     }
 
     /**

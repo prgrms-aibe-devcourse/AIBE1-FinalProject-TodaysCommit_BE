@@ -11,6 +11,6 @@ public record AdminVerificationResponseDTO(
         String name,
         boolean isVerified,
         String message,
-        String redirectUrl
-) {
-}
+        String redirectUrl,
+        String initialPassword
+) {}

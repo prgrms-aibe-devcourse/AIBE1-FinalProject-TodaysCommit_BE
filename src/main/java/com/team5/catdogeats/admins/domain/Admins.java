@@ -88,12 +88,20 @@ public class Admins extends BaseEntity {
         this.verificationCodeExpiry = null;
     }
 
+
+
     /**
-     * 로그인 시간 업데이트
+     * 첫 로그인 완료 처리 (비밀번호 변경 후 호출)
      */
-    public void updateLastLogin() {
-        this.lastLoginAt = ZonedDateTime.now();
+    public void completeFirstLogin() {
         this.isFirstLogin = false;
+    }
+
+    /**
+     * 로그인 시간만 업데이트 (첫 로그인 상태는 변경하지 않음)
+     */
+    public void updateLastLoginTime() {
+        this.lastLoginAt = ZonedDateTime.now();
     }
 
     /**
@@ -103,4 +111,5 @@ public class Admins extends BaseEntity {
         this.password = newPassword;
         this.isFirstLogin = false;
     }
+
 }

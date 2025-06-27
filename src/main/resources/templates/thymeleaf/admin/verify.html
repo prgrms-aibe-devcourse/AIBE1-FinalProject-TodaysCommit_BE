@@ -233,6 +233,171 @@
         .instruction-list li {
             margin-bottom: 0.25rem;
         }
+
+        /* ✨ 새로 추가된 모달 스타일 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95) translateY(-20px);
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .modal-header {
+            padding: 2rem 2rem 1rem 2rem;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            padding: 1rem 2rem 2rem 2rem;
+            text-align: center;
+        }
+
+        .password-field-container {
+            background-color: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .password-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+        }
+
+        .password-display {
+            flex: 1;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #374151;
+            background: transparent;
+            border: none;
+            outline: none;
+            letter-spacing: 0.1rem;
+        }
+
+        .icon-button {
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-button:hover {
+            transform: scale(1.1);
+        }
+
+        .toggle-button {
+            background-color: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .toggle-button:hover {
+            background-color: #e5e7eb;
+            color: #374151;
+        }
+
+        .copy-button {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
+
+        .copy-button:hover {
+            background-color: #bfdbfe;
+            color: #1d4ed8;
+        }
+
+        .security-warning {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .security-warning-text {
+            color: #dc2626;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .copy-success {
+            background-color: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 1rem 2rem;
+            background-color: #f5a623;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        }
+
+        .login-button:hover {
+            background-color: #e69500;
+            transform: translateY(-1px);
+        }
+
+        .password-hidden {
+            letter-spacing: 0.2rem;
+        }
     </style>
 </head>
 <body>
@@ -279,7 +444,7 @@
             <ul class="instruction-list">
                 <li>이메일로 발송된 6자리 인증코드를 입력해주세요</li>
                 <li>인증코드는 1시간 동안만 유효합니다</li>
-                <li>인증 완료 후 로그인하여 비밀번호를 변경해주세요</li>
+                <li>인증 완료 후 표시되는 초기 비밀번호로 로그인해주세요</li>
             </ul>
         </div>
 
@@ -385,8 +550,86 @@
     </div>
 </div>
 
+<!-- ✨ 새로 추가된 초기 비밀번호 모달 -->
+<div id="passwordModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <div class="mb-4">
+                <span class="material-icons-outlined text-6xl text-green-500">check_circle</span>
+            </div>
+            <h3 class="text-2xl font-bold text-green-600 mb-2">계정 인증 완료!</h3>
+            <p class="text-gray-600">
+                축하합니다! 계정이 성공적으로 활성화되었습니다.
+            </p>
+        </div>
+
+        <div class="modal-body">
+            <div class="password-field-container">
+                <label class="block text-sm font-bold text-gray-700 mb-3">
+                    🔑 초기 비밀번호
+                </label>
+                <div class="password-input-group">
+                    <input
+                            type="password"
+                            id="initialPasswordField"
+                            class="password-display"
+                            readonly
+                            value=""
+                    >
+                    <button
+                            type="button"
+                            onclick="togglePasswordVisibility()"
+                            class="icon-button toggle-button"
+                            title="비밀번호 보기/숨기기"
+                    >
+                        <span class="material-icons-outlined" id="passwordToggleIcon">visibility</span>
+                    </button>
+                    <button
+                            type="button"
+                            onclick="copyPassword()"
+                            class="icon-button copy-button"
+                            title="비밀번호 복사"
+                    >
+                        <span class="material-icons-outlined">content_copy</span>
+                    </button>
+                </div>
+
+                <div id="copySuccess" class="copy-success">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-outlined text-sm">check</span>
+                        <span>비밀번호가 클립보드에 복사되었습니다!</span>
+                    </div>
+                </div>
+
+                <div class="security-warning">
+                    <div class="flex items-start gap-2">
+                        <span class="material-icons-outlined text-red-500 text-base mt-0.5">warning</span>
+                        <div>
+                            <p class="security-warning-text mb-1">보안 중요사항</p>
+                            <ul class="text-sm text-red-600 space-y-1">
+                                <li>• 이 비밀번호를 안전한 곳에 보관하세요</li>
+                                <li>• 로그인 후 반드시 비밀번호를 변경하세요</li>
+                                <li>• 이 화면을 닫으면 다시 확인할 수 없습니다</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" onclick="goToLogin()" class="login-button">
+                <div class="flex items-center justify-center gap-2">
+                    <span class="material-icons-outlined">login</span>
+                    <span>로그인 페이지로 이동</span>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // 인증 처리
+    // 인증 처리 - ✨ 수정된 부분
     async function handleVerify(event) {
         event.preventDefault();
 
@@ -425,18 +668,17 @@
             const result = await response.json();
 
             if (response.ok && result.success) {
-                // 인증 성공
-                showAlert('계정 인증이 완료되었습니다! 로그인 페이지로 이동합니다.', 'success');
-
-                // 2초 후 리다이렉트
-                setTimeout(() => {
-                    if (result.data && result.data.redirectUrl) {
-                        window.location.href = result.data.redirectUrl;
-                    } else {
+                // ✨ 인증 성공 - 초기 비밀번호 모달 표시
+                if (result.data.initialPassword) {
+                    showInitialPasswordModal(result.data.initialPassword);
+                } else {
+                    // 이미 활성화된 계정의 경우
+                    showAlert('이미 활성화된 계정입니다. 로그인 페이지로 이동합니다.', 'info');
+                    setTimeout(() => {
                         window.location.href = '/v1/admin/login';
-                    }
-                }, 1500);
-
+                    }, 2000);
+                }
+                setLoading(false);
             } else {
                 // 인증 실패
                 const errorMessage = result.message || "인증에 실패했습니다.";
@@ -450,6 +692,66 @@
             setLoading(false);
         }
     }
+
+    // ✨ 새로 추가된 함수들
+
+    // 초기 비밀번호 모달 표시
+    function showInitialPasswordModal(initialPassword) {
+        document.getElementById('initialPasswordField').value = initialPassword;
+        document.getElementById('passwordModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    // 비밀번호 표시/숨김 토글
+    function togglePasswordVisibility() {
+        const field = document.getElementById('initialPasswordField');
+        const icon = document.getElementById('passwordToggleIcon');
+
+        if (field.type === 'password') {
+            field.type = 'text';
+            field.classList.remove('password-hidden');
+            icon.textContent = 'visibility_off';
+        } else {
+            field.type = 'password';
+            field.classList.add('password-hidden');
+            icon.textContent = 'visibility';
+        }
+    }
+
+    // 비밀번호 복사
+    async function copyPassword() {
+        const field = document.getElementById('initialPasswordField');
+        const copySuccess = document.getElementById('copySuccess');
+
+        try {
+            // 클립보드 API 사용
+            await navigator.clipboard.writeText(field.value);
+            showCopySuccess();
+        } catch (err) {
+            // 폴백: 텍스트 선택 후 복사
+            field.select();
+            field.setSelectionRange(0, 99999); // 모바일 대응
+            document.execCommand('copy');
+            showCopySuccess();
+        }
+    }
+
+    // 복사 성공 메시지 표시
+    function showCopySuccess() {
+        const copySuccess = document.getElementById('copySuccess');
+        copySuccess.style.display = 'block';
+
+        setTimeout(() => {
+            copySuccess.style.display = 'none';
+        }, 3000);
+    }
+
+    // 로그인 페이지로 이동
+    function goToLogin() {
+        window.location.href = '/v1/admin/login';
+    }
+
+    // ✨ 기존 함수들은 동일...
 
     // 인증코드 재발송
     document.getElementById('resendButton').addEventListener('click', async function() {
@@ -550,6 +852,20 @@
         document.getElementById('warningMessage').style.display = 'none';
     }
 
+    // 모달 외부 클릭 시 닫기 방지 (보안상 중요)
+    document.getElementById('passwordModal').addEventListener('click', function(e) {
+        // 모달 외부 클릭해도 닫히지 않도록 처리
+        e.stopPropagation();
+    });
+
+    // ESC 키로 모달 닫기 방지 (보안상 중요)
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && document.getElementById('passwordModal').classList.contains('active')) {
+            // ESC 키로 모달을 닫지 않음 (사용자가 반드시 비밀번호를 확인하도록)
+            e.preventDefault();
+        }
+    });
+
     // 페이지 로드 시 초기화
     document.addEventListener('DOMContentLoaded', function() {
         // 인증코드 필드에 포커스
@@ -563,7 +879,7 @@
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Enter') {
             const verifyButton = document.getElementById('verifyButton');
-            if (!verifyButton.disabled) {
+            if (!verifyButton.disabled && !document.getElementById('passwordModal').classList.contains('active')) {
                 handleVerify(event);
             }
         }

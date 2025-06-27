@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
@@ -29,6 +30,7 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
     private final AdminRepository adminRepository;
     private final JavaMailSender mailSender;
     private final SecureRandom secureRandom = new SecureRandom();
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${app.admin.base-url}")
     private String baseUrl;
@@ -48,6 +50,7 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
                     .isVerified(true)
                     .message("이미 활성화된 계정입니다.")
                     .redirectUrl(baseUrl + "/v1/admin/login")
+                    .initialPassword(null)
                     .build();
         }
 
@@ -63,8 +66,15 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
             throw new VerificationCodeExpiredException("인증코드가 만료되었습니다. 새로운 인증코드를 요청해주세요.");
         }
 
-        // 5. 계정 활성화
+        // 5.초기 비밀번호 생성 (인증 시점에 새로 생성)
+        String initialPassword = generateInitialPassword();
+
+        // 6. 계정 활성화 및 초기 비밀번호 설정
         admin.activate();
+
+        admin.setPassword(passwordEncoder.encode(initialPassword)); // 새 비밀번호로 설정
+        admin.setIsFirstLogin(true); // 첫 로그인 플래그 유지
+
         adminRepository.save(admin);
 
         log.info("관리자 계정 활성화 완료: email={}, name={}", admin.getEmail(), admin.getName());
@@ -75,6 +85,7 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
                 .isVerified(true)
                 .message("계정이 성공적으로 활성화되었습니다. 이제 로그인할 수 있습니다.")
                 .redirectUrl(baseUrl + "/v1/admin/login")
+                .initialPassword(initialPassword)
                 .build();
     }
 
@@ -99,6 +110,19 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
 
         log.info("인증코드 재발송: email={}", email);
         return newCode;
+    }
+
+
+    /**
+     * 초기 비밀번호 생성 (8자리 영문+숫자)
+     */
+    private String generateInitialPassword() {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        StringBuilder password = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            password.append(chars.charAt(secureRandom.nextInt(chars.length())));
+        }
+        return password.toString();
     }
 
     /**
