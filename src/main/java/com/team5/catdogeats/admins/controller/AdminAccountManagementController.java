@@ -47,7 +47,7 @@ public class AdminAccountManagementController {
 
         AdminSessionInfo sessionInfo = controllerUtils.requireAdminDepartment(session);
         model.addAttribute("admin", sessionInfo);
-        return "thymeleaf/admin/account-management";
+        return "thymeleaf/administratorPage_account_management";
     }
 
     /**

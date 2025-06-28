@@ -34,7 +34,7 @@ public class AdminSettingsController {
         if (redirectResult != null) {
             return redirectResult;
         }
-        return "thymeleaf/admin/settings";
+        return "thymeleaf/administratorPage_settings";
     }
 
     /**

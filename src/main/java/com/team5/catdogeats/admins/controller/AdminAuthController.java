@@ -43,7 +43,7 @@ public class AdminAuthController {
                     ? "redirect:/v1/admin/change-password"
                     : "redirect:/v1/admin/dashboard";
         }
-        return "thymeleaf/admin/login";
+        return "thymeleaf/administratorPage_login";
     }
 
     /**
@@ -77,7 +77,7 @@ public class AdminAuthController {
         AdminSessionInfo sessionInfo = controllerUtils.requireSessionInfo(session);
         model.addAttribute("adminName", sessionInfo.getName());
         model.addAttribute("isFirstLogin", sessionInfo.isFirstLogin());
-        return "thymeleaf/admin/change-password";
+        return "thymeleaf/administratorPage_change_password";
     }
 
     /**
@@ -106,7 +106,7 @@ public class AdminAuthController {
 
         AdminSessionInfo sessionInfo = controllerUtils.requireSessionInfo(session);
         model.addAttribute("admin", sessionInfo);
-        return "thymeleaf/admin/dashboard";
+        return "thymeleaf/administratorPage_dashboard";
     }
 
     /**

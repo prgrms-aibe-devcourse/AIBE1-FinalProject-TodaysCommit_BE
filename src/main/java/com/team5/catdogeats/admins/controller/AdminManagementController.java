@@ -42,11 +42,11 @@ public class AdminManagementController {
         if (redirectResult != null) {
             return redirectResult;
         }
-        return "thymeleaf/admin/invite";
+        return "thymeleaf/administratorPage_invite";
     }
 
     /**
-     * 관리자 초대 처리 (예외 처리 간소화)
+     * 관리자 초대 처리
      */
     @PostMapping("/invite")
     @ResponseBody
@@ -70,7 +70,7 @@ public class AdminManagementController {
     @GetMapping("/verify")
     public String showVerifyPage(@RequestParam(required = false) String email, Model model) {
         model.addAttribute("email", email != null ? email : "");
-        return "thymeleaf/admin/verify";
+        return "thymeleaf/administratorPage_verify";
     }
 
     /**
@@ -117,7 +117,7 @@ public class AdminManagementController {
     }
 
     /**
-     * 비밀번호 재설정 처리 (예외 처리 간소화)
+     * 비밀번호 재설정 처리
      */
     @PostMapping("/verify-reset-password")
     @ResponseBody
