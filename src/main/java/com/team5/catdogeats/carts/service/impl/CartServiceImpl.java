@@ -10,6 +10,7 @@ import com.team5.catdogeats.carts.dto.response.CartResponse;
 import com.team5.catdogeats.carts.repository.CartItemRepository;
 import com.team5.catdogeats.carts.repository.CartRepository;
 import com.team5.catdogeats.carts.service.CartService;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.users.domain.Users;
@@ -17,7 +18,6 @@ import com.team5.catdogeats.users.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
+@JpaTransactional(readOnly = true)
 public class CartServiceImpl implements CartService {
 
     private final CartRepository cartRepository;
@@ -45,7 +45,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public CartResponse addItemToCart(UserPrincipal userPrincipal, AddCartItemRequest request) {
         // 입력 값 검증
         if (request.getQuantity() <= 0) {
@@ -86,7 +86,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public CartResponse updateCartItem(UserPrincipal userPrincipal, String cartItemId, UpdateCartItemRequest request) {
         // 입력 값 검증
         if (request.getQuantity() <= 0) {
@@ -117,7 +117,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public CartResponse removeCartItem(UserPrincipal userPrincipal, String cartItemId) {
         Users user = getUserByPrincipal(userPrincipal);
         Carts cart = getOrCreateCart(user.getId());
@@ -139,7 +139,7 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
-    @Transactional
+    @JpaTransactional
     public void clearCart(UserPrincipal userPrincipal) {
         Users user = getUserByPrincipal(userPrincipal);
         Carts cart = getOrCreateCart(user.getId());
