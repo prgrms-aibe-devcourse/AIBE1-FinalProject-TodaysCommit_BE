@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -25,6 +26,8 @@ public class ChatRoomListServiceImpl implements ChatRoomListService {
     private final UserIdCacheService userIdCacheService;
     private final ChatRoomRepository chatRoomRepository;
 
+    @Override
+    @Transactional(readOnly = true)
     public ChatRoomPageResponseDTO<ChatRoomListDTO> getChatRooms(UserPrincipal userPrincipal,
                                                                  ChatRoomPageRequestDTO pageRequest) {
         try {

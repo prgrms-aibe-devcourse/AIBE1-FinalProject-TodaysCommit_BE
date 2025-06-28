@@ -12,6 +12,5 @@ public record SelfDTO(String roomId,
                       String message,
                       boolean isRead,
                       Instant sentAt,
-                      boolean isMe,
-                      int     unreadCount ) {
+                      boolean isMe) {
 }

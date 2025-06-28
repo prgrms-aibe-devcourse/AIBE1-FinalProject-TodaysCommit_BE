@@ -51,4 +51,5 @@ public class ChatRooms {
     private Instant buyerLastSeenAt;    // 구매자 마지막 접속 시간
     private Instant sellerLastSeenAt;   // 판매자 마지막 접속 시간
 
+
 }

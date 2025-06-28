@@ -64,10 +64,19 @@ public interface ChatRoomRepository extends MongoRepository<ChatRooms, String> {
     @Update("{ '$set': { 'lastMessage': ?1, 'lastMessageAt': ?2, 'lastSenderId': ?3, 'lastBehaviorType': ?4, 'updatedAt': ?2 } }")
     void updateLastMessage(String roomId, String message, Instant sentAt, String senderId, BehaviorType behaviorType);
 
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$set': { 'buyerUnreadCount': 0, 'buyerLastReadAt': ?1 } }")
+    void resetBuyerUnreadCountAndUpdateLastReadAt(String roomId, Instant readAt);
+
+    @Query("{ '_id': ?0 }")
+    @Update("{ '$set': { 'sellerUnreadCount': 0, 'sellerLastReadAt': ?1 } }")
+    void resetSellerUnreadCountAndUpdateLastReadAt(String roomId, Instant readAt);
+
     // 구매자 안읽은 메시지 개수 초기화
     @Query("{ '_id': ?0 }")
     @Update("{ '$set': { 'buyerUnreadCount': 0 } }")
     void resetBuyerUnreadCount(String roomId);
+
 
     // 판매자 안읽은 메시지 개수 초기화
     @Query("{ '_id': ?0 }")

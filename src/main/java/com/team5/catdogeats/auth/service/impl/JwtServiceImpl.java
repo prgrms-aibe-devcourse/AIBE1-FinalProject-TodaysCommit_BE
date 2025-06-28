@@ -31,7 +31,6 @@ import java.util.NoSuchElementException;
 @RequiredArgsConstructor
 public class JwtServiceImpl implements JwtService {
     private final TokenFactory tokenFactory;
-    private final OAuth2ProviderStrategyFactory oAuth2ProviderStrategyFactory;
     private final OAuth2ProviderStrategyFactory strategyFactory;
     private final UserRepository userRepository;
     private final JwtConfig jwtConfig;

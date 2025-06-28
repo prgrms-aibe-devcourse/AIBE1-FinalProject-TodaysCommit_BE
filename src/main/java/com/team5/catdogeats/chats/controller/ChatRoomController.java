@@ -7,6 +7,8 @@ import com.team5.catdogeats.chats.service.ChatRoomCreateService;
 import com.team5.catdogeats.chats.service.ChatRoomListService;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,11 +23,13 @@ import java.util.NoSuchElementException;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/v1/users/chat")
+@Tag(name = "Chatting", description = "채팅 관련 API")
 public class ChatRoomController {
 
     private final ChatRoomCreateService ChatRoomCreateService;
     private final ChatRoomListService chatRoomListService;
 
+    @Operation(summary = "채팅방 생성", description = "채팅방을 생성하는 API입니다.")
     @PostMapping("/rooms")
     public ResponseEntity<ApiResponse<ChatRoomResponseDTO>> createRoom(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -48,6 +52,7 @@ public class ChatRoomController {
 
     }
 
+    @Operation(summary = "채팅방 목록 조화", description = "채팅방 목록을 조하는 API입니다.")
     @GetMapping("/rooms")
     public ResponseEntity<ApiResponse<ChatRoomPageResponseDTO<ChatRoomListDTO>>> getChatHistory(
             @AuthenticationPrincipal UserPrincipal principal,
@@ -62,12 +67,12 @@ public class ChatRoomController {
 
         try {
             ChatRoomPageRequestDTO pageRequest = ChatRoomPageRequestDTO.builder()
-                    .cursor(cursor)
-                    .size(size)
-                    .build();
+                                                                        .cursor(cursor)
+                                                                        .size(size)
+                                                                        .build();
 
             ChatRoomPageResponseDTO<ChatRoomListDTO> response =
-                    chatRoomListService.getChatRooms(principal, pageRequest);
+                                                    chatRoomListService.getChatRooms(principal, pageRequest);
 
 
             return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));

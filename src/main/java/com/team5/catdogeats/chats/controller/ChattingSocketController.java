@@ -1,8 +1,9 @@
 package com.team5.catdogeats.chats.controller;
 
 import com.team5.catdogeats.chats.domain.dto.ChatMessageDTO;
+import com.team5.catdogeats.chats.domain.dto.ReadReceiptDTO;
 import com.team5.catdogeats.chats.service.ChatMessageService;
-import com.team5.catdogeats.chats.service.UserIdCacheService;
+import com.team5.catdogeats.chats.service.ChatRoomUpdateService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -16,14 +17,14 @@ import java.security.Principal;
 @RequiredArgsConstructor
 public class ChattingSocketController {
 
-    private final ChatMessageService chatService;
-    private final UserIdCacheService userIdCacheService;
+    private final ChatMessageService chatMessageService;
+    private final ChatRoomUpdateService chatRoomUpdateService;
 
     @MessageMapping("/chat/message")
     public void onMessage(@Payload ChatMessageDTO dto, Principal principal) {
         log.debug("🔔 메시지 수신됨. DTO: {}, Principal: {}", dto, principal);
         if (principal == null) {
-            log.warn("principal is null, skipping");
+            log.warn("유저 정보가 없습니다.");
             return;
         }
 
@@ -32,6 +33,25 @@ public class ChattingSocketController {
 
 
         // 실제 저장/발행 호출
-        chatService.saveAndPublish(dto, userId);
+        chatMessageService.saveAndPublish(dto, userId);
+    }
+
+    @MessageMapping("/chat/read")
+    public void markAsRead(@Payload ReadReceiptDTO readReceipt, Principal principal) {
+        log.debug("메시지 읽음");
+        if (principal == null) {
+            log.warn("유저 정보가 없습니다.");
+            return;
+        }
+
+        try {
+            String userId = principal.getName();
+            log.debug("읽음 처리 요청: userId={}, roomId={}", userId, readReceipt.roomId());
+
+            chatRoomUpdateService.markMessagesAsRead(readReceipt.roomId(), userId);
+
+        } catch (Exception e) {
+            log.error("읽음 처리 중 오류 발생: roomId={}", readReceipt.roomId(), e);
+        }
     }
 }

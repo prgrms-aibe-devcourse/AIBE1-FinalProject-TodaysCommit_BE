@@ -1,7 +1,10 @@
 package com.team5.catdogeats.global.config;
 
-import com.team5.catdogeats.chats.util.ChatSubscriber;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team5.catdogeats.chats.util.ChatSubscriber;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -57,4 +60,24 @@ public class RedisConfig {
         container.addMessageListener(chatSubscriber, new PatternTopic("user:*"));
         return container;
     }
+
+    @Bean
+    public RedissonClient redissonClient(
+            @Value("${spring.data.redis.host}") String host,
+            @Value("${spring.data.redis.port}") int port,
+            @Value("${spring.data.redis.password}") String password) { // password를 주입받도록 추가
+        Config config = new Config();
+        config.useSingleServer()
+                .setAddress("redis://" + host + ":" + port)
+                .setPassword(password)
+                .setConnectionPoolSize(64)
+                .setConnectionMinimumIdleSize(10)
+                .setIdleConnectionTimeout(10000)
+                .setConnectTimeout(10000)
+                .setTimeout(3000)
+                .setRetryAttempts(3);
+        return Redisson.create(config);
+    }
+
+
 }

@@ -1,6 +1,6 @@
 package com.team5.catdogeats.users.service.impl;
 
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.exception.WithdrawnAccountDomainException;

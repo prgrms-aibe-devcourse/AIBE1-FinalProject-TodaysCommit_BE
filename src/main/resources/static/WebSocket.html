@@ -129,6 +129,11 @@
     el.innerHTML = `<strong>${who}</strong> <small>${time}</small><br>${data.message}`;
     $("log").appendChild(el);
     $("log").scrollTop = $("log").scrollHeight;
+    stomp.send(
+            '/pub/chat/read',
+            {},
+            JSON.stringify({ roomId: currentRoom })
+    );
   }
 
   function sendMessage() {

@@ -10,7 +10,7 @@ import com.team5.catdogeats.chats.mongo.repository.ChatRoomRepository;
 import com.team5.catdogeats.chats.service.ChatMessageService;
 import com.team5.catdogeats.chats.service.ChatRoomUpdateService;
 import com.team5.catdogeats.chats.service.UserIdCacheService;
-import com.team5.catdogeats.global.config.MongoTransactional;
+import com.team5.catdogeats.global.annotation.MongoTransactional;
 import com.team5.catdogeats.users.domain.enums.Role;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +69,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .behaviorType(dto.behaviorType())
                 .sentAt(sentAt)
                 .isMe(true)
-                .unreadCount(0)
                 .build();
         redisTemplate.convertAndSend("user:" + userId, self);
         log.debug("Redis 발신자 채널 전송: user:{} -> {}", userId, self);
@@ -82,7 +81,6 @@ public class ChatMessageServiceImpl implements ChatMessageService {
                 .behaviorType(dto.behaviorType())
                 .sentAt(sentAt)
                 .isMe(false)
-                .unreadCount(1)
                 .build();
         redisTemplate.convertAndSend("user:" + targetId, publish);
         log.debug("Redis 수신자 채널 전송: user:{} -> {}", targetId, publish);
@@ -126,4 +124,15 @@ public class ChatMessageServiceImpl implements ChatMessageService {
         }
         throw new IllegalStateException("허용되지 않은 역할(Role)입니다.");
     }
+
+//    private void validateMessageContent(String message) {
+//        if (message == null || message.trim().isEmpty()) {
+//            throw new IllegalArgumentException("빈 메시지는 전송할 수 없습니다.");
+//        }
+//
+//        // XSS 방지
+//        if (containsScript(message)) {
+//            throw new InvalidMessageException("허용되지 않는 내용입니다.");
+//        }
+//    }
 }
