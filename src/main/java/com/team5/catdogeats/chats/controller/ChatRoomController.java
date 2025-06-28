@@ -3,6 +3,7 @@ package com.team5.catdogeats.chats.controller;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.chats.domain.ChatRooms;
 import com.team5.catdogeats.chats.domain.dto.*;
+import com.team5.catdogeats.chats.service.ChatMessageListService;
 import com.team5.catdogeats.chats.service.ChatRoomCreateService;
 import com.team5.catdogeats.chats.service.ChatRoomListService;
 import com.team5.catdogeats.global.dto.ApiResponse;
@@ -28,6 +29,7 @@ public class ChatRoomController {
 
     private final ChatRoomCreateService ChatRoomCreateService;
     private final ChatRoomListService chatRoomListService;
+    private final ChatMessageListService chatMessageListService;
 
     @Operation(summary = "채팅방 생성", description = "채팅방을 생성하는 API입니다.")
     @PostMapping("/rooms")
@@ -86,6 +88,27 @@ public class ChatRoomController {
            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
        }
 
+
+    }
+
+    @GetMapping("/rooms/{roomId}")
+    public ResponseEntity<ApiResponse<ChatMessagePageResponseDTO<ChatMessageListDTO>>> getMessages(
+            @PathVariable String roomId,
+            @AuthenticationPrincipal UserPrincipal principal,
+            @RequestParam(required = false) String cursor,
+            @RequestParam(defaultValue = "30") int size) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
+
+        try {
+            ChatMessagePageRequestDTO requestDTO = new ChatMessagePageRequestDTO(cursor, size);
+            ChatMessagePageResponseDTO<ChatMessageListDTO> response = chatMessageListService.getMessagesWithCursor(roomId, requestDTO, principal);
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
 
     }
 }

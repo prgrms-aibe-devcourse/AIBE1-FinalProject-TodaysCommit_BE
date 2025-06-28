@@ -54,4 +54,18 @@ public class ChattingSocketController {
             log.error("읽음 처리 중 오류 발생: roomId={}", readReceipt.roomId(), e);
         }
     }
+
+    @MessageMapping("/chat/enter")
+    public void enterChatRoom(@Payload ReadReceiptDTO enterRequest, Principal principal) {
+        try {
+            String userId = principal.getName();
+            log.debug("채팅방 입장: userId={}, roomId={}", userId, enterRequest.roomId());
+
+            // 채팅방 입장 시 자동으로 읽음 처리
+            chatRoomUpdateService.markMessagesAsRead(enterRequest.roomId(), userId);
+
+        } catch (Exception e) {
+            log.error("채팅방 입장 처리 중 오류 발생: roomId={}", enterRequest.roomId(), e);
+        }
+    }
 }

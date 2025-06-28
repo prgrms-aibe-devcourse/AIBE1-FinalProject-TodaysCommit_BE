@@ -40,6 +40,7 @@ public class Reports extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
+    @Builder.Default
     private ReportStatus reportStatus = ReportStatus.PENDING;
 
     @Column(name = "processed_at")
