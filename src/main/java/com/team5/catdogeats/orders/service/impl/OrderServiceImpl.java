@@ -1,7 +1,5 @@
 package com.team5.catdogeats.orders.service.impl;
 
-import com.team5.catdogeats.addresses.domain.enums.AddressType;
-import com.team5.catdogeats.addresses.dto.AddressResponseDto;
 import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
@@ -35,7 +33,7 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
- * 주문 관리 서비스 구현체 (EDA + 쿠폰 할인 방식)
+ * 주문 관리 서비스 구현체 (EDA + 쿠폰 할인 방식 + 배송비 포함)
  * 이벤트 기반 아키텍처 적용으로 관심사를 분리했습니다:
  * - OrderService: 주문 엔티티 저장과 이벤트 발행만 담당
  * - EventListeners: 재고 차감, 결제 정보 생성, 알림 등 부가 로직 처리
@@ -43,6 +41,9 @@ import java.util.concurrent.ThreadLocalRandom;
  * 1. 상품별 할인 제거 → 전체 주문 금액에 쿠폰 할인률 적용
  * 2. 단순화된 가격 계산 로직
  * 3. 할인 정보의 명확한 분리 (원가 vs 최종 가격)
+ * 배송비 및 배송지 정보 개선사항:
+ * 4. 배송비 포함된 최종 결제 금액 계산
+ * 5. 주문 시 배송지 정보 DB 저장
  */
 @Slf4j
 @Service
@@ -58,20 +59,21 @@ public class OrderServiceImpl implements OrderService {
     private final AddressService addressService;
 
     /**
-     * UserPrincipal을 사용한 주문 생성 (EDA + 쿠폰 할인 방식)
+     * UserPrincipal을 사용한 주문 생성 (EDA + 쿠폰 할인 + 배송비 포함 방식)
      * 변경된 처리 흐름:
      * 1. 구매자 검증 (BuyerRepository 활용)
      * 2. 상품 정보 수집 (원가 기준)
      * 3. 전체 주문 금액 계산 (원가 총합)
      * 4. 쿠폰 할인 적용 (전체 금액에서 할인)
-     * 5. 주문 엔티티 저장 (할인 적용된 최종 금액)
-     * 6. 토스 페이먼츠 응답 생성
-     * 7. OrderCreatedEvent 발행 (할인 정보 포함)
+     * 5. 배송비 포함 최종 결제 금액 계산 ✅ 새로 추가
+     * 6. 주문 엔티티 저장 (배송비 포함 금액 + 배송지 정보) ✅ 수정됨
+     * 7. 토스 페이먼츠 응답 생성
+     * 8. OrderCreatedEvent 발행 (할인 정보 포함)
      */
     @Override
     @JpaTransactional
     public OrderCreateResponse createOrderByUserPrincipal(UserPrincipal userPrincipal, OrderCreateRequest request) {
-        log.info("주문 생성 시작 (EDA + 쿠폰 할인): provider={}, providerId={}, 상품 개수={}, 쿠폰 할인률={}%",
+        log.info("주문 생성 시작 (EDA + 쿠폰 할인 + 배송비 포함): provider={}, providerId={}, 상품 개수={}, 쿠폰 할인률={}%",
                 userPrincipal.provider(), userPrincipal.providerId(),
                 request.getOrderItems().size(), request.getPaymentInfo().getCouponDiscountRate());
 
@@ -87,28 +89,31 @@ public class OrderServiceImpl implements OrderService {
 
         // 4. 쿠폰 할인 적용
         Double couponDiscountRate = request.getPaymentInfo().getCouponDiscountRate();
-        Long finalTotalPrice = applyCouponDiscount(originalTotalPrice, couponDiscountRate);
+        Long discountedPrice = applyCouponDiscount(originalTotalPrice, couponDiscountRate);
 
-        // 5. 주문 엔티티 생성 및 저장 (최종 할인 금액으로)
-        Orders savedOrder = createAndSaveOrder(user, finalTotalPrice);
+        // 5. 배송비 포함 최종 결제 금액 계산 ✅ 새로 추가
+        Long finalPaymentAmount = calculateFinalPaymentAmount(discountedPrice, originalTotalPrice);
 
-        // 6. 토스 페이먼츠 응답 생성
+        // 6. 주문 엔티티 생성 및 저장 (배송비 포함 금액 + 배송지 정보) ✅ 수정됨
+        Orders savedOrder = createAndSaveOrderWithShipping(user, finalPaymentAmount, request.getShippingAddress());
+
+        // 7. 토스 페이먼츠 응답 생성
         OrderCreateResponse response = buildTossPaymentResponse(savedOrder, request.getPaymentInfo());
 
-        // 7. OrderCreatedEvent 발행 (할인 정보 포함)
+        // 8. OrderCreatedEvent 발행 (할인 정보 포함)
         publishOrderCreatedEvent(savedOrder, user, userPrincipal, detailedOrderItems,
-                originalTotalPrice, couponDiscountRate, finalTotalPrice);
+                originalTotalPrice, couponDiscountRate, finalPaymentAmount);
 
-        log.info("주문 생성 완료: orderId={}, orderNumber={}, 원가={}원, 쿠폰할인={}%, 최종금액={}원",
+        log.info("주문 생성 완료: orderId={}, orderNumber={}, 원가={}원, 쿠폰할인={}%, 최종결제금액={}원 (배송비포함)",
                 savedOrder.getId(), savedOrder.getOrderNumber(), originalTotalPrice,
-                couponDiscountRate != null ? couponDiscountRate : 0, finalTotalPrice);
+                couponDiscountRate != null ? couponDiscountRate : 0, finalPaymentAmount);
 
         return response;
     }
 
-    // ===== getOrderDetail 메서드 구현 =====
+    // ===== getOrderDetail 메서드 구현 (배송지 정보 수정) =====
     /**
-     * 주문 상세 조회 구현
+     * 주문 상세 조회 구현 (저장된 배송지 정보 사용)
      */
     @Override
     @JpaTransactional(readOnly = true)
@@ -139,37 +144,34 @@ public class OrderServiceImpl implements OrderService {
                     return new NoSuchElementException("주문을 찾을 수 없습니다.");
                 });
 
-        // 3. 사용자 기본 주소 조회 (배송지 정보로 사용)
-        AddressResponseDto defaultAddress = addressService.getDefaultAddress(userPrincipal, AddressType.PERSONAL);
-
-        // 4. 주문 상품 정보 변환
+        // 3. 주문 상품 정보 변환
         List<OrderDetailResponse.OrderItemDetail> orderItemDetails = order.getOrderItems().stream()
                 .map(orderItem -> new OrderDetailResponse.OrderItemDetail(
                         orderItem.getId(),
                         orderItem.getProducts().getId(),
-                        orderItem.getProducts().getTitle(), // getName() → getTitle()로 수정
+                        orderItem.getProducts().getTitle(),
                         orderItem.getQuantity(),
                         orderItem.getPrice(),
                         orderItem.getPrice() * orderItem.getQuantity()
                 )).toList();
 
-        // 5. 총 상품 가격 계산
+        // 4. 총 상품 가격 계산
         Long totalProductPrice = orderItemDetails.stream()
                 .mapToLong(OrderDetailResponse.OrderItemDetail::totalPrice)
                 .sum();
 
-        // 6. 할인 금액 및 배송비 계산
+        // 5. 할인 금액 및 배송비 계산 (기존 로직 유지)
         Long discountAmount = calculateDiscountAmount(order, totalProductPrice);
-        Long deliveryFee = calculateDeliveryFee(order, totalProductPrice);
+        Long deliveryFee = calculateDeliveryFee(totalProductPrice); // order 매개변수 제거
 
-        // 7. 받는 사람 정보 생성
-        OrderDetailResponse.RecipientInfo recipientInfo = createRecipientInfo(defaultAddress, orderNumber);
+        // 6. 받는 사람 정보 생성 ✅ 저장된 배송지 정보 사용
+        OrderDetailResponse.RecipientInfo recipientInfo = createRecipientInfoFromOrder(order);
 
-        // 8. 결제 정보 생성
+        // 7. 결제 정보 생성
         OrderDetailResponse.PaymentInfo paymentInfo = OrderDetailResponse.PaymentInfo.of(
                 totalProductPrice, discountAmount, deliveryFee);
 
-        // 9. 응답 DTO 생성
+        // 8. 응답 DTO 생성
         OrderDetailResponse response = new OrderDetailResponse(
                 order.getId(),
                 order.getOrderNumber(),
@@ -185,6 +187,85 @@ public class OrderServiceImpl implements OrderService {
 
         return response;
     }
+
+    // ===== 새로 추가된 메서드들 =====
+
+    /**
+     * 배송비 포함 최종 결제 금액 계산 ✅ 새로 추가
+     * @param discountedPrice 쿠폰 할인 적용된 상품 금액
+     * @param originalTotalPrice 원가 총 금액 (배송비 계산 기준용)
+     * @return 배송비 포함된 최종 결제 금액
+     */
+    private Long calculateFinalPaymentAmount(Long discountedPrice, Long originalTotalPrice) {
+        // 배송비 계산 (원가 기준으로 계산하되, 할인된 금액에 추가)
+        Long deliveryFee = calculateDeliveryFee(originalTotalPrice);
+        Long finalPaymentAmount = discountedPrice + deliveryFee;
+
+        log.debug("최종 결제 금액 계산 완료: 할인적용금액={}원, 배송비={}원, 최종결제금액={}원",
+                discountedPrice, deliveryFee, finalPaymentAmount);
+
+        return finalPaymentAmount;
+    }
+
+    /**
+     * 주문 엔티티 생성 및 저장 (배송지 정보 포함) ✅ 수정됨
+     * @param user 사용자 정보
+     * @param finalPaymentAmount 배송비 포함된 최종 결제 금액
+     * @param shippingAddress 배송지 정보
+     * @return 저장된 주문 엔티티
+     */
+    private Orders createAndSaveOrderWithShipping(Users user, Long finalPaymentAmount,
+                                                  OrderCreateRequest.ShippingAddressRequest shippingAddress) {
+        Orders order = Orders.builder()
+                .user(user)
+                .orderNumber(generateOrderNumber())
+                .orderStatus(OrderStatus.PAYMENT_PENDING)
+                .totalPrice(finalPaymentAmount)  // ✅ 배송비 포함된 최종 금액
+                .build();
+
+        // ✅ 배송지 정보 설정
+        order.setShippingInfo(
+                shippingAddress.getRecipientName(),
+                shippingAddress.getRecipientPhone(),
+                shippingAddress.getPostalCode(),
+                shippingAddress.getStreetAddress(),
+                shippingAddress.getDetailAddress(),
+                shippingAddress.getDeliveryNote()
+        );
+
+        Orders savedOrder = orderRepository.save(order);
+        log.debug("주문 엔티티 저장 완료: orderId={}, orderNumber={}, 최종결제금액={}원 (배송비포함), 수령인={}",
+                savedOrder.getId(), savedOrder.getOrderNumber(), finalPaymentAmount, shippingAddress.getRecipientName());
+
+        return savedOrder;
+    }
+
+    /**
+     * 저장된 주문 정보에서 받는 사람 정보 생성 ✅ 새로 추가
+     * @param order 주문 엔티티 (배송지 정보 포함)
+     * @return 받는 사람 정보 DTO
+     */
+    private OrderDetailResponse.RecipientInfo createRecipientInfoFromOrder(Orders order) {
+        // 주문에 저장된 배송지 정보가 있는 경우
+        if (order.getRecipientName() != null && !order.getRecipientName().trim().isEmpty()) {
+            return new OrderDetailResponse.RecipientInfo(
+                    order.getRecipientName(),
+                    order.getRecipientPhone(),
+                    order.getFullShippingAddress(), // Orders 엔티티의 편의 메서드 사용
+                    order.getDeliveryNote() != null ? order.getDeliveryNote() : "배송 요청사항 없음"
+            );
+        }
+
+        // 주문에 배송지 정보가 없는 경우 기본값 (기존 로직과 동일)
+        return new OrderDetailResponse.RecipientInfo(
+                "수령인 미등록",
+                "연락처 미등록",
+                "주소 미등록",
+                "배송 요청사항 없음"
+        );
+    }
+
+    // ===== 기존 메서드들 (수정 최소화) =====
 
     /**
      * UserPrincipal로 구매자 조회 및 검증 (BuyerRepository 활용)
@@ -282,25 +363,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 엔티티 생성 및 저장
-     */
-    private Orders createAndSaveOrder(Users user, Long finalTotalPrice) {
-        Orders order = Orders.builder()
-                .user(user)
-                .orderNumber(generateOrderNumber())
-                .orderStatus(OrderStatus.PAYMENT_PENDING)
-                .totalPrice(finalTotalPrice)  // 할인 적용된 최종 금액
-                .build();
-
-        Orders savedOrder = orderRepository.save(order);
-        log.debug("주문 엔티티 저장 완료: orderId={}, orderNumber={}, finalPrice={}원",
-                savedOrder.getId(), savedOrder.getOrderNumber(), finalTotalPrice);
-
-        return savedOrder;
-    }
-
-    /**
-     * 토스 페이먼츠 응답 생성 (할인 적용된 금액으로)
+     * 토스 페이먼츠 응답 생성 (배송비 포함된 금액으로)
      */
     private OrderCreateResponse buildTossPaymentResponse(Orders savedOrder,
                                                          OrderCreateRequest.PaymentInfoRequest paymentInfo) {
@@ -333,13 +396,13 @@ public class OrderServiceImpl implements OrderService {
                 userPrincipal.providerId(),
                 originalTotalPrice,      // 원가 총 금액
                 couponDiscountRate,      // 쿠폰 할인률
-                finalTotalPrice,         // 최종 할인 금액
+                finalTotalPrice,         // 배송비 포함된 최종 결제 금액
                 orderItems
         );
 
         eventPublisher.publishEvent(event);
 
-        log.debug("OrderCreatedEvent 발행 완료: orderId={}, 원가={}원, 쿠폰할인={}%, 최종={}원",
+        log.debug("OrderCreatedEvent 발행 완료: orderId={}, 원가={}원, 쿠폰할인={}%, 최종={}원 (배송비포함)",
                 savedOrder.getId(), originalTotalPrice,
                 couponDiscountRate != null ? couponDiscountRate : 0, finalTotalPrice);
     }
@@ -349,41 +412,18 @@ public class OrderServiceImpl implements OrderService {
      */
     private Long calculateDiscountAmount(Orders order, Long totalProductPrice) {
         // 현재는 주문 금액에서 실제 결제 금액을 빼서 할인 금액 계산
-        return Math.max(0L, totalProductPrice - order.getTotalPrice());
+        // 단, 이제 order.getTotalPrice()는 배송비 포함이므로 배송비를 제외해야 함
+        Long deliveryFee = calculateDeliveryFee(totalProductPrice);
+        Long discountedAmount = order.getTotalPrice() - deliveryFee; // 배송비 제외한 실제 상품 금액
+        return Math.max(0L, totalProductPrice - discountedAmount);
     }
 
     /**
-     * 배송비 계산 (비즈니스 로직에 따라 구현)
+     * 배송비 계산 (비즈니스 로직에 따라 구현) ✅ order 매개변수 제거
      */
-    private Long calculateDeliveryFee(Orders order, Long totalProductPrice) {
+    private Long calculateDeliveryFee(Long totalProductPrice) {
         // 현재는 기본 배송비 설정 (3,000원, 30,000원 이상 무료배송)
         return totalProductPrice >= 30000L ? 0L : 3000L;
-    }
-
-    /**
-     * 받는 사람 정보 생성
-     */
-    private OrderDetailResponse.RecipientInfo createRecipientInfo(AddressResponseDto defaultAddress, Long orderNumber) {
-        if (defaultAddress == null) {
-            // 기본 주소가 없는 경우 기본값 설정
-            return new OrderDetailResponse.RecipientInfo(
-                    "수령인 미등록",
-                    "연락처 미등록",
-                    "주소 미등록",
-                    "배송 요청사항 없음"
-            );
-        }
-
-        return OrderDetailResponse.RecipientInfo.of(
-                "수령인", // TODO: 실제 수령인 이름 (별도 저장 필요)
-                defaultAddress.getPhoneNumber(),
-                defaultAddress.getCity(),
-                defaultAddress.getDistrict(),
-                defaultAddress.getNeighborhood(),
-                defaultAddress.getStreetAddress(),
-                defaultAddress.getDetailAddress(),
-                "안전하게 배송 부탁드립니다." // TODO: 실제 배송 요청사항 (별도 저장 필요)
-        );
     }
 
     /**
@@ -391,22 +431,19 @@ public class OrderServiceImpl implements OrderService {
      * 현재 시간 기반으로 고유한 주문 번호를 생성합니다.
      */
     private Long generateOrderNumber() {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        LocalDateTime now = LocalDateTime.now();
+        String timeString = now.format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         int randomSuffix = ThreadLocalRandom.current().nextInt(100, 1000);
-        return Long.parseLong(timestamp + randomSuffix);
+        return Long.parseLong(timeString + randomSuffix);
     }
 
     /**
-     * 토스 페이먼츠용 주문명 생성
-     *
-     * @param requestOrderName 요청에서 받은 주문명
-     * @param orderNumber 생성된 주문 번호
-     * @return 토스 페이먼츠에 표시될 주문명
+     * 주문명 생성 (기존 로직 유지)
      */
-    private String generateOrderName(String requestOrderName, Long orderNumber) {
-        if (requestOrderName != null && !requestOrderName.trim().isEmpty()) {
-            return requestOrderName;
+    private String generateOrderName(String baseOrderName, Long orderNumber) {
+        if (baseOrderName != null && !baseOrderName.trim().isEmpty()) {
+            return baseOrderName.trim();
         }
-        return "반려동물 용품 주문 #" + orderNumber;
+        return "주문번호 " + orderNumber;
     }
 }
