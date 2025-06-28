@@ -17,20 +17,6 @@ public interface AdminRepository extends JpaRepository<Admins, String> {
      */
     Optional<Admins> findByEmail(String email);
 
-    /**
-     * 이메일과 부서로 관리자 조회
-     */
-    Optional<Admins> findByEmailAndDepartment(String email, Department department);
-
-    /**
-     * 인증코드로 관리자 조회
-     */
-    Optional<Admins> findByVerificationCode(String verificationCode);
-
-    /**
-     * 활성화된 관리자 목록 조회
-     */
-    List<Admins> findByIsActiveTrue();
 
     /**
      * 부서별 관리자 목록 조회
