@@ -5,8 +5,6 @@ import com.team5.catdogeats.admins.domain.enums.AdminRole;
 import com.team5.catdogeats.admins.domain.enums.Department;
 import com.team5.catdogeats.admins.domain.dto.AdminInvitationRequestDTO;
 import com.team5.catdogeats.admins.domain.dto.AdminInvitationResponseDTO;
-import com.team5.catdogeats.admins.exception.DuplicateEmailException;
-import com.team5.catdogeats.admins.exception.InvalidDepartmentException;
 import com.team5.catdogeats.admins.repository.AdminRepository;
 import com.team5.catdogeats.admins.service.AdminInvitationService;
 import com.team5.catdogeats.admins.util.AdminUtils;
@@ -79,11 +77,10 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
      */
     private void validateDepartment(Department department) {
         if (department == Department.ADMIN) {
-            throw new InvalidDepartmentException("ADMIN 부서는 직접 등록할 수 없습니다. 시스템에서 자동으로 생성됩니다.");
+            throw new IllegalArgumentException("ADMIN 부서는 직접 등록할 수 없습니다. 시스템에서 자동으로 생성됩니다.");
         }
-
         if (!ALLOWED_DEPARTMENTS.contains(department)) {
-            throw new InvalidDepartmentException("허용되지 않은 부서입니다. 사용 가능한 부서: " + ALLOWED_DEPARTMENTS);
+            throw new IllegalArgumentException("허용되지 않은 부서입니다. 사용 가능한 부서: " + ALLOWED_DEPARTMENTS);
         }
     }
 
@@ -92,7 +89,7 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
      */
     private void validateEmailNotExists(String email) {
         if (adminRepository.existsByEmail(email)) {
-            throw new DuplicateEmailException("이미 등록된 이메일입니다: " + email);
+            throw new IllegalArgumentException("이미 등록된 이메일입니다: " + email);
         }
     }
 
@@ -100,7 +97,6 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
      * 대기중인 관리자 계정 생성
      */
     private Admins createPendingAdmin(AdminInvitationRequestDTO request, String verificationCode, ZonedDateTime expiry) {
-        // 임시 비밀번호 생성
         String tempPassword = adminUtils.generateInitialPassword();
 
         Admins admin = Admins.builder()
@@ -108,7 +104,7 @@ public class AdminInvitationServiceImpl implements AdminInvitationService {
                 .name(request.name())
                 .department(request.department())
                 .adminRole(AdminRole.ROLE_ADMIN)
-                .password(passwordEncoder.encode(tempPassword)) // 임시 비밀번호 (인증 시 재생성됨)
+                .password(passwordEncoder.encode(tempPassword))
                 .isActive(false)
                 .isFirstLogin(true)
                 .build();

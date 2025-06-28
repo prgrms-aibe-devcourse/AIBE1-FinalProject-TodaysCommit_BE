@@ -1,11 +1,10 @@
 package com.team5.catdogeats.admins.controller;
 
 import com.team5.catdogeats.admins.domain.dto.*;
-import com.team5.catdogeats.admins.domain.enums.Department;
 import com.team5.catdogeats.admins.service.AdminInvitationService;
 import com.team5.catdogeats.admins.service.AdminPasswordResetService;
 import com.team5.catdogeats.admins.service.AdminVerificationService;
-import com.team5.catdogeats.admins.service.AdminAuthenticationService;
+import com.team5.catdogeats.admins.util.AdminControllerUtils;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -21,7 +20,6 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 관리자 관리 컨트롤러
- * 슈퍼관리자의 관리자 초대 및 계정 인증 기능
  */
 @Slf4j
 @Controller
@@ -32,25 +30,23 @@ public class AdminManagementController {
 
     private final AdminInvitationService invitationService;
     private final AdminVerificationService verificationService;
-    private final AdminAuthenticationService authenticationService;
     private final AdminPasswordResetService passwordResetService;
+    private final AdminControllerUtils controllerUtils;
+
     /**
      * 관리자 초대 페이지 (ADMIN 부서만 접근 가능)
      */
     @GetMapping("/invite")
     public String showInvitePage(HttpSession session) {
-        // 권한 검증: ADMIN 부서만 접근 가능
-        if (!isAdminDepartmentUser(session)) {
-            log.warn("비ADMIN 부서 사용자의 초대 페이지 접근 시도: {}",
-                    getSessionUserInfo(session));
-            return "redirect:/v1/admin/dashboard?error=access_denied";
+        String redirectResult = controllerUtils.validatePageAccess(session, true);
+        if (redirectResult != null) {
+            return redirectResult;
         }
-
         return "thymeleaf/admin/invite";
     }
 
     /**
-     * 관리자 초대 처리 (ADMIN 부서만 실행 가능)
+     * 관리자 초대 처리 (예외 처리 간소화)
      */
     @PostMapping("/invite")
     @ResponseBody
@@ -59,28 +55,13 @@ public class AdminManagementController {
             @Valid @RequestBody AdminInvitationRequestDTO request,
             HttpSession session) {
 
-        try {
-            // 권한 검증: ADMIN 부서만 실행 가능
-            if (!isAdminDepartmentUser(session)) {
-                log.warn("비ADMIN 부서 사용자의 관리자 초대 시도: {}, 요청: {}",
-                        getSessionUserInfo(session), request.email());
-                return ResponseEntity.status(403)
-                        .body(ApiResponse.error(ResponseCode.ACCESS_DENIED, "ADMIN 부서만 관리자를 초대할 수 있습니다."));
-            }
+        controllerUtils.requireAdminDepartment(session);
+        AdminInvitationResponseDTO response = invitationService.inviteAdmin(request);
 
-            AdminInvitationResponseDTO response = invitationService.inviteAdmin(request);
+        log.info("관리자 초대 성공: 초대자={}, 피초대자={}",
+                controllerUtils.getSessionUserInfo(session), request.email());
 
-            log.info("관리자 초대 성공: 초대자={}, 피초대자={}",
-                    getSessionUserInfo(session), request.email());
-
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
-
-        } catch (Exception e) {
-            log.error("관리자 초대 중 오류 발생: 초대자={}, 요청={}, 오류={}",
-                    getSessionUserInfo(session), request.email(), e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
-        }
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
     /**
@@ -93,7 +74,7 @@ public class AdminManagementController {
     }
 
     /**
-     * 계정 인증 처리 (모든 사용자 실행 가능)
+     * 계정 인증 처리 (예외 처리 간소화)
      */
     @PostMapping("/verify")
     @ResponseBody
@@ -101,40 +82,23 @@ public class AdminManagementController {
     public ResponseEntity<ApiResponse<AdminVerificationResponseDTO>> verifyAdmin(
             @Valid @RequestBody AdminVerificationRequestDTO request) {
 
-        try {
-            AdminVerificationResponseDTO response = verificationService.verifyAdmin(request);
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
-
-        } catch (Exception e) {
-            log.error("계정 인증 중 오류 발생: email={}, 오류={}", request.email(), e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
-        }
+        AdminVerificationResponseDTO response = verificationService.verifyAdmin(request);
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
-
     /**
-     * 인증코드 재발송 (모든 사용자 실행 가능)
+     * 인증코드 재발송 (예외 처리 간소화)
      */
     @PostMapping("/resend-code")
     @ResponseBody
     @Operation(summary = "인증코드 재발송", description = "만료된 인증코드를 재발송합니다.")
     public ResponseEntity<ApiResponse<String>> resendVerificationCode(@RequestParam String email) {
-        try {
-            verificationService.resendVerificationCode(email);
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, "인증코드가 재발송되었습니다."));
-
-        } catch (Exception e) {
-            log.error("인증코드 재발송 중 오류 발생: email={}, 오류={}", email, e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
-        }
+        verificationService.resendVerificationCode(email);
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, "인증코드가 재발송되었습니다."));
     }
 
-
-
     /**
-     *  관리자 비밀번호 초기화 요청
+     * 관리자 비밀번호 초기화 요청 (예외 처리 간소화)
      */
     @PostMapping("/reset-password")
     @ResponseBody
@@ -143,33 +107,17 @@ public class AdminManagementController {
             @Valid @RequestBody AdminPasswordResetRequestDTO request,
             HttpSession session) {
 
-        try {
-            // 권한 검증
-            if (!isAdminDepartmentUser(session)) {
-                return ResponseEntity.status(403)
-                        .body(ApiResponse.error(ResponseCode.ACCESS_DENIED, "ADMIN 부서만 비밀번호를 초기화할 수 있습니다."));
-            }
+        controllerUtils.requireAdminDepartment(session);
+        AdminPasswordResetResponseDTO response = passwordResetService.requestPasswordReset(request);
 
-            AdminPasswordResetResponseDTO response = passwordResetService.requestPasswordReset(request);
+        log.info("비밀번호 초기화 요청 성공: target={}, requestedBy={}",
+                request.email(), request.requestedBy());
 
-            log.info("비밀번호 초기화 요청 성공: target={}, requestedBy={}",
-                    request.email(), request.requestedBy());
-
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
-        } catch (Exception e) {
-            log.error("비밀번호 초기화 중 오류 발생: ", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
-        }
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 
-
     /**
-     *  비밀번호 재설정 처리
+     * 비밀번호 재설정 처리 (예외 처리 간소화)
      */
     @PostMapping("/verify-reset-password")
     @ResponseBody
@@ -177,38 +125,7 @@ public class AdminManagementController {
     public ResponseEntity<ApiResponse<AdminVerificationResponseDTO>> verifyAndResetPassword(
             @Valid @RequestBody AdminPasswordResetVerificationDTO request) {
 
-        try {
-            AdminVerificationResponseDTO response = passwordResetService.verifyAndResetPassword(request);
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
-
-        } catch (Exception e) {
-            log.error("비밀번호 재설정 중 오류 발생: email={}, 오류={}", request.email(), e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
-        }
-    }
-
-
-    /**
-     * ADMIN 부서 사용자인지 확인
-     */
-    private boolean isAdminDepartmentUser(HttpSession session) {
-        AdminSessionInfo sessionInfo = authenticationService.getSessionInfo(session);
-        if (sessionInfo == null) {
-            return false;
-        }
-        return Department.ADMIN.equals(sessionInfo.getDepartment());
-    }
-
-    /**
-     * 세션 사용자 정보 로깅용
-     */
-    private String getSessionUserInfo(HttpSession session) {
-        AdminSessionInfo sessionInfo = authenticationService.getSessionInfo(session);
-        if (sessionInfo == null) {
-            return "익명사용자";
-        }
-        return String.format("email=%s, department=%s",
-                sessionInfo.getEmail(), sessionInfo.getDepartment());
+        AdminVerificationResponseDTO response = passwordResetService.verifyAndResetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
 }

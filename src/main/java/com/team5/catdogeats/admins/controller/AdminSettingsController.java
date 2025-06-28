@@ -1,7 +1,7 @@
 package com.team5.catdogeats.admins.controller;
 
 import com.team5.catdogeats.admins.domain.dto.AdminSessionInfo;
-import com.team5.catdogeats.admins.service.AdminAuthenticationService;
+import com.team5.catdogeats.admins.util.AdminControllerUtils;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,28 +23,22 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Admin Settings", description = "관리자 설정 API")
 public class AdminSettingsController {
 
-    private final AdminAuthenticationService authenticationService;
+    private final AdminControllerUtils controllerUtils;
 
     /**
      * 설정 페이지 표시
-     *
      */
     @GetMapping("/settings")
     public String showSettingsPage(HttpSession session) {
-        AdminSessionInfo sessionInfo = authenticationService.getSessionInfo(session);
-        if (sessionInfo == null) {
-            return "redirect:/v1/admin/login";
+        String redirectResult = controllerUtils.checkFirstLoginRedirect(session);
+        if (redirectResult != null) {
+            return redirectResult;
         }
-
-        if (sessionInfo.isFirstLogin()) {
-            return "redirect:/v1/admin/change-password";
-        }
-
         return "thymeleaf/admin/settings";
     }
 
     /**
-     * 프로필 업데이트 (이름만 변경)
+     * 프로필 업데이트 (이름만 변경) - 예외 처리 간소화
      */
     @PostMapping("/profile/update")
     @ResponseBody
@@ -53,27 +47,21 @@ public class AdminSettingsController {
             @RequestBody UpdateProfileRequest request,
             HttpSession session) {
 
-        try {
-            AdminSessionInfo sessionInfo = authenticationService.getSessionInfo(session);
-            if (sessionInfo == null) {
-                return ResponseEntity.status(401)
-                        .body(ApiResponse.error(ResponseCode.UNAUTHORIZED));
-            }
+        AdminSessionInfo sessionInfo = controllerUtils.requireSessionInfo(session);
 
-            // 세션 정보 업데이트
-            sessionInfo.setName(request.name());
-            session.setAttribute("ADMIN_USER", sessionInfo);
-
-            log.info("관리자 프로필 업데이트: email={}, newName={}",
-                    sessionInfo.getEmail(), request.name());
-
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, "프로필이 업데이트되었습니다."));
-
-        } catch (Exception e) {
-            log.error("프로필 업데이트 중 오류: ", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        // 입력값 검증
+        if (request.name() == null || request.name().trim().isEmpty()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
         }
+
+        // 세션 정보 업데이트
+        sessionInfo.setName(request.name().trim());
+        session.setAttribute("ADMIN_USER", sessionInfo);
+
+        log.info("관리자 프로필 업데이트: email={}, newName={}",
+                sessionInfo.getEmail(), request.name());
+
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, "프로필이 업데이트되었습니다."));
     }
 
     public record UpdateProfileRequest(String name) {}

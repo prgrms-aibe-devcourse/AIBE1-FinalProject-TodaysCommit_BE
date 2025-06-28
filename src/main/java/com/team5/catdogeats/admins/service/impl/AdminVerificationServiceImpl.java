@@ -6,8 +6,6 @@ import com.team5.catdogeats.admins.domain.dto.AdminVerificationRequestDTO;
 import com.team5.catdogeats.admins.domain.dto.AdminVerificationResponseDTO;
 import com.team5.catdogeats.admins.repository.AdminRepository;
 import com.team5.catdogeats.admins.service.AdminVerificationService;
-import com.team5.catdogeats.admins.exception.InvalidVerificationCodeException;
-import com.team5.catdogeats.admins.exception.VerificationCodeExpiredException;
 import com.team5.catdogeats.admins.util.AdminUtils;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import lombok.RequiredArgsConstructor;
@@ -104,14 +102,13 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
                 .build();
     }
 
-    // ===== 헬퍼 메서드들 =====
 
     /**
      * 이메일로 관리자 조회
      */
     private Admins findAdminByEmail(String email) {
         return adminRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidVerificationCodeException("존재하지 않는 이메일입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
     }
 
     /**
@@ -120,12 +117,12 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
     private void validateVerificationCode(Admins admin, String verificationCode) {
         if (admin.getVerificationCode() == null ||
                 !admin.getVerificationCode().equals(verificationCode)) {
-            throw new InvalidVerificationCodeException("잘못된 인증코드입니다.");
+            throw new IllegalArgumentException("잘못된 인증코드입니다.");
         }
 
         if (admin.getVerificationCodeExpiry() == null ||
                 admin.getVerificationCodeExpiry().isBefore(ZonedDateTime.now())) {
-            throw new VerificationCodeExpiredException("인증코드가 만료되었습니다. 새로운 인증코드를 요청해주세요.");
+            throw new IllegalStateException("인증코드가 만료되었습니다. 새로운 인증코드를 요청해주세요.");
         }
     }
 
@@ -147,15 +144,11 @@ public class AdminVerificationServiceImpl implements AdminVerificationService {
      * 관리자 계정 활성화 및 초기 비밀번호 설정
      */
     private String activateAdminAccount(Admins admin) {
-        // 초기 비밀번호 생성
         String initialPassword = adminUtils.generateInitialPassword();
-
-        // 계정 활성화 및 초기 비밀번호 설정
         admin.activate();
         admin.setPassword(passwordEncoder.encode(initialPassword));
         admin.setIsFirstLogin(true);
         adminRepository.save(admin);
-
         return initialPassword;
     }
 

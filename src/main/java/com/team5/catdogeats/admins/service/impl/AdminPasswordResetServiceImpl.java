@@ -2,8 +2,6 @@ package com.team5.catdogeats.admins.service.impl;
 
 import com.team5.catdogeats.admins.domain.Admins;
 import com.team5.catdogeats.admins.domain.dto.*;
-import com.team5.catdogeats.admins.exception.InvalidVerificationCodeException;
-import com.team5.catdogeats.admins.exception.VerificationCodeExpiredException;
 import com.team5.catdogeats.admins.repository.AdminRepository;
 import com.team5.catdogeats.admins.service.AdminPasswordResetService;
 import com.team5.catdogeats.admins.util.AdminUtils;
@@ -93,7 +91,7 @@ public class AdminPasswordResetServiceImpl implements AdminPasswordResetService 
 
         // 슈퍼관리자 계정은 초기화 불가
         if (SUPER_ADMIN_EMAIL.equals(targetAdmin.getEmail())) {
-            throw new IllegalArgumentException("ADMIN 관리자 계정은 비밀번호를 초기화할 수 없습니다.");
+            throw new IllegalArgumentException("슈퍼관리자 계정은 비밀번호를 초기화할 수 없습니다.");
         }
 
         // 자기 자신 초기화 방지
@@ -119,18 +117,18 @@ public class AdminPasswordResetServiceImpl implements AdminPasswordResetService 
      */
     private Admins findAndValidateAdmin(String email, String verificationCode) {
         Admins admin = adminRepository.findByEmail(email)
-                .orElseThrow(() -> new InvalidVerificationCodeException("존재하지 않는 이메일입니다."));
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 이메일입니다."));
 
         // 인증코드 검증
         if (admin.getVerificationCode() == null ||
                 !admin.getVerificationCode().equals(verificationCode)) {
-            throw new InvalidVerificationCodeException("잘못된 인증코드입니다.");
+            throw new IllegalArgumentException("잘못된 인증코드입니다.");
         }
 
         // 인증코드 만료 확인
         if (admin.getVerificationCodeExpiry() == null ||
                 admin.getVerificationCodeExpiry().isBefore(ZonedDateTime.now())) {
-            throw new VerificationCodeExpiredException("인증코드가 만료되었습니다. 관리자에게 새로운 초기화를 요청하세요.");
+            throw new IllegalStateException("인증코드가 만료되었습니다. 관리자에게 새로운 초기화를 요청하세요.");
         }
 
         return admin;
