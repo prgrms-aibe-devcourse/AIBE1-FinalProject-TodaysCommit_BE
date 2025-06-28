@@ -2,6 +2,7 @@ package com.team5.catdogeats.admins.scheduler;
 
 import com.team5.catdogeats.admins.domain.Admins;
 import com.team5.catdogeats.admins.repository.AdminRepository;
+import com.team5.catdogeats.global.config.JpaTransactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -27,7 +28,7 @@ public class AdminCleanupScheduler {
      * 매일 새벽 2시에 실행
      */
     @Scheduled(cron = "0 0 2 * * *")
-    @Transactional
+    @JpaTransactional
     public void cleanupExpiredVerificationCodes() {
         try {
             ZonedDateTime now = ZonedDateTime.now();
@@ -61,7 +62,7 @@ public class AdminCleanupScheduler {
      * 30일 이상 비활성화 상태인 계정 삭제
      */
     @Scheduled(cron = "0 0 3 * * SUN")
-    @Transactional
+    @JpaTransactional
     public void cleanupInactiveAdmins() {
         try {
             ZonedDateTime thirtyDaysAgo = ZonedDateTime.now().minusDays(30);
