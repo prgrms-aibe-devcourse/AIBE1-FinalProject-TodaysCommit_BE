@@ -1,17 +1,21 @@
-package com.team5.catdogeats.global.config;
+package com.team5.catdogeats.global.annotation;
+
 
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.lang.annotation.*;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Target({ ElementType.TYPE, ElementType.METHOD })
+@Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Transactional(transactionManager = "mongoTransactionManager")
-public @interface MongoTransactional {
+@Transactional(transactionManager = "mybatisTransactionManager")
+public @interface MybatisTransactional {
+
     /** 전파 옵션 (기본: Propagation.REQUIRED) */
     @AliasFor(annotation = Transactional.class, attribute = "propagation")
     Propagation propagation() default Propagation.REQUIRED;
