@@ -12,7 +12,7 @@ import com.team5.catdogeats.addresses.exception.UserNotFoundException;
 import com.team5.catdogeats.addresses.repository.AddressRepository;
 import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.users.domain.Users;
 import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.repository.BuyerRepository;

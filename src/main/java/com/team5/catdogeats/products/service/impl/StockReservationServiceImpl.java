@@ -1,6 +1,6 @@
 package com.team5.catdogeats.products.service.impl;
 
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.orders.domain.Orders;
 import com.team5.catdogeats.products.component.StockValidator;
 import com.team5.catdogeats.products.domain.StockReservation;

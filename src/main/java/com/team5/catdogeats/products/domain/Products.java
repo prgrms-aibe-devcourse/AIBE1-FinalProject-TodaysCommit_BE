@@ -49,6 +49,7 @@ public class Products extends BaseEntity {
     private StockStatus stockStatus;
 
     @Column(name = "is_discounted")
+    @Builder.Default
     private boolean isDiscounted = false;
 
     @Column(name = "discount_rate", columnDefinition = "DECIMAL(10,2)")

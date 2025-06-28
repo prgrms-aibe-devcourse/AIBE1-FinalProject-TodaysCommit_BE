@@ -18,14 +18,19 @@ public class BatchConfig {
     public JobRepository jobRepository(
             DataSource dataSource,
             @Qualifier("batchTransactionManager") PlatformTransactionManager transactionManager // 반드시 MyBatis용!
-    ) throws Exception {
-        JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
-        factory.setDataSource(dataSource);
-        factory.setTransactionManager(transactionManager);
-        // 필수 옵션 (Spring Boot 3.x 이상, JDBC 기반 테이블 스키마)
-        factory.setIsolationLevelForCreate("ISOLATION_DEFAULT");
-        factory.afterPropertiesSet();
-        return factory.getObject();
+    )  {
+        try {
+            JobRepositoryFactoryBean factory = new JobRepositoryFactoryBean();
+            factory.setDataSource(dataSource);
+            factory.setTransactionManager(transactionManager);
+            // 필수 옵션 (Spring Boot 3.x 이상, JDBC 기반 테이블 스키마)
+            factory.setIsolationLevelForCreate("ISOLATION_DEFAULT");
+            factory.afterPropertiesSet();
+            return factory.getObject();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     @Bean(name = "batchTransactionManager")

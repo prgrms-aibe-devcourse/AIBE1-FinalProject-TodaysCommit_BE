@@ -61,7 +61,10 @@ dependencies {
 
 	implementation platform('software.amazon.awssdk:bom:2.31.68')
 	implementation 'software.amazon.awssdk:s3'
-
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'org.springframework:spring-messaging'
+	implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+	implementation 'org.redisson:redisson-spring-boot-starter:3.50.0'
 }
 
 tasks.named('test') {

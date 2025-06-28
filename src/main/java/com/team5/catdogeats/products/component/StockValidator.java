@@ -1,6 +1,6 @@
 package com.team5.catdogeats.products.component;
 
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.dto.StockAvailabilityDto;
 import com.team5.catdogeats.products.repository.ProductRepository;
@@ -8,7 +8,6 @@ import com.team5.catdogeats.products.repository.StockReservationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.NoSuchElementException;

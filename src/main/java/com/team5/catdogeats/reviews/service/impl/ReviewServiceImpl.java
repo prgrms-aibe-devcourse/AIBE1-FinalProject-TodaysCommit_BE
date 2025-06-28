@@ -1,7 +1,7 @@
 package com.team5.catdogeats.reviews.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.pets.domain.Pets;
 import com.team5.catdogeats.pets.repository.PetRepository;
 import com.team5.catdogeats.products.domain.Products;

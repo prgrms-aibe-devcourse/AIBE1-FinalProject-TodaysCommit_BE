@@ -5,6 +5,7 @@ import com.team5.catdogeats.auth.assistant.JwtAssistant.OAuth2ProviderStrategyFa
 import com.team5.catdogeats.auth.dto.TokenDTO;
 import com.team5.catdogeats.global.config.JwtConfig;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class TokenFactory {
     private final OAuth2ProviderStrategyFactory strategyFactory;
     private final JwtConfig jwtConfig;

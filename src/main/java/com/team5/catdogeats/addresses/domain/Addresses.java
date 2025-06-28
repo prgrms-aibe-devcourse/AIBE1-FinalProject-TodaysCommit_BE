@@ -55,6 +55,7 @@ public class Addresses extends BaseEntity {
 
     // 기본 주소 여부
     @Column(name = "is_default", nullable = false)
+    @Builder.Default
     private boolean isDefault = false;
 
     @ManyToOne(fetch = FetchType.LAZY)

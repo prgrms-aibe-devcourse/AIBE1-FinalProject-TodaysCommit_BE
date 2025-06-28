@@ -1,6 +1,6 @@
 package com.team5.catdogeats.products.service.impl;
 
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
 import com.team5.catdogeats.products.domain.StockReservation;
 import com.team5.catdogeats.products.domain.enums.ReservationStatus;

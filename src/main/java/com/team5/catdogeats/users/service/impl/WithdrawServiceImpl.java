@@ -1,7 +1,7 @@
 package com.team5.catdogeats.users.service.impl;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
-import com.team5.catdogeats.global.config.MybatisTransactional;
+import com.team5.catdogeats.global.annotation.MybatisTransactional;
 import com.team5.catdogeats.users.domain.enums.Role;
 import com.team5.catdogeats.users.mapper.UserMapper;
 import com.team5.catdogeats.users.service.WithdrawService;

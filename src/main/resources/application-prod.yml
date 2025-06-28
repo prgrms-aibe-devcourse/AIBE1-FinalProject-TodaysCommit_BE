@@ -1,6 +1,6 @@
 batch:
   withdrawn:
-    cron: "${WITHDRAW_CRON:0 30 2 * * ?}"
+    cron: ${WITHDRAW_CRON:0 30 2 * * ?}
     chunk-size: ${WITHDRAW_CHUNK:1000}
 spring:
   batch:
@@ -128,3 +128,30 @@ cloud:
       bucket: ${S3_BUCKET_NAME}
     cloudfront:
       domain: ${CLOUD_FRONT_DOMAIN_NAME}
+
+toss:
+  payments:
+    # 클라이언트 키 (개발환경용 - 환경변수 권장)
+    client-key: ${TOSS_CLIENT_KEY}
+
+    # 시크릿 키 (개발환경용 - 환경변수 권장)
+    secret-key: ${TOSS_SECRET_KEY}
+
+    # 결제 성공 시 리디렉션 URL
+    success-url: http://localhost:8080/v1/buyers/payments/success
+
+    # 결제 실패 시 리디렉션 URL
+    fail-url: http://localhost:8080/v1/buyers/payments/fail
+
+    # 토스 페이먼츠 API 기본 설정
+    api:
+      base-url: https://api.tosspayments.com/
+      version: "2022-11-16"
+
+    # 결제 관련 기본 설정
+    order:
+      # 주문번호 접두사 (선택사항)
+      prefix: "CATDOG"
+
+      # 결제 타임아웃 (분 단위)
+      timeout-minutes: 10

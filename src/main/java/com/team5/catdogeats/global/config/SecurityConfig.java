@@ -72,10 +72,12 @@ public class SecurityConfig {
                             -> authorize
                             .requestMatchers("/").permitAll()
                             .requestMatchers("/index.html").permitAll() // 개발할때만 사용 로그인 페이지
+                            .requestMatchers("WebSocket.html").permitAll() // 개발할때만 소켓 페이지
                             .requestMatchers("/withdraw").permitAll()
                             .requestMatchers("/error").permitAll()
                             .requestMatchers("/.well-known/**").permitAll()
                             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                            .requestMatchers("/ws/**").permitAll()
                             .requestMatchers("/oauth2/authorization/google/**").permitAll()
                             .requestMatchers("/oauth2/authorization/kakao/**").permitAll()
                             .requestMatchers("/oauth2/authorization/naver/**").permitAll()
@@ -89,7 +91,7 @@ public class SecurityConfig {
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-id}/list").permitAll()
                             .requestMatchers("/v1/buyers/reviews/{product-number}").permitAll()
-                            .requestMatchers("/v1/users/{vendor-name}").permitAll()
+                            .requestMatchers("/v1/users/page/{vendor-name}").permitAll()
                             .requestMatchers("/withdraw").permitAll()
                             .requestMatchers("/v1/users/**").hasAnyRole("BUYER", "SELLER")
                             .requestMatchers("/v1/sellers/**").hasRole("SELLER")

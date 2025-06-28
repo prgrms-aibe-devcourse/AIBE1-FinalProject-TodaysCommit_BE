@@ -7,7 +7,7 @@ import com.team5.catdogeats.auth.repository.RefreshTokensRedisRepository;
 import com.team5.catdogeats.auth.service.JwtService;
 import com.team5.catdogeats.auth.service.RefreshTokenService;
 import com.team5.catdogeats.auth.service.RotateRefreshTokenService;
-import com.team5.catdogeats.global.config.JpaTransactional;
+import com.team5.catdogeats.global.annotation.JpaTransactional;
 import com.team5.catdogeats.global.exception.ExpiredTokenException;
 import com.team5.catdogeats.global.exception.InvalidTokenException;
 import lombok.RequiredArgsConstructor;
