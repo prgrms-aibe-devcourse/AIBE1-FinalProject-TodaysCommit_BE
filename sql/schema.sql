@@ -279,7 +279,7 @@ CREATE TABLE orders_compare_llm (
 -- 주문 상세 페이지에 사용되는것!
 CREATE TABLE order_items (
                              id VARCHAR(36) PRIMARY KEY,
-                             order_id BIGINT NOT NULL, -- 주문 번호는 유저에게 보이기 때문에 숫자로
+                             order_id VARCHAR(36) NOT NULL, -- 주문 번호는 유저에게 보이기 때문에 숫자로
                              product_id VARCHAR(36) NOT NULL,
                              quantity INT UNSIGNED NOT NULL,
                              price BIGINT NOT NULL,  -- 주문 시점 상품 가격 저장 (변경 대비)
