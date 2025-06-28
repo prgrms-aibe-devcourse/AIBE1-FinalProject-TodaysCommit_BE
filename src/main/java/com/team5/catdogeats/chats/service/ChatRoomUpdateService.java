@@ -14,8 +14,6 @@ public interface ChatRoomUpdateService {
 
     int getUnreadCount(String roomId, String userId);
 
-    void updateLastMessageOnly(String roomId, String message, Instant sentAt,
-                               String senderId, BehaviorType behaviorType);
     int getTotalUnreadCount(String userId);
 
 }
