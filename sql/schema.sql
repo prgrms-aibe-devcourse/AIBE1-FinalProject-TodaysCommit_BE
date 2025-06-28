@@ -201,6 +201,13 @@ CREATE TABLE orders (
                             'REFUNDED'
                             ) ,
                         total_price BIGINT NOT NULL,
+                        -- ===== 배송지 정보 컬럼 추가 =====
+                        recipient_name VARCHAR(100),        -- 받는 사람 이름
+                        recipient_phone VARCHAR(20),        -- 받는 사람 연락처
+                        postal_code VARCHAR(10),            -- 우편번호
+                        shipping_address VARCHAR(500),      -- 배송 주소
+                        detail_address VARCHAR(200),        -- 상세 주소
+                        delivery_note VARCHAR(500),         -- 배송 요청사항
                         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                         CONSTRAINT fk_orders_user_id FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
