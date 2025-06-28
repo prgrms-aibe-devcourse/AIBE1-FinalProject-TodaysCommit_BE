@@ -3,6 +3,7 @@ package com.team5.catdogeats.admins.controller;
 import com.team5.catdogeats.admins.domain.dto.*;
 import com.team5.catdogeats.admins.domain.enums.Department;
 import com.team5.catdogeats.admins.service.AdminInvitationService;
+import com.team5.catdogeats.admins.service.AdminPasswordResetService;
 import com.team5.catdogeats.admins.service.AdminVerificationService;
 import com.team5.catdogeats.admins.service.AdminAuthenticationService;
 import com.team5.catdogeats.global.dto.ApiResponse;
@@ -32,7 +33,7 @@ public class AdminManagementController {
     private final AdminInvitationService invitationService;
     private final AdminVerificationService verificationService;
     private final AdminAuthenticationService authenticationService;
-
+    private final AdminPasswordResetService passwordResetService;
     /**
      * 관리자 초대 페이지 (ADMIN 부서만 접근 가능)
      */
@@ -111,6 +112,7 @@ public class AdminManagementController {
         }
     }
 
+
     /**
      * 인증코드 재발송 (모든 사용자 실행 가능)
      */
@@ -128,6 +130,64 @@ public class AdminManagementController {
                     .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
         }
     }
+
+
+
+    /**
+     *  관리자 비밀번호 초기화 요청
+     */
+    @PostMapping("/reset-password")
+    @ResponseBody
+    @Operation(summary = "관리자 비밀번호 초기화", description = "관리자의 비밀번호를 초기화하고 인증 메일을 발송합니다.")
+    public ResponseEntity<ApiResponse<AdminPasswordResetResponseDTO>> resetAdminPassword(
+            @Valid @RequestBody AdminPasswordResetRequestDTO request,
+            HttpSession session) {
+
+        try {
+            // 권한 검증
+            if (!isAdminDepartmentUser(session)) {
+                return ResponseEntity.status(403)
+                        .body(ApiResponse.error(ResponseCode.ACCESS_DENIED, "ADMIN 부서만 비밀번호를 초기화할 수 있습니다."));
+            }
+
+            AdminPasswordResetResponseDTO response = passwordResetService.requestPasswordReset(request);
+
+            log.info("비밀번호 초기화 요청 성공: target={}, requestedBy={}",
+                    request.email(), request.requestedBy());
+
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
+        } catch (Exception e) {
+            log.error("비밀번호 초기화 중 오류 발생: ", e);
+            return ResponseEntity.internalServerError()
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
+        }
+    }
+
+
+    /**
+     *  비밀번호 재설정 처리
+     */
+    @PostMapping("/verify-reset-password")
+    @ResponseBody
+    @Operation(summary = "비밀번호 재설정", description = "인증코드 확인 후 새 비밀번호를 설정합니다.")
+    public ResponseEntity<ApiResponse<AdminVerificationResponseDTO>> verifyAndResetPassword(
+            @Valid @RequestBody AdminPasswordResetVerificationDTO request) {
+
+        try {
+            AdminVerificationResponseDTO response = passwordResetService.verifyAndResetPassword(request);
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
+
+        } catch (Exception e) {
+            log.error("비밀번호 재설정 중 오류 발생: email={}, 오류={}", request.email(), e.getMessage(), e);
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
+        }
+    }
+
 
     /**
      * ADMIN 부서 사용자인지 확인

@@ -310,23 +310,17 @@
             transform: scale(1.1);
         }
 
-        .action-toggle {
-            background-color: #f3f4f6;
-            color: #6b7280;
+
+        .action-reset {
+            background-color: #fef3c7;
+            color: #d97706;
         }
 
-        .action-toggle:hover {
-            background-color: #e5e7eb;
+        .action-reset:hover {
+            background-color: #fde68a;
+            color: #b45309;
         }
 
-        .action-delete {
-            background-color: #fee2e2;
-            color: #dc2626;
-        }
-
-        .action-delete:hover {
-            background-color: #fecaca;
-        }
 
         .pagination {
             display: flex;
@@ -851,39 +845,6 @@
     </div>
 </div>
 
-<!-- 삭제 확인 모달 -->
-<div id="deleteModal" class="modal-overlay">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="text-lg font-semibold text-red-600">관리자 삭제</h3>
-            <button onclick="closeDeleteModal()" class="text-gray-400 hover:text-gray-600">
-                <span class="material-icons-outlined">close</span>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="text-center">
-                <div class="mb-4">
-                    <span class="material-icons-outlined text-red-500 text-6xl">warning</span>
-                </div>
-                <h3 class="text-lg font-semibold mb-2">정말로 삭제하시겠습니까?</h3>
-                <p class="text-gray-600 mb-4">
-                    <span id="deleteAdminName" class="font-semibold">-</span>님의 계정이 영구적으로 삭제됩니다.
-                </p>
-                <p class="text-sm text-gray-500">
-                    이메일: <span id="deleteAdminEmail" class="font-medium">-</span>
-                </p>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button type="button" onclick="closeDeleteModal()" class="btn btn-secondary">취소</button>
-            <button type="button" onclick="confirmDelete()" class="btn btn-danger">
-                <span class="material-icons-outlined text-sm">delete</span>
-                삭제
-            </button>
-        </div>
-    </div>
-</div>
-
 <script>
     // 전역 변수
     let currentPage = 0;
@@ -942,6 +903,48 @@
         }
     }
 
+    async function resetAdminPassword(adminEmail, adminName) {
+        if (adminEmail.includes('super@catdogeats.com')) {
+            showAlert('슈퍼관리자 계정은 비밀번호를 초기화할 수 없습니다.', 'error');
+            return;
+        }
+
+        const confirmed = confirm(
+            `${adminName}님의 비밀번호를 초기화하시겠습니까?\n\n` +
+            `• 해당 계정은 임시로 비활성화됩니다\n` +
+            `• 인증 이메일이 발송됩니다\n` +
+            `• 사용자는 인증 후 새 비밀번호를 설정해야 합니다`
+        );
+
+        if (!confirmed) return;
+
+        try {
+            const response = await fetch(`/v1/admin/accounts/${encodeURIComponent(adminEmail)}/reset-password`, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                showAlert(
+                    `${adminName}님에게 비밀번호 초기화 이메일이 발송되었습니다. ` +
+                    `해당 계정은 재설정 완료까지 임시 비활성화됩니다.`,
+                    'success'
+                );
+                loadAdminList(); // 목록 새로고침
+            } else {
+                showAlert(result.message || '비밀번호 초기화에 실패했습니다.', 'error');
+            }
+
+        } catch (error) {
+            console.error('비밀번호 초기화 중 오류:', error);
+            showAlert('서버 연결에 문제가 발생했습니다.', 'error');
+        }
+    }
+
     // 통계 업데이트
     function updateStats(stats) {
         document.getElementById('totalAdmins').textContent = stats.totalCount || 0;
@@ -975,41 +978,40 @@
         document.querySelector('.admin-table').style.display = 'table';
 
         tbody.innerHTML = admins.map(admin => `
-          <tr>
-            <td>
-              <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
-                  <span class="text-orange-600 font-semibold text-sm">${admin.name.substring(0, 2)}</span>
-                </div>
-                <div>
-                  <div class="font-semibold text-gray-900">${admin.name}</div>
-                  <div class="text-gray-500 text-sm">${admin.email}</div>
-                </div>
-              </div>
-            </td>
-            <td>${getDepartmentName(admin.department)}</td>
-            <td>
-              <span class="status-badge ${getStatusClass(admin)}">
-                <span class="material-icons-outlined text-xs">${getStatusIcon(admin)}</span>
-                ${getStatusName(admin)}
-              </span>
-            </td>
-            <td>${formatDate(admin.createdAt)}</td>
-            <td>${admin.lastLoginAt ? formatDateTime(admin.lastLoginAt) : '-'}</td>
-            <td>
-              <div class="action-buttons">
-                ${!admin.email.includes('super@catdogeats.com') ? `
-                  <button class="action-btn action-toggle" onclick="toggleAdminStatus('${admin.email}')" title="${admin.isFirstLogin ? '활성화' : '비활성화'}">
-                    <span class="material-icons-outlined text-sm">${admin.isFirstLogin ? 'toggle_off' : 'toggle_on'}</span>
-                  </button>
-                  <button class="action-btn action-delete" onclick="deleteAdmin('${admin.email}', '${admin.name}')" title="삭제">
-                    <span class="material-icons-outlined text-sm">delete</span>
-                  </button>
-                ` : ''}
-              </div>
-            </td>
-          </tr>
-        `).join('');
+  <tr>
+    <td>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+          <span class="text-orange-600 font-semibold text-sm">${admin.name.substring(0, 2)}</span>
+        </div>
+        <div>
+          <div class="font-semibold text-gray-900">${admin.name}</div>
+          <div class="text-gray-500 text-sm">${admin.email}</div>
+        </div>
+      </div>
+    </td>
+    <td>${getDepartmentName(admin.department)}</td>
+    <td>
+      <span class="status-badge ${getStatusClass(admin)}">
+        <span class="material-icons-outlined text-xs">${getStatusIcon(admin)}</span>
+        ${getStatusName(admin)}
+      </span>
+    </td>
+    <td>${formatDate(admin.createdAt)}</td>
+    <td>${admin.lastLoginAt ? formatDateTime(admin.lastLoginAt) : '-'}</td>
+    <td>
+      <div class="action-buttons">
+        ${!admin.email.includes('super@catdogeats.com') ? `
+          <button class="action-btn action-reset" onclick="resetAdminPassword('${admin.email}', '${admin.name}')" title="비밀번호 초기화">
+            <span class="material-icons-outlined text-sm">lock_reset</span>
+          </button>
+        ` : `
+          <span class="text-gray-400 text-sm">관리 불가</span>
+        `}
+      </div>
+    </td>
+  </tr>
+`).join('');
 
         renderPagination(data);
     }
@@ -1100,86 +1102,6 @@
         loadAdminList();
     }
 
-    // 관리자 상태 토글
-    async function toggleAdminStatus(adminEmail) {
-        try {
-            // 이메일로 관리자 ID 찾기 (실제로는 서버에서 이메일로 찾도록 수정 필요)
-            const admin = adminData.find(a => a.email === adminEmail);
-            if (!admin) {
-                showAlert('관리자를 찾을 수 없습니다.', 'error');
-                return;
-            }
-
-            const response = await fetch(`/v1/admin/accounts/${admin.email}/toggle-status`, {
-                method: 'PATCH',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                showAlert(result.data, 'success');
-                loadAdminList(); // 목록 새로고침
-            } else {
-                showAlert(result.message || '상태 변경에 실패했습니다.', 'error');
-            }
-
-        } catch (error) {
-            console.error('상태 토글 중 오류:', error);
-            showAlert('서버 연결에 문제가 발생했습니다.', 'error');
-        }
-    }
-
-    // 관리자 삭제
-    function deleteAdmin(adminEmail, adminName) {
-        if (adminEmail.includes('super@catdogeats.com')) {
-            showAlert('슈퍼관리자 계정은 삭제할 수 없습니다.', 'error');
-            return;
-        }
-
-        document.getElementById('deleteAdminName').textContent = adminName;
-        document.getElementById('deleteAdminEmail').textContent = adminEmail;
-        document.getElementById('deleteModal').classList.add('active');
-        document.getElementById('deleteModal').dataset.adminEmail = adminEmail;
-        document.body.style.overflow = 'hidden';
-    }
-
-    // 삭제 확인
-    async function confirmDelete() {
-        try {
-            const adminEmail = document.getElementById('deleteModal').dataset.adminEmail;
-
-            const response = await fetch(`/v1/admin/accounts/${adminEmail}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                showAlert(result.data, 'success');
-                loadAdminList(); // 목록 새로고침
-            } else {
-                showAlert(result.message || '삭제에 실패했습니다.', 'error');
-            }
-
-        } catch (error) {
-            console.error('삭제 중 오류:', error);
-            showAlert('서버 연결에 문제가 발생했습니다.', 'error');
-        }
-
-        closeDeleteModal();
-    }
-
-    // 삭제 모달 닫기
-    function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.remove('active');
-        document.body.style.overflow = 'auto';
-    }
 
     // 사용자 메뉴 토글
     function toggleUserMenu() {

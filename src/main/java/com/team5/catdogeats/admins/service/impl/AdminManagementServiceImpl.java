@@ -7,7 +7,6 @@ import com.team5.catdogeats.admins.domain.dto.AdminStatsDTO;
 import com.team5.catdogeats.admins.domain.enums.Department;
 import com.team5.catdogeats.admins.repository.AdminRepository;
 import com.team5.catdogeats.admins.service.AdminManagementService;
-import com.team5.catdogeats.global.config.JpaTransactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -43,7 +42,7 @@ public class AdminManagementServiceImpl implements AdminManagementService {
                     .filter(admin ->
                             admin.getName().toLowerCase().contains(search.toLowerCase()) ||
                                     admin.getEmail().toLowerCase().contains(search.toLowerCase()))
-                    .skip(page * size)
+                    .skip((long) page * size)
                     .limit(size)
                     .toList();
             totalElements = adminRepository.findAll().stream()
@@ -54,7 +53,7 @@ public class AdminManagementServiceImpl implements AdminManagementService {
         } else if (status != null && !status.equals("all")) {
             // 상태별 필터링
             adminList = filterByStatus(status).stream()
-                    .skip(page * size)
+                    .skip((long) page * size)
                     .limit(size)
                     .toList();
             totalElements = filterByStatus(status).size();
@@ -87,53 +86,6 @@ public class AdminManagementServiceImpl implements AdminManagementService {
                 .build();
     }
 
-    @Override
-    @JpaTransactional
-    public String toggleAdminStatus(String adminEmail, String currentUserEmail) {
-        Admins admin = adminRepository.findByEmail(adminEmail)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 관리자입니다."));
-
-        // 슈퍼관리자 계정은 비활성화 불가
-        if (admin.getEmail().equals("super@catdogeats.com")) {
-            throw new IllegalArgumentException("슈퍼관리자 계정은 상태를 변경할 수 없습니다.");
-        }
-
-        // 상태 토글
-        admin.setIsActive(!admin.getIsActive());
-        adminRepository.save(admin);
-
-        String statusMessage = admin.getIsActive() ? "활성화" : "비활성화";
-
-        log.info("관리자 상태 변경: email={}, newStatus={}, changedBy={}",
-                admin.getEmail(), statusMessage, currentUserEmail);
-
-        return String.format("%s님의 계정이 %s되었습니다.", admin.getName(), statusMessage);
-    }
-
-    @Override
-    @JpaTransactional
-    public String deleteAdmin(String adminEmail, String currentUserEmail) {
-        Admins admin = adminRepository.findByEmail(adminEmail)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 관리자입니다."));
-
-        // 슈퍼관리자 계정은 삭제 불가
-        if (admin.getEmail().equals("super@catdogeats.com")) {
-            throw new IllegalArgumentException("슈퍼관리자 계정은 삭제할 수 없습니다.");
-        }
-
-        // 자기 자신은 삭제 불가
-        if (admin.getEmail().equals(currentUserEmail)) {
-            throw new IllegalArgumentException("자신의 계정은 삭제할 수 없습니다.");
-        }
-
-        String deletedAdminName = admin.getName();
-        adminRepository.delete(admin);
-
-        log.info("관리자 계정 삭제: email={}, name={}, deletedBy={}",
-                admin.getEmail(), admin.getName(), currentUserEmail);
-
-        return String.format("%s님의 계정이 삭제되었습니다.", deletedAdminName);
-    }
 
     @Override
     public AdminStatsDTO calculateAdminStats() {
@@ -154,7 +106,6 @@ public class AdminManagementServiceImpl implements AdminManagementService {
                 .build();
     }
 
-    // === Private Helper Methods ===
 
     /**
      * 상태별 필터링

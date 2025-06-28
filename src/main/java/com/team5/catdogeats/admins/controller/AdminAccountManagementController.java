@@ -1,13 +1,11 @@
 package com.team5.catdogeats.admins.controller;
 
-import com.team5.catdogeats.admins.domain.dto.AdminInvitationRequestDTO;
-import com.team5.catdogeats.admins.domain.dto.AdminInvitationResponseDTO;
-import com.team5.catdogeats.admins.domain.dto.AdminListResponseDTO;
-import com.team5.catdogeats.admins.domain.dto.AdminSessionInfo;
+import com.team5.catdogeats.admins.domain.dto.*;
 import com.team5.catdogeats.admins.domain.enums.Department;
 import com.team5.catdogeats.admins.service.AdminAuthenticationService;
 import com.team5.catdogeats.admins.service.AdminInvitationService;
 import com.team5.catdogeats.admins.service.AdminManagementService;
+import com.team5.catdogeats.admins.service.AdminPasswordResetService;
 import com.team5.catdogeats.global.dto.ApiResponse;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +33,7 @@ public class AdminAccountManagementController {
     private final AdminAuthenticationService authenticationService;
     private final AdminInvitationService invitationService;
     private final AdminManagementService managementService;
+    private final AdminPasswordResetService passwordResetService;
 
     /**
      * 관리자 계정 관리 페이지 (ADMIN 부서만 접근 가능)
@@ -86,7 +85,7 @@ public class AdminAccountManagementController {
     }
 
     /**
-     * 관리자 추가 (기존 초대 기능 활용)
+     * 관리자 추가
      */
     @PostMapping("/accounts")
     @ResponseBody
@@ -116,13 +115,14 @@ public class AdminAccountManagementController {
         }
     }
 
+
     /**
-     * 관리자 상태 토글 (활성화/비활성화) - 이메일 기반
+     * 관리자 비밀번호 초기화 요청
      */
-    @PatchMapping("/accounts/{adminEmail}/toggle-status")
+    @PostMapping("/accounts/{adminEmail}/reset-password")
     @ResponseBody
-    @Operation(summary = "관리자 상태 토글", description = "관리자 계정의 활성화 상태를 변경합니다.")
-    public ResponseEntity<ApiResponse<String>> toggleAdminStatus(
+    @Operation(summary = "관리자 비밀번호 초기화", description = "관리자의 비밀번호를 초기화하고 인증 메일을 발송합니다.")
+    public ResponseEntity<ApiResponse<AdminPasswordResetResponseDTO>> resetAdminPassword(
             @PathVariable String adminEmail,
             HttpSession session) {
 
@@ -130,57 +130,33 @@ public class AdminAccountManagementController {
             // 권한 검증
             if (!isAdminDepartmentUser(session)) {
                 return ResponseEntity.status(403)
-                        .body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
+                        .body(ApiResponse.error(ResponseCode.ACCESS_DENIED, "ADMIN 부서만 비밀번호를 초기화할 수 있습니다."));
             }
 
             AdminSessionInfo sessionInfo = authenticationService.getSessionInfo(session);
-            String result = managementService.toggleAdminStatus(adminEmail, sessionInfo.getEmail());
+            AdminPasswordResetRequestDTO request = new AdminPasswordResetRequestDTO(
+                    adminEmail,
+                    sessionInfo.getEmail()
+            );
 
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, result));
+            AdminPasswordResetResponseDTO response = passwordResetService.requestPasswordReset(request);
+
+            log.info("비밀번호 초기화 요청 성공: target={}, requestedBy={}",
+                    adminEmail, sessionInfo.getEmail());
+
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
 
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.ACCESS_DENIED, e.getMessage()));
+                    .body(ApiResponse.error(ResponseCode.INVALID_INPUT_VALUE, e.getMessage()));
         } catch (Exception e) {
-            log.error("관리자 상태 변경 중 오류 발생: ", e);
+            log.error("비밀번호 초기화 중 오류 발생: ", e);
             return ResponseEntity.internalServerError()
                     .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
         }
     }
 
-    /**
-     * 관리자 삭제 - 이메일 기반
-     */
-    @DeleteMapping("/accounts/{adminEmail}")
-    @ResponseBody
-    @Operation(summary = "관리자 삭제", description = "관리자 계정을 삭제합니다.")
-    public ResponseEntity<ApiResponse<String>> deleteAdmin(
-            @PathVariable String adminEmail,
-            HttpSession session) {
 
-        try {
-            // 권한 검증
-            if (!isAdminDepartmentUser(session)) {
-                return ResponseEntity.status(403)
-                        .body(ApiResponse.error(ResponseCode.ACCESS_DENIED));
-            }
-
-            AdminSessionInfo sessionInfo = authenticationService.getSessionInfo(session);
-            String result = managementService.deleteAdmin(adminEmail, sessionInfo.getEmail());
-
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, result));
-
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(ApiResponse.error(ResponseCode.ACCESS_DENIED, e.getMessage()));
-        } catch (Exception e) {
-            log.error("관리자 삭제 중 오류 발생: ", e);
-            return ResponseEntity.internalServerError()
-                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR));
-        }
-    }
-
-    // === Private Helper Methods ===
 
     /**
      * ADMIN 부서 사용자인지 확인

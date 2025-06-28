@@ -14,15 +14,6 @@ public interface AdminManagementService {
      */
     AdminListResponseDTO getAdminList(int page, int size, String status, String search, Department department);
 
-    /**
-     * 관리자 상태 토글 (활성화/비활성화)
-     */
-    String toggleAdminStatus(String adminEmail, String currentUserEmail);
-
-    /**
-     * 관리자 삭제
-     */
-    String deleteAdmin(String adminEmail, String currentUserEmail);
 
     /**
      * 관리자 통계 계산

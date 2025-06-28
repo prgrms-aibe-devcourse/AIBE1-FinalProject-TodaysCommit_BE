@@ -26,7 +26,8 @@ public class AdminSettingsController {
     private final AdminAuthenticationService authenticationService;
 
     /**
-     * 설정 페이지 표시 - 이게 핵심 기능!
+     * 설정 페이지 표시
+     *
      */
     @GetMapping("/settings")
     public String showSettingsPage(HttpSession session) {
