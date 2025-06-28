@@ -1,6 +1,5 @@
 package com.team5.catdogeats.orders.service.impl;
 
-import com.team5.catdogeats.addresses.service.AddressService;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.orders.domain.Orders;
@@ -56,7 +55,6 @@ public class OrderServiceImpl implements OrderService {
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TossPaymentResponseBuilder tossPaymentResponseBuilder;
-    private final AddressService addressService;
 
     /**
      * UserPrincipal을 사용한 주문 생성 (EDA + 쿠폰 할인 + 배송비 포함 방식)
@@ -65,8 +63,8 @@ public class OrderServiceImpl implements OrderService {
      * 2. 상품 정보 수집 (원가 기준)
      * 3. 전체 주문 금액 계산 (원가 총합)
      * 4. 쿠폰 할인 적용 (전체 금액에서 할인)
-     * 5. 배송비 포함 최종 결제 금액 계산 ✅ 새로 추가
-     * 6. 주문 엔티티 저장 (배송비 포함 금액 + 배송지 정보) ✅ 수정됨
+     * 5. 배송비 포함 최종 결제 금액 계산
+     * 6. 주문 엔티티 저장 (배송비 포함 금액 + 배송지 정보)
      * 7. 토스 페이먼츠 응답 생성
      * 8. OrderCreatedEvent 발행 (할인 정보 포함)
      */
@@ -91,10 +89,10 @@ public class OrderServiceImpl implements OrderService {
         Double couponDiscountRate = request.getPaymentInfo().getCouponDiscountRate();
         Long discountedPrice = applyCouponDiscount(originalTotalPrice, couponDiscountRate);
 
-        // 5. 배송비 포함 최종 결제 금액 계산 ✅ 새로 추가
+        // 5. 배송비 포함 최종 결제 금액 계산
         Long finalPaymentAmount = calculateFinalPaymentAmount(discountedPrice, originalTotalPrice);
 
-        // 6. 주문 엔티티 생성 및 저장 (배송비 포함 금액 + 배송지 정보) ✅ 수정됨
+        // 6. 주문 엔티티 생성 및 저장 (배송비 포함 금액 + 배송지 정보)
         Orders savedOrder = createAndSaveOrderWithShipping(user, finalPaymentAmount, request.getShippingAddress());
 
         // 7. 토스 페이먼츠 응답 생성
@@ -160,11 +158,11 @@ public class OrderServiceImpl implements OrderService {
                 .mapToLong(OrderDetailResponse.OrderItemDetail::totalPrice)
                 .sum();
 
-        // 5. 할인 금액 및 배송비 계산 (기존 로직 유지)
+        // 5. 할인 금액 및 배송비 계산
         Long discountAmount = calculateDiscountAmount(order, totalProductPrice);
         Long deliveryFee = calculateDeliveryFee(totalProductPrice); // order 매개변수 제거
 
-        // 6. 받는 사람 정보 생성 ✅ 저장된 배송지 정보 사용
+        // 6. 받는 사람 정보 생성
         OrderDetailResponse.RecipientInfo recipientInfo = createRecipientInfoFromOrder(order);
 
         // 7. 결제 정보 생성
@@ -191,7 +189,7 @@ public class OrderServiceImpl implements OrderService {
     // ===== 새로 추가된 메서드들 =====
 
     /**
-     * 배송비 포함 최종 결제 금액 계산 ✅ 새로 추가
+     * 배송비 포함 최종 결제 금액 계산
      * @param discountedPrice 쿠폰 할인 적용된 상품 금액
      * @param originalTotalPrice 원가 총 금액 (배송비 계산 기준용)
      * @return 배송비 포함된 최종 결제 금액
@@ -208,7 +206,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 주문 엔티티 생성 및 저장 (배송지 정보 포함) ✅ 수정됨
+     * 주문 엔티티 생성 및 저장 (배송지 정보 포함)
      * @param user 사용자 정보
      * @param finalPaymentAmount 배송비 포함된 최종 결제 금액
      * @param shippingAddress 배송지 정보
@@ -220,10 +218,10 @@ public class OrderServiceImpl implements OrderService {
                 .user(user)
                 .orderNumber(generateOrderNumber())
                 .orderStatus(OrderStatus.PAYMENT_PENDING)
-                .totalPrice(finalPaymentAmount)  // ✅ 배송비 포함된 최종 금액
+                .totalPrice(finalPaymentAmount)  //배송비 포함된 최종 금액
                 .build();
 
-        // ✅ 배송지 정보 설정
+        // 배송지 정보 설정
         order.setShippingInfo(
                 shippingAddress.getRecipientName(),
                 shippingAddress.getRecipientPhone(),
@@ -241,7 +239,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 저장된 주문 정보에서 받는 사람 정보 생성 ✅ 새로 추가
+     * 저장된 주문 정보에서 받는 사람 정보 생성
      * @param order 주문 엔티티 (배송지 정보 포함)
      * @return 받는 사람 정보 DTO
      */
@@ -419,7 +417,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     /**
-     * 배송비 계산 (비즈니스 로직에 따라 구현) ✅ order 매개변수 제거
+     * 배송비 계산 (비즈니스 로직에 따라 구현)
      */
     private Long calculateDeliveryFee(Long totalProductPrice) {
         // 현재는 기본 배송비 설정 (3,000원, 30,000원 이상 무료배송)
