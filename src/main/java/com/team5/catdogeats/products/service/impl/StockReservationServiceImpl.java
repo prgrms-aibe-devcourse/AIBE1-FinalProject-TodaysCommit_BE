@@ -37,7 +37,7 @@ public class StockReservationServiceImpl implements StockReservationService {
     private int reservationExpirationMinutes;
 
     @Override
-    @Transactional(transactionManager = "jpaTransactionManager", propagation = Propagation.REQUIRES_NEW)
+    @JpaTransactional(propagation = Propagation.REQUIRES_NEW)
     @Retryable(retryFor = {OptimisticLockingFailureException.class}, backoff = @Backoff(delay = 100))
     public List<StockReservation> createBulkReservations(Orders order, List<ReservationRequest> reservationRequests) {
         log.info("일괄 재고 예약 생성 시작: orderId={}, 상품 개수={}", order.getId(), reservationRequests.size());
