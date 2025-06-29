@@ -91,7 +91,7 @@ public class AdminManagementController {
     @PostMapping("/invite")
     @ResponseBody
     @Operation(summary = "관리자 추가", description = "새로운 관리자를 초대합니다.")
-    public ResponseEntity<ApiResponse<AdminInvitationResponseDTO>> createAdmin(
+    public ResponseEntity<ApiResponse<AdminInvitationResponseDTO>> inviteAdmin(
             @Valid @RequestBody AdminInvitationRequestDTO request,
             HttpSession session) {
 
@@ -140,18 +140,23 @@ public class AdminManagementController {
     /**
      * 관리자 비밀번호 초기화 요청
      */
-    @PostMapping("/reset-password")
+    @PostMapping("/accounts/{adminEmail}/reset-password")
     @ResponseBody
     @Operation(summary = "관리자 비밀번호 초기화", description = "관리자의 비밀번호를 초기화하고 인증 메일을 발송합니다.")
     public ResponseEntity<ApiResponse<AdminPasswordResetResponseDTO>> resetAdminPassword(
-            @Valid @RequestBody AdminPasswordResetRequestDTO request,
+            @PathVariable String adminEmail,
             HttpSession session) {
 
-        controllerUtils.requireAdminDepartment(session);
+        AdminSessionInfo sessionInfo = controllerUtils.requireAdminDepartment(session);
+        AdminPasswordResetRequestDTO request = new AdminPasswordResetRequestDTO(
+                adminEmail,
+                sessionInfo.getEmail()
+        );
+
         AdminPasswordResetResponseDTO response = passwordResetService.requestPasswordReset(request);
 
         log.info("비밀번호 초기화 요청 성공: target={}, requestedBy={}",
-                request.email(), request.requestedBy());
+                adminEmail, sessionInfo.getEmail());
 
         return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
     }
