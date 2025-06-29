@@ -10,6 +10,8 @@ import com.team5.catdogeats.products.domain.dto.ProductDeleteRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
 import com.team5.catdogeats.products.domain.enums.SellerProductSortType;
 import com.team5.catdogeats.products.service.ProductService;
+import com.team5.catdogeats.reviews.domain.dto.ProductReviewResponseDto;
+import com.team5.catdogeats.reviews.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,6 +31,7 @@ import java.util.NoSuchElementException;
 @Tag(name = "Product", description = "상품 정보 관련 API")
 public class ProductController {
     private final ProductService productService;
+    private final ReviewService reviewService;
 
     @Operation(
             summary = "상품 등록",
@@ -108,6 +111,30 @@ public class ProductController {
             Page<MyProductResponseDto> data = productService.getProductsBySeller(userPrincipal, page, size, sortType);
 
             return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, PageResponseDto.from(data)));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
+                    .body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, e.getMessage()));
+        }
+    }
+
+    // 리뷰 domain의 특정 상품에 대한 리뷰 조회 controller 재활용
+    @Operation(summary = "특정 상품에 대한 리뷰 목록 조회",
+            description = "리뷰 작성자, 작성자의 펫 정보, 별점, 내용, 등록/수정 날짜, 리뷰에 첨부된 이미지들 제공합니다.")
+    @GetMapping("/sellers/products/{productNumber}/list")
+    public ResponseEntity<ApiResponse<PageResponseDto<ProductReviewResponseDto>>> getReviewsByBuyer(
+            @Parameter(description = "조회할 상품 Number", required = true)
+            @PathVariable Long productNumber,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        try {
+            Page<ProductReviewResponseDto> reviews = reviewService.getReviewsByProductNumber(productNumber, page, size);
+
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, PageResponseDto.from(reviews)));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
