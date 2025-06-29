@@ -96,15 +96,14 @@ public class CartServiceImpl implements CartService {
         }
 
         Users user = getUserByPrincipal(userPrincipal);
-        Carts cart = getOrCreateCart(user.getId());
-        CartItems cartItem = getCartItemById(cartItemId);
 
-        // 권한 확인
-        if (!cartItem.getCarts().getId().equals(cart.getId())) {
-            log.warn("장바구니 아이템 접근 권한 없음 - userId: {}, cartItemId: {}, cartId: {}",
-                    user.getId(), cartItemId, cart.getId());
-            throw new SecurityException("해당 장바구니 아이템에 접근 권한이 없습니다.");
-        }
+        // 권한확인 + 조회
+        CartItems cartItem = cartItemRepository.findByIdAndUserId(cartItemId, user.getId())
+                .orElseThrow(() -> {
+                    log.warn("장바구니 아이템 접근 권한 없음 또는 존재하지 않음 - userId: {}, cartItemId: {}",
+                            user.getId(), cartItemId);
+                    return new SecurityException("해당 장바구니 아이템에 접근 권한이 없거나 존재하지 않습니다.");
+                });
 
         int oldQuantity = cartItem.getQuantity();
         cartItem.setQuantity(request.getQuantity());
@@ -120,15 +119,14 @@ public class CartServiceImpl implements CartService {
     @JpaTransactional
     public CartResponse removeCartItem(UserPrincipal userPrincipal, String cartItemId) {
         Users user = getUserByPrincipal(userPrincipal);
-        Carts cart = getOrCreateCart(user.getId());
-        CartItems cartItem = getCartItemById(cartItemId);
 
-        // 권한 확인
-        if (!cartItem.getCarts().getId().equals(cart.getId())) {
-            log.warn("장바구니 아이템 삭제 권한 없음 - userId: {}, cartItemId: {}, cartId: {}",
-                    user.getId(), cartItemId, cart.getId());
-            throw new SecurityException("해당 장바구니 아이템에 접근 권한이 없습니다.");
-        }
+        // 권한 확인 + 조회
+        CartItems cartItem = cartItemRepository.findByIdAndUserId(cartItemId, user.getId())
+                .orElseThrow(() -> {
+                    log.warn("장바구니 아이템 삭제 권한 없음 또는 존재하지 않음 - userId: {}, cartItemId: {}",
+                            user.getId(), cartItemId);
+                    return new SecurityException("해당 장바구니 아이템에 접근 권한이 없거나 존재하지 않습니다.");
+                });
 
         String productName = cartItem.getProduct().getTitle();
         cartItemRepository.delete(cartItem);
@@ -169,7 +167,7 @@ public class CartServiceImpl implements CartService {
         return cartRepository.save(newCart);
     }
 
-    // UserPrincipal로 사용자 조회 - 예외 처리 개선
+    // 사용자 조회
     private Users getUserByPrincipal(UserPrincipal userPrincipal) {
         return userRepository.findByProviderAndProviderId(
                         userPrincipal.provider(),
@@ -194,14 +192,6 @@ public class CartServiceImpl implements CartService {
                 .orElseThrow(() -> {
                     log.error("상품을 찾을 수 없음 - productId: {}", productId);
                     return new NoSuchElementException("상품을 찾을 수 없습니다: " + productId);
-                });
-    }
-
-    private CartItems getCartItemById(String cartItemId) {
-        return cartItemRepository.findById(cartItemId)
-                .orElseThrow(() -> {
-                    log.error("장바구니 아이템을 찾을 수 없음 - cartItemId: {}", cartItemId);
-                    return new NoSuchElementException("장바구니 아이템을 찾을 수 없습니다: " + cartItemId);
                 });
     }
 
