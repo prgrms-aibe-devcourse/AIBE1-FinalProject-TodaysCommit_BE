@@ -25,10 +25,12 @@ import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequest
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisHttpSession;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
+@EnableRedisHttpSession(maxInactiveIntervalInSeconds = 1800)
 @Slf4j
 @RequiredArgsConstructor
 public class SecurityConfig {
@@ -48,11 +50,42 @@ public class SecurityConfig {
                     .securityMatcher("/v1/admin/**") // 관리자 체인 설정 지정
                     .csrf(AbstractHttpConfigurer::disable) // 개발이 끝나면 반드시 활성화 시킬것!
                     .sessionManagement(session ->
-                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                            session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                                    .sessionFixation().migrateSession()
+                                    .maximumSessions(1)
+                                    .maxSessionsPreventsLogin(false))
                     .authorizeHttpRequests(authorize -> authorize
-                            .requestMatchers("/v1/admin/login").permitAll()
-                            .requestMatchers("/v1/admin/**").hasRole("ADMIN") // 테스트 시, permitAll() / 기존, hasRole("ADMIN")
-                            .anyRequest().authenticated());
+                            .requestMatchers("/v1/admin/login").permitAll()                           // 로그인 페이지
+                            .requestMatchers("/v1/admin/verify").permitAll()                          // 계정 인증 페이지
+                            .requestMatchers("/v1/admin/resend-code").permitAll()                     // 인증코드 재발송
+                            .requestMatchers("/v1/admin/invite").hasAuthority("ADMIN")                // 초대 기능은 ADMIN 부서만
+                            .requestMatchers("/v1/admin/account-management").hasAuthority("ADMIN")    // 계정 관리는 ADMIN 부서만
+                            .requestMatchers("/v1/admin/accounts/**").hasAuthority("ADMIN")           // 계정 관리 API는 ADMIN 부서만
+                            .requestMatchers("/v1/admin/**").authenticated()                          // 나머지는 세션 인증 필요
+                            .anyRequest().authenticated())
+                    .httpBasic(AbstractHttpConfigurer::disable)
+                    .formLogin(AbstractHttpConfigurer::disable)                         // Spring Security 기본 로그인 비활성화
+                    .logout(logout -> logout
+                            .logoutUrl("/v1/admin/logout")
+                            .logoutSuccessUrl("/v1/admin/login?logout=true")
+                            .invalidateHttpSession(true)
+                            .deleteCookies("JSESSIONID")
+                            .permitAll())
+                    .securityContext(securityContext ->
+                            securityContext.requireExplicitSave(false))                // SecurityContext 자동 저장 활성화
+                    .exceptionHandling(exceptions -> exceptions
+                            .authenticationEntryPoint((request, response, authException) -> {
+                                // 인증되지 않은 사용자를 로그인 페이지로 리다이렉트
+                                if (request.getRequestURI().startsWith("/v1/admin/")) {
+                                    response.sendRedirect("/v1/admin/login");
+                                }
+                            })
+                            .accessDeniedHandler((request, response, accessDeniedException) -> {
+                                // 권한이 없는 사용자를 대시보드로 리다이렉트
+                                if (request.getRequestURI().startsWith("/v1/admin/")) {
+                                    response.sendRedirect("/v1/admin/dashboard?error=access_denied");
+                                }
+                            }));
             return http.build();
         } catch (Exception e) {
             log.error("Admin SecurityFilterChain 설정 중 예외 발생: ", e);
@@ -83,7 +116,7 @@ public class SecurityConfig {
                             .requestMatchers("/login/oauth2/code/naver/**").permitAll()
                             .requestMatchers("/login/oauth2/code/kakao/**").permitAll()
                             .requestMatchers("/v1/auth/refresh").permitAll()
-                            .requestMatchers("/v1/notices/**").permitAll()
+                            .requestMatchers("/v1/notices").permitAll()
                             .requestMatchers("/v1/faqs").permitAll()
                             .requestMatchers("/v1/buyers/products/list").permitAll()
                             .requestMatchers("/v1/buyers/products/{product-number}").permitAll()
