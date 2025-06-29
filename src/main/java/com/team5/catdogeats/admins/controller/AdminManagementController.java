@@ -1,7 +1,9 @@
 package com.team5.catdogeats.admins.controller;
 
 import com.team5.catdogeats.admins.domain.dto.*;
+import com.team5.catdogeats.admins.domain.enums.Department;
 import com.team5.catdogeats.admins.service.AdminInvitationService;
+import com.team5.catdogeats.admins.service.AdminManagementService;
 import com.team5.catdogeats.admins.service.AdminPasswordResetService;
 import com.team5.catdogeats.admins.service.AdminVerificationService;
 import com.team5.catdogeats.admins.util.AdminControllerUtils;
@@ -32,6 +34,43 @@ public class AdminManagementController {
     private final AdminVerificationService verificationService;
     private final AdminPasswordResetService passwordResetService;
     private final AdminControllerUtils controllerUtils;
+    private final AdminManagementService managementService;
+
+
+    /**
+     * 관리자 계정 관리 페이지 (ADMIN 부서만 접근 가능)
+     */
+    @GetMapping("/account-management")
+    public String showAccountManagementPage(HttpSession session, Model model) {
+        String redirectResult = controllerUtils.validatePageAccess(session, true);
+        if (redirectResult != null) {
+            return redirectResult;
+        }
+
+        AdminSessionInfo sessionInfo = controllerUtils.requireAdminDepartment(session);
+        model.addAttribute("admin", sessionInfo);
+        return "thymeleaf/administratorPage_account_management";
+    }
+
+
+    /**
+     * 관리자 목록 조회 API
+     */
+    @GetMapping("/accounts")
+    @ResponseBody
+    @Operation(summary = "관리자 목록 조회", description = "페이지네이션과 필터링이 적용된 관리자 목록을 조회합니다.")
+    public ResponseEntity<ApiResponse<AdminListResponseDTO>> getAdminList(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Department department,
+            HttpSession session) {
+
+        controllerUtils.requireAdminDepartment(session);
+        AdminListResponseDTO response = managementService.getAdminList(page, size, status, search, department);
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
+    }
 
     /**
      * 관리자 초대 페이지 (ADMIN 부서만 접근 가능)
@@ -45,23 +84,24 @@ public class AdminManagementController {
         return "thymeleaf/administratorPage_invite";
     }
 
+
     /**
-     * 관리자 초대 처리
+     * 관리자 추가
      */
     @PostMapping("/invite")
     @ResponseBody
-    @Operation(summary = "관리자 초대", description = "슈퍼관리자가 새로운 관리자를 초대합니다.")
-    public ResponseEntity<ApiResponse<AdminInvitationResponseDTO>> inviteAdmin(
+    @Operation(summary = "관리자 추가", description = "새로운 관리자를 초대합니다.")
+    public ResponseEntity<ApiResponse<AdminInvitationResponseDTO>> createAdmin(
             @Valid @RequestBody AdminInvitationRequestDTO request,
             HttpSession session) {
 
         controllerUtils.requireAdminDepartment(session);
         AdminInvitationResponseDTO response = invitationService.inviteAdmin(request);
 
-        log.info("관리자 초대 성공: 초대자={}, 피초대자={}",
+        log.info("관리자 추가 성공: 추가자={}, 피추가자={}",
                 controllerUtils.getSessionUserInfo(session), request.email());
 
-        return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, response));
+        return ResponseEntity.ok(ApiResponse.success(ResponseCode.CREATED, response));
     }
 
     /**
@@ -74,7 +114,7 @@ public class AdminManagementController {
     }
 
     /**
-     * 계정 인증 처리 (예외 처리 간소화)
+     * 계정 인증 처리
      */
     @PostMapping("/verify")
     @ResponseBody
@@ -87,7 +127,7 @@ public class AdminManagementController {
     }
 
     /**
-     * 인증코드 재발송 (예외 처리 간소화)
+     * 인증코드 재발송
      */
     @PostMapping("/resend-code")
     @ResponseBody
@@ -98,7 +138,7 @@ public class AdminManagementController {
     }
 
     /**
-     * 관리자 비밀번호 초기화 요청 (예외 처리 간소화)
+     * 관리자 비밀번호 초기화 요청
      */
     @PostMapping("/reset-password")
     @ResponseBody
