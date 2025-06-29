@@ -32,7 +32,6 @@ public class ProductServiceImpl implements ProductService {
     private final SellersRepository sellerRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductImageService productImageService;
-    private final ReviewRepository reviewRepository;
 
     @Override
     public String registerProduct(UserPrincipal userPrincipal, ProductCreateRequestDto dto) {
