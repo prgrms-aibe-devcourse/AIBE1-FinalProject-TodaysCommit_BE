@@ -12,10 +12,6 @@ import org.springframework.data.domain.Page;
 public interface ProductService {
     String registerProduct(UserPrincipal userPrincipal, ProductCreateRequestDto dto);
 
-    Page<MyProductResponseDto> getProductsBySeller(UserPrincipal userPrincipal, int page, int size, SellerProductSortType sortType);
-
-    SellerReviewSummaryResponseDto getSellerReviewSummary(UserPrincipal userPrincipal);
-
     void updateProduct(ProductUpdateRequestDto dto);
 
     void deleteProduct(ProductDeleteRequestDto dto);
