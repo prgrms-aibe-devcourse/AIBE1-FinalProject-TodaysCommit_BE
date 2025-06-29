@@ -6,7 +6,6 @@ import com.team5.catdogeats.global.dto.PageResponseDto;
 import com.team5.catdogeats.global.enums.ResponseCode;
 import com.team5.catdogeats.products.domain.dto.MyProductResponseDto;
 import com.team5.catdogeats.products.domain.enums.SellerProductSortType;
-import com.team5.catdogeats.products.service.ProductService;
 import com.team5.catdogeats.reviews.domain.dto.ProductReviewResponseDto;
 import com.team5.catdogeats.reviews.domain.dto.SellerReviewSummaryResponseDto;
 import com.team5.catdogeats.reviews.service.ReviewService;
