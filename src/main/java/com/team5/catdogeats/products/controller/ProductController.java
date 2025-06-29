@@ -11,6 +11,7 @@ import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
 import com.team5.catdogeats.products.domain.enums.SellerProductSortType;
 import com.team5.catdogeats.products.service.ProductService;
 import com.team5.catdogeats.reviews.domain.dto.ProductReviewResponseDto;
+import com.team5.catdogeats.reviews.domain.dto.SellerReviewSummaryResponseDto;
 import com.team5.catdogeats.reviews.service.ReviewService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -145,4 +146,23 @@ public class ProductController {
                     .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, e.getMessage()));
         }
     }
+
+    @Operation(summary = "특정 판매자의 전체 상품의 리뷰 통계 조회", description = "판매자가 등록한 모든 상품의 리뷰들 개수, 평균 별점, 별점구간별로 집계")
+    @GetMapping("/sellers/products/reviewSummary")
+    public ResponseEntity<ApiResponse<SellerReviewSummaryResponseDto>> getSellerReviewSummary(@AuthenticationPrincipal UserPrincipal userPrincipal) {
+        try {
+            SellerReviewSummaryResponseDto summary = productService.getSellerReviewSummary(userPrincipal);
+
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, summary));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
+                    .body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, e.getMessage()));
+        }
+    }
+
 }

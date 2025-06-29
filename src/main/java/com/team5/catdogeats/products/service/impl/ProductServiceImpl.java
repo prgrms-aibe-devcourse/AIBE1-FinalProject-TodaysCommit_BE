@@ -8,6 +8,7 @@ import com.team5.catdogeats.products.domain.enums.SellerProductSortType;
 import com.team5.catdogeats.products.exception.DuplicateProductNumberException;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.products.service.ProductService;
+import com.team5.catdogeats.reviews.domain.dto.SellerReviewSummaryResponseDto;
 import com.team5.catdogeats.reviews.repository.ReviewRepository;
 import com.team5.catdogeats.storage.domain.dto.ProductImageResponseDto;
 import com.team5.catdogeats.storage.domain.mapping.ProductsImages;
@@ -26,10 +27,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.Comparator;
 
 @Slf4j
 @Service
@@ -93,7 +92,8 @@ public class ProductServiceImpl implements ProductService {
                     summary.productId(),
                     summary.productName(),
                     summary.reviewCount(),
-                    summary.averageStar(),
+                    // 소수점 한 자리로 반올림
+                    Math.round(summary.averageStar() * 10) / 10.0,
                     imageDto
             );
         }).toList();
@@ -115,6 +115,36 @@ public class ProductServiceImpl implements ProductService {
         List<MyProductResponseDto> pageContent = sorted.subList(start, end);
 
         return new PageImpl<>(pageContent, PageRequest.of(page, size), sorted.size());
+    }
+
+    @Override
+    public SellerReviewSummaryResponseDto getSellerReviewSummary(UserPrincipal userPrincipal) {
+        SellerDTO sellerDTO = sellerRepository.findSellerDtoByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
+                .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
+
+        // 전체 평균, 전체 개수
+        List<Object[]> avgCountList = reviewRepository.findAvgAndCountBySellerId(sellerDTO.userId());
+        Object[] avgCount = avgCountList.isEmpty() ? new Object[]{0.0, 0L} : avgCountList.get(0);
+        double avgStar = avgCount[0] != null ? ((Number) avgCount[0]).doubleValue() : 0.0;
+        long totalCount = avgCount[1] != null ? ((Number) avgCount[1]).longValue() : 0L;
+
+        // 구간별 개수
+        Map<Integer, Long> starGroupCount = new HashMap<>();
+        // 0~5점대 기본값 0으로 초기화
+        for (int i = 0; i <= 5; i++) starGroupCount.put(i, 0L);
+
+        for (Object[] groupRow : reviewRepository.findGroupStarCountBySellerId(sellerDTO.userId())) {
+            Integer group = groupRow[0] != null ? ((Number) groupRow[0]).intValue() : null;
+            Long count = groupRow[1] != null ? ((Number) groupRow[1]).longValue() : null;
+            if (group != null && count != null) {
+                starGroupCount.put(group, count);
+            }
+        }
+
+        // 소수점 한 자리로 평균 반올림
+        avgStar = Math.round(avgStar * 10) / 10.0;
+
+        return new SellerReviewSummaryResponseDto(avgStar, totalCount, starGroupCount);
     }
 
     @JpaTransactional
@@ -140,6 +170,8 @@ public class ProductServiceImpl implements ProductService {
 
         productRepository.deleteById(dto.productId());
     }
+
+
 
     // TODO: 상품 조회 서비스 로직 / 상품 상세 조회 서비스 로직 구현하기
 
