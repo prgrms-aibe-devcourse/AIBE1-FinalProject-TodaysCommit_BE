@@ -1,6 +1,8 @@
 package com.team5.catdogeats.products.repository;
 
 import com.team5.catdogeats.products.domain.Products;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,4 +20,8 @@ public interface ProductRepository extends JpaRepository<Products, String> {
     // 단순 스토어 상품 개수 조회
     @Query("SELECT COUNT(p) FROM Products p WHERE p.seller.userId = :sellerId")
     Long countSellerActiveProducts(@Param("sellerId") String sellerId);
+
+    Page<Products> findAllBySeller_UserId(String sellerId, Pageable pageable);
+
+
 }

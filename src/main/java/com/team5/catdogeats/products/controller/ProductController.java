@@ -2,7 +2,9 @@ package com.team5.catdogeats.products.controller;
 
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.dto.ApiResponse;
+import com.team5.catdogeats.global.dto.PageResponseDto;
 import com.team5.catdogeats.global.enums.ResponseCode;
+import com.team5.catdogeats.products.domain.dto.MyProductResponseDto;
 import com.team5.catdogeats.products.domain.dto.ProductCreateRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductDeleteRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
@@ -12,6 +14,7 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -88,5 +91,28 @@ public class ProductController {
         }
     }
 
-    // TODO: 상품 조회 서비스 로직 / 상품 상세 조회 컨트롤러 구현하기
+    @Operation(
+            summary = "판매자 상품 목록 조회",
+            description = "판매자가 등록한 상품 목록을 조회합니다. 상품명, 대표 이미지, 리뷰 개수, 평균 별점 정보를 제공합니다."
+    )
+    @GetMapping("/sellers/products/list")
+    public ResponseEntity<ApiResponse<PageResponseDto<MyProductResponseDto>>> getMyProductsBySeller(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        try {
+            Page<MyProductResponseDto> data = productService.getProductsBySeller(userPrincipal, page, size);
+
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, PageResponseDto.from(data)));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity
+                    .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
+                    .body(ApiResponse.error(ResponseCode.ENTITY_NOT_FOUND, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .status(ResponseCode.INTERNAL_SERVER_ERROR.getStatus())
+                    .body(ApiResponse.error(ResponseCode.INTERNAL_SERVER_ERROR, e.getMessage()));
+        }
+    }
 }

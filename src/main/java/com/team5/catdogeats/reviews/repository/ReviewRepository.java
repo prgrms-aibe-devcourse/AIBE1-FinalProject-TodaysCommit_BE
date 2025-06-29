@@ -20,4 +20,9 @@ public interface ReviewRepository extends JpaRepository<Reviews, String> {
     Page<Reviews> findByProductNumber(@Param("productNumber") Long productNumber, Pageable pageable);
 
     void deleteById(String reviewId);
+
+    int countByProductId(String productId);
+
+    @Query("SELECT COALESCE(AVG(r.star), 0.0) FROM Reviews r WHERE r.product.id = :productId")
+    Double avgStarByProductId(@Param("productId") String productId);
 }

@@ -3,20 +3,27 @@ package com.team5.catdogeats.products.service.impl;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
+import com.team5.catdogeats.products.domain.dto.MyProductResponseDto;
 import com.team5.catdogeats.products.domain.dto.ProductCreateRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductDeleteRequestDto;
 import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
 import com.team5.catdogeats.products.exception.DuplicateProductNumberException;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.products.service.ProductService;
+import com.team5.catdogeats.reviews.repository.ReviewRepository;
+import com.team5.catdogeats.storage.domain.dto.ProductImageResponseDto;
 import com.team5.catdogeats.storage.domain.mapping.ProductsImages;
 import com.team5.catdogeats.storage.repository.ProductImageRepository;
 import com.team5.catdogeats.storage.service.ProductImageService;
+import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.dto.SellerDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -34,6 +41,7 @@ public class ProductServiceImpl implements ProductService {
     private final SellersRepository sellerRepository;
     private final ProductImageRepository productImageRepository;
     private final ProductImageService productImageService;
+    private final ReviewRepository reviewRepository;
 
     @Override
     public String registerProduct(UserPrincipal userPrincipal, ProductCreateRequestDto dto) {
@@ -67,6 +75,34 @@ public class ProductServiceImpl implements ProductService {
 
         Products product = Products.fromDto(dto, seller, productNumber);
         return productRepository.save(product).getId();
+    }
+
+    @Override
+    public Page<MyProductResponseDto> getProductsBySeller(UserPrincipal userPrincipal, int page, int size) {
+        SellerDTO sellerDTO = sellerRepository.findSellerDtoByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
+                .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Products> productPage = productRepository.findAllBySeller_UserId(sellerDTO.userId(), pageable);
+
+        return productPage.map(product -> {
+            // 대표 이미지 (Dto)
+            List<ProductImageResponseDto> imageDtos = productImageRepository.findFirstImageDtoByProductId(product.getId());
+            ProductImageResponseDto imageDto = imageDtos.isEmpty() ? null : imageDtos.get(0);
+
+            // 리뷰 수/평균
+            int reviewCount = reviewRepository.countByProductId(product.getId());
+            Double avgStar = reviewRepository.avgStarByProductId(product.getId());
+
+
+            return new MyProductResponseDto(
+                    product.getId(),
+                    product.getTitle(),
+                    reviewCount,
+                    avgStar,
+                    imageDto
+            );
+        });
     }
 
     @JpaTransactional
