@@ -55,16 +55,7 @@ public class ReviewController {
         try {
             Page<MyReviewResponseDto> reviews = reviewService.getReviewsByBuyer(userPrincipal, page, size);
 
-            // Page 객체를 PageResponseDto로 변환
-            PageResponseDto<MyReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
-                    reviews.getContent(),
-                    reviews.getNumber(),
-                    reviews.getSize(),
-                    reviews.getTotalElements(),
-                    reviews.getTotalPages(),
-                    reviews.isLast()
-            );
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, reviewPageResponse));
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, PageResponseDto.from(reviews)));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
@@ -86,16 +77,7 @@ public class ReviewController {
         try {
             Page<ProductReviewResponseDto> reviews = reviewService.getReviewsByProductNumber(productNumber, page, size);
 
-            // Page 객체를 PageResponseDto로 변환
-            PageResponseDto<ProductReviewResponseDto> reviewPageResponse = new PageResponseDto<>(
-                    reviews.getContent(),
-                    reviews.getNumber(),
-                    reviews.getSize(),
-                    reviews.getTotalElements(),
-                    reviews.getTotalPages(),
-                    reviews.isLast()
-            );
-            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, reviewPageResponse));
+            return ResponseEntity.ok(ApiResponse.success(ResponseCode.SUCCESS, PageResponseDto.from(reviews)));
         } catch (NoSuchElementException e) {
             return ResponseEntity
                     .status(ResponseCode.ENTITY_NOT_FOUND.getStatus())
