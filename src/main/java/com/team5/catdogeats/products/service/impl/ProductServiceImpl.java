@@ -3,10 +3,8 @@ package com.team5.catdogeats.products.service.impl;
 import com.team5.catdogeats.auth.dto.UserPrincipal;
 import com.team5.catdogeats.global.config.JpaTransactional;
 import com.team5.catdogeats.products.domain.Products;
-import com.team5.catdogeats.products.domain.dto.MyProductResponseDto;
-import com.team5.catdogeats.products.domain.dto.ProductCreateRequestDto;
-import com.team5.catdogeats.products.domain.dto.ProductDeleteRequestDto;
-import com.team5.catdogeats.products.domain.dto.ProductUpdateRequestDto;
+import com.team5.catdogeats.products.domain.dto.*;
+import com.team5.catdogeats.products.domain.enums.SellerProductSortType;
 import com.team5.catdogeats.products.exception.DuplicateProductNumberException;
 import com.team5.catdogeats.products.repository.ProductRepository;
 import com.team5.catdogeats.products.service.ProductService;
@@ -15,13 +13,13 @@ import com.team5.catdogeats.storage.domain.dto.ProductImageResponseDto;
 import com.team5.catdogeats.storage.domain.mapping.ProductsImages;
 import com.team5.catdogeats.storage.repository.ProductImageRepository;
 import com.team5.catdogeats.storage.service.ProductImageService;
-import com.team5.catdogeats.users.domain.dto.BuyerDTO;
 import com.team5.catdogeats.users.domain.dto.SellerDTO;
 import com.team5.catdogeats.users.domain.mapping.Sellers;
 import com.team5.catdogeats.users.repository.SellersRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -31,6 +29,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Comparator;
 
 @Slf4j
 @Service
@@ -78,31 +77,44 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public Page<MyProductResponseDto> getProductsBySeller(UserPrincipal userPrincipal, int page, int size) {
+    public Page<MyProductResponseDto> getProductsBySeller(UserPrincipal userPrincipal, int page, int size, SellerProductSortType sortType) {
         SellerDTO sellerDTO = sellerRepository.findSellerDtoByProviderAndProviderId(userPrincipal.provider(), userPrincipal.providerId())
                 .orElseThrow(() -> new NoSuchElementException("해당 유저 정보를 찾을 수 없습니다."));
 
-        Pageable pageable = PageRequest.of(page, size);
-        Page<Products> productPage = productRepository.findAllBySeller_UserId(sellerDTO.userId(), pageable);
+        // Pageable은 무시하고, 모든 상품을 다 가져옴
+        List<MyProductSummaryDto> allSummaries = productRepository.findSummaryBySellerId(sellerDTO.userId(), Pageable.unpaged())
+                .getContent();
 
-        return productPage.map(product -> {
-            // 대표 이미지 (Dto)
-            List<ProductImageResponseDto> imageDtos = productImageRepository.findFirstImageDtoByProductId(product.getId());
+        List<MyProductResponseDto> dtos = allSummaries.stream().map(summary -> {
+            List<ProductImageResponseDto> imageDtos = productImageRepository.findFirstImageDtoByProductId(summary.productId());
             ProductImageResponseDto imageDto = imageDtos.isEmpty() ? null : imageDtos.get(0);
 
-            // 리뷰 수/평균
-            int reviewCount = reviewRepository.countByProductId(product.getId());
-            Double avgStar = reviewRepository.avgStarByProductId(product.getId());
-
-
             return new MyProductResponseDto(
-                    product.getId(),
-                    product.getTitle(),
-                    reviewCount,
-                    avgStar,
+                    summary.productId(),
+                    summary.productName(),
+                    summary.reviewCount(),
+                    summary.averageStar(),
                     imageDto
             );
-        });
+        }).toList();
+
+        // 정렬 적용
+        List<MyProductResponseDto> sorted = switch (sortType) {
+            case STAR -> dtos.stream()
+                    .sorted(Comparator.comparingDouble(MyProductResponseDto::averageStar).reversed())
+                    .toList();
+            case REVIEW -> dtos.stream()
+                    .sorted(Comparator.comparingLong(MyProductResponseDto::reviewCount).reversed())
+                    .toList();
+            default -> dtos; // LATEST: product 생성순
+        };
+
+        // 페이지네이션 적용
+        int start = Math.min(page * size, sorted.size());
+        int end = Math.min(start + size, sorted.size());
+        List<MyProductResponseDto> pageContent = sorted.subList(start, end);
+
+        return new PageImpl<>(pageContent, PageRequest.of(page, size), sorted.size());
     }
 
     @JpaTransactional
