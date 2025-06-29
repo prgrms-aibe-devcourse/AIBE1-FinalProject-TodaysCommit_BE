@@ -61,7 +61,7 @@ public class SellerRatingController {
     @Operation(summary = "특정 상품에 대한 리뷰 목록 조회",
             description = "리뷰 작성자, 작성자의 펫 정보, 별점, 내용, 등록/수정 날짜, 리뷰에 첨부된 이미지들 제공합니다.")
     @GetMapping("/{productNumber}/list")
-    public ResponseEntity<ApiResponse<PageResponseDto<ProductReviewResponseDto>>> getReviewsByBuyer(
+    public ResponseEntity<ApiResponse<PageResponseDto<ProductReviewResponseDto>>> getReviewsByProduct(
             @Parameter(description = "조회할 상품 Number", required = true)
             @PathVariable Long productNumber,
             @RequestParam(defaultValue = "0") int page,

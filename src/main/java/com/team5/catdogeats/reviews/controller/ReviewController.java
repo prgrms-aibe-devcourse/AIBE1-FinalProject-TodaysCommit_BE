@@ -69,7 +69,7 @@ public class ReviewController {
 
     @Operation(summary = "상품에 대한 리뷰 목록 조회 (페이징)", description = "특정 상품에 대한 모든 리뷰 목록을 조회합니다.")
     @GetMapping("/{productNumber}/list")
-    public ResponseEntity<ApiResponse<PageResponseDto<ProductReviewResponseDto>>> getReviewsByBuyer(
+    public ResponseEntity<ApiResponse<PageResponseDto<ProductReviewResponseDto>>> getReviewsByProduct(
             @Parameter(description = "조회할 상품 Number", required = true)
             @PathVariable Long productNumber,
             @RequestParam(defaultValue = "0") int page,
