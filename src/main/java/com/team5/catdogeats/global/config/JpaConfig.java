@@ -19,6 +19,7 @@ import javax.sql.DataSource;
                 "com.team5.catdogeats.orders.repository",
                 "com.team5.catdogeats.products.repository",
                 "com.team5.catdogeats.pets.repository",
+                "com.team5.catdogeats.carts.repository",
                 "com.team5.catdogeats.payments.repository",
                 "com.team5.catdogeats.reviews.repository",
                 "com.team5.catdogeats.storage.repository",
